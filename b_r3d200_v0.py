@@ -358,20 +358,20 @@ ctTestDataset = ctDataset2(df=all_df_test, root_dir='~/rp/dataset2/dataset2')
 # --model resnet --model_depth 34 --n_pretrain_classes 700
 
 r3d200 = generate_model(200, n_classes=700)
-PATH = 'r3d50_K_200ep.pth'
-# PATH = '/content/drive/MyDrive/curated_data/r3d50_K_200ep.pth'
+PATH = 'r3d200_K_200ep.pth'
+# PATH = '/content/drive/MyDrive/curated_data/r3d200_K_200ep.pth'
 
 # Model class must be defined somewhere
-r3d50.load_state_dict(torch.load(PATH)['state_dict'])
-r3d50.eval()
-r3d50 = r3d50.to(device)
+r3d200.load_state_dict(torch.load(PATH)['state_dict'])
+r3d200.eval()
+r3d200 = r3d200.to(device)
 
 # so we're doing feature extraction
-for p in r3d50.parameters():
+for p in r3d200.parameters():
     p.requires_grad = False
 
 # change to classify for 3 features
-r3d50.fc = nn.Linear(r3d50.fc.in_features, 3).to(device) # 3 classes
+r3d200.fc = nn.Linear(r3d200.fc.in_features, 3).to(device) # 3 classes
 
 
 BATCH_SIZE = 4
@@ -382,14 +382,14 @@ ctTestDataloader=torch.utils.data.DataLoader(ctTestDataset, batch_size=BATCH_SIZ
 NUM_EPOCHS = 100
 # BEST_MODEL_PATH = 'best_model.pth'
 
-optimizer = optim.SGD(r3d50.parameters(), lr=0.001, momentum=0.9)
+optimizer = optim.SGD(r3d200.parameters(), lr=0.001, momentum=0.9)
 
 for epoch in range(NUM_EPOCHS):
     for i, data in enumerate(ctTrainDataloader):
         images = data['images'].to(device)
         labels = data['labels'].to(device)
         optimizer.zero_grad()
-        outputs = r3d50(images)
+        outputs = r3d200(images)
         loss = F.cross_entropy(outputs, labels)
         loss.backward()
         optimizer.step()
@@ -403,7 +403,7 @@ for i, data in enumerate(ctTestDataloader):
     images = data['images'].to(device)
     labels = data['labels'].to(device)
 
-    outputs = r3d50(images)
+    outputs = r3d200(images)
     true = torch.cat((true, labels), 0)
 
 
@@ -419,7 +419,7 @@ pred = pred.to('cpu')
 
 target_names = ['NonCOVID', 'COVID', 'CAP']
 
-print('Model outputs for b_r3d50_v0:')
+print('Model outputs for b_r3d200_v0:')
 
 # get precision, recall, f1-score
 print(classification_report(true, pred, target_names=target_names, digits=4))
@@ -433,5 +433,5 @@ print(matrix.diagonal()/matrix.sum(axis=1))
 print(accuracy_score(true, pred))
 
 # Colab path commented out
-# torch.save(r3d50.state_dict(), 'drive/MyDrive/curated_data/baseline_r3d50_v0_test_2epoch.pth')
-torch.save(r3d50.state_dict(), 'b_r3d50_v0.pth')
+# torch.save(r3d200.state_dict(), 'drive/MyDrive/curated_data/baseline_r3d200_v0_test_2epoch.pth')
+torch.save(r3d200.state_dict(), 'b_r3d200_v0.pth')
