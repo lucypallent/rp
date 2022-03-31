@@ -419,6 +419,8 @@ pred = pred.to('cpu')
 
 target_names = ['NonCOVID', 'COVID', 'CAP']
 
+print('Model outputs for b_r3d18_v0:')
+
 # get precision, recall, f1-score
 print(classification_report(true, pred, target_names=target_names, digits=4))
 
@@ -432,4 +434,4 @@ print(accuracy_score(true, pred))
 
 # Colab path commented out
 # torch.save(r3d18.state_dict(), 'drive/MyDrive/curated_data/baseline_r3d18_v0_test_2epoch.pth')
-torch.save(r3d_34.state_dict(), 'b_r3d18_v0.pth')
+torch.save(r3d18.state_dict(), 'b_r3d18_v0.pth')
