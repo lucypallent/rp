@@ -12,4 +12,4 @@
 source /etc/profile
 source env/bin/activate
 
-python3 b_r3d18_v0.py
+python3 b_r3d18_vpt0.py
