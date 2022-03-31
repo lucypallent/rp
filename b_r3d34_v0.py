@@ -362,7 +362,7 @@ PATH = '~/rp/r3d34_K_200ep.pth'
 # PATH = '/content/drive/MyDrive/curated_data/r3d34_K_200ep.pth'
 
 # Model class must be defined somewhere
-r3dr34.load_state_dict(torch.load(PATH)['state_dict'])
+r3d34.load_state_dict(torch.load(PATH)['state_dict'])
 r3d34.eval()
 r3d34 = r3d34.to(device)
 
