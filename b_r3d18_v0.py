@@ -357,7 +357,7 @@ ctTestDataset = ctDataset2(df=all_df_test, root_dir='~/rp/dataset2/dataset2')
 
 # --model resnet --model_depth 34 --n_pretrain_classes 700
 
-r3d18 = generate_model(34, n_classes=700)
+r3d18 = generate_model(18, n_classes=700)
 PATH = 'r3d18_K_200ep.pth'
 # PATH = '/content/drive/MyDrive/curated_data/r3d18_K_200ep.pth'
 
