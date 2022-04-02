@@ -367,7 +367,7 @@ ctTestDataset_1 = ctDataset2_1(df=all_df_test, root_dir='~/rp/dataset2/dataset2'
 # --model resnet --model_depth 34 --n_pretrain_classes 700
 
 # create model to classify pneumonia / normal
-r3d18_1 = generate_model(34, n_classes=700)
+r3d18_1 = generate_model(18, n_classes=700)
 PATH = 'r3d18_K_200ep.pth'
 # PATH = '/content/drive/MyDrive/curated_data/r3d18_K_200ep.pth'
 
@@ -551,7 +551,7 @@ ctTestDataset_2 = ctDataset2_2(df=all_df_test, root_dir='~/rp/dataset2/dataset2'
 # --model resnet --model_depth 34 --n_pretrain_classes 700
 
 # create model to classify pneumonia / COVID
-r3d18_2 = generate_model(34, n_classes=700)
+r3d18_2 = generate_model(18, n_classes=700)
 PATH = 'r3d18_K_200ep.pth'
 # PATH = '/content/drive/MyDrive/curated_data/r3d18_K_200ep.pth'
 
