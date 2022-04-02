@@ -389,7 +389,7 @@ BATCH_SIZE = 4
 ctTrainDataloader_1=torch.utils.data.DataLoader(ctTrainDataset_1, batch_size=BATCH_SIZE, shuffle=True, num_workers=0)
 ctTestDataloader_1=torch.utils.data.DataLoader(ctTestDataset_1, batch_size=BATCH_SIZE, shuffle=True, num_workers=0)
 
-NUM_EPOCHS = 100
+NUM_EPOCHS = 10
 # BEST_MODEL_PATH = 'best_model.pth'
 
 optimizer = optim.SGD(r3d34_1.parameters(), lr=0.001, momentum=0.9)
@@ -573,7 +573,7 @@ BATCH_SIZE = 4
 ctTrainDataloader_2=torch.utils.data.DataLoader(ctTrainDataset_2, batch_size=BATCH_SIZE, shuffle=True, num_workers=0)
 ctTestDataloader_2=torch.utils.data.DataLoader(ctTestDataset_2, batch_size=BATCH_SIZE, shuffle=True, num_workers=0)
 
-NUM_EPOCHS = 100
+NUM_EPOCHS = 10
 # BEST_MODEL_PATH = 'best_model.pth'
 
 optimizer = optim.SGD(r3d34_2.parameters(), lr=0.001, momentum=0.9)
