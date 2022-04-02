@@ -308,9 +308,8 @@ class ctDataset2_1(Dataset):
 
         patient_id = self.id_df.iloc[idx, 0].tolist()
         img_class = self.id_df.iloc[idx, 1].tolist()
-        img_class_num = torch.tensor(self.id_df.iloc[idx, 2].values)[0]
-
-        for pi, ic, icn in zip(patient_id, img_class, img_class_num):
+        img_class_num_lst = self.id_df.iloc[idx, 2].tolist()
+        for pi, ic, icn in zip(patient_id, img_class, img_class_num_lst):
 
             img1 = np.zeros((1, 512, 512, 3))
             if ic == 'COVID-19':
@@ -321,7 +320,10 @@ class ctDataset2_1(Dataset):
                 clss = '/3CAP/'
                 # change to equal covid ie become binary classifier
                 ic = 'COVID-19'
-                icn = 1
+                img_class_num_lst[0] = 1
+
+
+            img_class_num = torch.tensor(img_class_num_lst)[0]
 
             imgs = torch.empty((1, 128, 128, 3)).to(device)
             for i in range(64):
@@ -353,9 +355,9 @@ all_df_test = all_df_test[['File name', 'Patient ID', 'Slice', 'Diagnosis', 'dia
 all_df_test.sort_values(['Patient ID', 'Slice'], ascending=True, inplace=True)
 
 # Colab url commented out
-# ctTrainDataset = ctDataset2_1(df=all_df_train, root_dir='/content/drive/MyDrive/curated_data/curated_data')
+# ctTrainDataset_1 = ctDataset2_1(df=all_df_train, root_dir='/content/drive/MyDrive/curated_data/curated_data')
 ctTrainDataset_1 = ctDataset2_1(df=all_df_train, root_dir='~/rp/dataset2/dataset2')
-# ctTestDataset = ctDataset2_1(df=all_df_test, root_dir='/content/drive/MyDrive/curated_data/curated_data')
+# ctTestDataset_1 = ctDataset2_1(df=all_df_test, root_dir='/content/drive/MyDrive/curated_data/curated_data')
 ctTestDataset_1 = ctDataset2_1(df=all_df_test, root_dir='~/rp/dataset2/dataset2')
 
 
@@ -387,7 +389,7 @@ BATCH_SIZE = 4
 ctTrainDataloader_1=torch.utils.data.DataLoader(ctTrainDataset_1, batch_size=BATCH_SIZE, shuffle=True, num_workers=0)
 ctTestDataloader_1=torch.utils.data.DataLoader(ctTestDataset_1, batch_size=BATCH_SIZE, shuffle=True, num_workers=0)
 
-NUM_EPOCHS = 5
+NUM_EPOCHS = 100
 # BEST_MODEL_PATH = 'best_model.pth'
 
 optimizer = optim.SGD(r3d34_1.parameters(), lr=0.001, momentum=0.9)
@@ -406,8 +408,8 @@ true = torch.tensor([]).to(device)
 pred = torch.tensor([]).to(device)
 
  # test for t
-for i, data in enumerate(ctTestDataloader_1):
 
+for i, data in enumerate(ctTestDataloader_1):
     images = data['images'].to(device)
     labels = data['labels'].to(device)
 
@@ -486,19 +488,24 @@ class ctDataset2_2(Dataset):
 
         patient_id = self.id_df.iloc[idx, 0].tolist()
         img_class = self.id_df.iloc[idx, 1].tolist()
-        img_class_num = torch.tensor(self.id_df.iloc[idx, 2].values)[0]
+        # img_class_num = torch.tensor(self.id_df.iloc[idx, 2].values)[0]
+        img_class_num_lst = self.id_df.iloc[idx, 2].tolist()
 
-        for pi, ic, icn in zip(patient_id, img_class, img_class_num):
+
+        for pi, ic, icn in zip(patient_id, img_class, img_class_num_lst):
 
             img1 = np.zeros((1, 512, 512, 3))
             if ic == 'COVID-19':
                 clss = '/2COVID/'
             elif ic == 'CAP':
                 clss = '/3CAP/'
+                img_class_num_lst[0]= 0
             elif ic == 'Normal':
                 clss = '/1NonCOVID/'
                 ic = 'CAP' # assign normal images to 'CAP' for binary classification
-                icn = 2
+                # icn = 2
+
+            img_class_num = torch.tensor(img_class_num_lst)[0]
 
             imgs = torch.empty((1, 128, 128, 3)).to(device)
             for i in range(64):
@@ -524,10 +531,12 @@ all_patient_df_train, all_patient_df_test = train_test_split(all_patient_df, tra
 all_df_train = all_patient_df_train.merge(all_df[['File name', 'Patient ID', 'Slice']], on='Patient ID')
 all_df_train = all_df_train[['File name', 'Patient ID', 'Slice', 'Diagnosis', 'diag_num']]
 all_df_train.sort_values(['Patient ID', 'Slice'], ascending=True, inplace=True)
+all_df_train = all_df_train[all_df_train.diag_num != 0]
 
 all_df_test = all_patient_df_test.merge(all_df[['File name', 'Patient ID', 'Slice']], on='Patient ID')
 all_df_test = all_df_test[['File name', 'Patient ID', 'Slice', 'Diagnosis', 'diag_num']]
 all_df_test.sort_values(['Patient ID', 'Slice'], ascending=True, inplace=True)
+all_df_test = all_df_test[all_df_test.diag_num != 0]
 
 # Colab url commented out
 # ctTrainDataset_2 = ctDataset2_2(df=all_df_train, root_dir='/content/drive/MyDrive/curated_data/curated_data')
@@ -564,7 +573,7 @@ BATCH_SIZE = 4
 ctTrainDataloader_2=torch.utils.data.DataLoader(ctTrainDataset_2, batch_size=BATCH_SIZE, shuffle=True, num_workers=0)
 ctTestDataloader_2=torch.utils.data.DataLoader(ctTestDataset_2, batch_size=BATCH_SIZE, shuffle=True, num_workers=0)
 
-NUM_EPOCHS = 5
+NUM_EPOCHS = 100
 # BEST_MODEL_PATH = 'best_model.pth'
 
 optimizer = optim.SGD(r3d34_2.parameters(), lr=0.001, momentum=0.9)
@@ -735,13 +744,11 @@ for i, data in enumerate(ctTestDataloader):
     predicted = torch.max(outputs.data, 1)[1]
 
     # get cases where predicted values are covdi to run through the 2nd classifier
-    print('predicted1 below')
-    print(predicted[0])
     if predicted[0] == 1:
         outputs = r3d34_2(images)
         predicted = torch.max(outputs.data, 1)[1]
-        print('predicted2 below')
-        print(predicted[0])
+        if predicted[0] == 0:
+            predicted[0] = 2
 
     pred = torch.cat((pred, predicted), 0)
 
