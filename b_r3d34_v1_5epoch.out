@@ -1,0 +1,37 @@
+Model outputs for b_r3d34_1:
+              precision    recall  f1-score   support
+
+    NonCOVID     0.9014    0.9697    0.9343        66
+   Pneumonia     0.9394    0.8158    0.8732        38
+
+    accuracy                         0.9135       104
+   macro avg     0.9204    0.8927    0.9038       104
+weighted avg     0.9153    0.9135    0.9120       104
+
+[0.96969697 0.81578947]
+0.9134615384615384
+Model outputs for b_r3d34_2:
+              precision    recall  f1-score   support
+
+       COVID     0.4231    1.0000    0.5946        11
+   Pneumonia     1.0000    0.4444    0.6154        27
+
+    accuracy                         0.6053        38
+   macro avg     0.7115    0.7222    0.6050        38
+weighted avg     0.8330    0.6053    0.6094        38
+
+[1.         0.44444444]
+0.6052631578947368
+Model outputs for b_r3d34_T:
+              precision    recall  f1-score   support
+
+    NonCOVID     0.9014    0.9697    0.9343        66
+       COVID     1.0000    0.2222    0.3636        27
+         CAP     0.3704    0.9091    0.5263        11
+
+    accuracy                         0.7692       104
+   macro avg     0.7573    0.7003    0.6081       104
+weighted avg     0.8708    0.7692    0.7430       104
+
+[0.96969697 0.22222222 0.90909091]
+0.7692307692307693
