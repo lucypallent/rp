@@ -447,7 +447,7 @@ print(accuracy_score(true, pred))
 
 # Colab path commented out
 # torch.save(r3d34.state_dict(), 'drive/MyDrive/curated_data/baseline_r3d34_v0_test_2epoch.pth')
-torch.save(b_r3d34_1.state_dict(), 'b_r3d34_1_10epoch.pth')
+torch.save(r3d34_1.state_dict(), 'b_r3d34_1_10epoch.pth')
 
 # code for classifying between pneumonina / covid
 
@@ -555,7 +555,7 @@ ctTestDataset_2 = ctDataset2_2(df=all_df_test, root_dir='~/rp/dataset2/dataset2'
 
 # create model to classify pneumonia / COVID
 r3d34_2 = generate_model(34, n_classes=700)
-PATH = 'r3d34_2.pth' # loads the 2nd model
+PATH = 'b_r3d34_2.pth' # loads the 2nd model
 # PATH = '/content/drive/MyDrive/curated_data/r3d34_K_200ep.pth'
 
 # Model class must be defined somewhere
