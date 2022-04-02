@@ -447,7 +447,7 @@ print(accuracy_score(true, pred))
 
 # Colab path commented out
 # torch.save(r3d34.state_dict(), 'drive/MyDrive/curated_data/baseline_r3d34_v0_test_2epoch.pth')
-torch.save(r3d34_1.state_dict(), 'b_r3d34_1_10epoch.pth')
+torch.save(b_r3d34_1.state_dict(), 'b_r3d34_1_10epoch.pth')
 
 # code for classifying between pneumonina / covid
 
