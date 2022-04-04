@@ -10,6 +10,8 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
+import neptune.new as neptune
+
 
 def get_inplanes():
     return [64, 128, 256, 512]
@@ -410,16 +412,21 @@ for epoch in range(NUM_EPOCHS):
         optimizer.zero_grad()
         outputs = r3d18_1(images)
         loss = F.cross_entropy(outputs, labels)
+
+        run["train/batch/loss"].log(loss)
+        acc = (torch.sum(outputs == labels)) / lendata)
+        run["train/batch/acc"].log(acc)
+
         loss.backward()
         optimizer.step()
-        run["train/loss"].log(0.9 ** epoch)
+
 
 
 true = torch.tensor([]).to(device)
 pred = torch.tensor([]).to(device)
 
  # test for t
-
+correct = 0
 for i, data in enumerate(ctTestDataloader_1):
     images = data['images'].to(device)
     labels = data['labels'].to(device)
@@ -430,7 +437,11 @@ for i, data in enumerate(ctTestDataloader_1):
 
     # Get predictions from the maximum value
     predicted = torch.max(outputs.data, 1)[1]
+    correct += (predicted.argmax(1) == labels).type(torch.float).sum().item())
     pred = torch.cat((pred, predicted), 0)
+
+run["valid/acc"] = correct / len(ctTestDataloader_1.dataset)
+run.stop()
 
 from sklearn.metrics import classification_report
 from sklearn.metrics import accuracy_score
@@ -783,9 +794,6 @@ print(matrix.diagonal()/matrix.sum(axis=1))
 
 # get accuracy averaged out across class
 print(accuracy_score(true, pred))
-
-run["eval/f1_score"] = 0.66
-run.stop()
 
 
 # Colab path commented out
