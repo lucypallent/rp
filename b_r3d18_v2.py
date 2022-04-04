@@ -392,7 +392,16 @@ ctTestDataloader_1=torch.utils.data.DataLoader(ctTestDataset_1, batch_size=BATCH
 NUM_EPOCHS = 100
 # BEST_MODEL_PATH = 'best_model.pth'
 
-optimizer = optim.SGD(r3d18_1.parameters(), lr=0.001, momentum=0.9)
+optimizer = optim.Adam(r3d18_1.parameters(), lr=0.001)
+
+run = neptune.init(
+    project="lucypallent/research-project",
+    api_token="eyJhcGlfYWRkcmVzcyI6Imh0dHBzOi8vYXBwLm5lcHR1bmUuYWkiLCJhcGlfdXJsIjoiaHR0cHM6Ly9hcHAubmVwdHVuZS5haSIsImFwaV9rZXkiOiIzMmI3Y2EyOC1kZGMzLTRiNjgtYjY1MS04ZmZlMzA5MjJiYTYifQ==",
+)  # your credentials
+
+params = {"learning_rate": 0.001, "optimizer": "Adam"}
+run["parameters"] = params
+
 
 for epoch in range(NUM_EPOCHS):
     for i, data in enumerate(ctTrainDataloader_1):
@@ -403,6 +412,8 @@ for epoch in range(NUM_EPOCHS):
         loss = F.cross_entropy(outputs, labels)
         loss.backward()
         optimizer.step()
+        run["train/loss"].log(0.9 ** epoch)
+
 
 true = torch.tensor([]).to(device)
 pred = torch.tensor([]).to(device)
@@ -772,6 +783,10 @@ print(matrix.diagonal()/matrix.sum(axis=1))
 
 # get accuracy averaged out across class
 print(accuracy_score(true, pred))
+
+run["eval/f1_score"] = 0.66
+run.stop()
+
 
 # Colab path commented out
 # torch.save(r3d18_2.state_dict(), 'drive/MyDrive/curated_data/baseline_r3d18_v0_test_2epoch.pth')
