@@ -477,8 +477,8 @@ with torch.no_grad():
 
 """# Preprocess images"""
 
-!pip install zqlib
-!pip install fvcore
+# !pip install zqlib
+# !pip install fvcore
 
 # processing the images so they work with DeCoVNet
 
