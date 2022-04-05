@@ -22,6 +22,22 @@ import matplotlib.pyplot as plt
 import pandas as pd
 import numpy as np
 
+import cv2
+from PIL import Image
+import random
+import numpy as np
+import torch
+import torchvision.transforms.functional as TF
+
+from torch.utils import data
+from PIL import Image
+import os
+import torchvision.transforms.functional as TF
+import numpy as np
+import torch
+import random
+from scipy.ndimage import zoom
+
 random.seed(0); torch.manual_seed(0); np.random.seed(0)
 
 all_df = pd.read_csv('~/rp/dataset2/all_df.csv')
@@ -143,12 +159,7 @@ write_txt('~/rp/NCOV-BF/ImageSets/ncov_valid.txt', C_lst_valid)
 # from ops.dataset_ops import Train_Collatefn
 # copied code from above file
 
-import cv2
-from PIL import Image
-import random
-import numpy as np
-import torch
-import torchvision.transforms.functional as TF
+
 
 def Train_Collatefn(data):
     all_F, all_L, all_info = [], [], []
@@ -163,14 +174,7 @@ def Train_Collatefn(data):
 
 # from dataset.dataset_test import CTDataset
 # copied code from above file
-from torch.utils import data
-from PIL import Image
-import os
-import torchvision.transforms.functional as TF
-import numpy as np
-import torch
-import random
-from scipy.ndimage import zoom
+
 
 # try:
 #     from ops.dataset_ops import Rand_Transforms
