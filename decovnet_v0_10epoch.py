@@ -425,7 +425,7 @@ if __name__ == "__main__":
     bb = unet(aa)
     print (bb.shape)
 
-PRETRAINED_MODEL_PATH = '~/rp/unet.pth' # "pretrained_model/unet-Epoch_00110-valid98.pth"
+PRETRAINED_MODEL_PATH = 'unet.pth' # "pretrained_model/unet-Epoch_00110-valid98.pth"
 RESULE_HOME = '~/rp/unet-results'
 NUM_WORKERS = 8
 SAMPLE_NUMBER = -1 # All CT images
@@ -2109,7 +2109,7 @@ model = torch.nn.DataParallel(model).cuda()
 # print('PRE-TRAINED')
 # print(torch.load(PRETRAINED_MODEL_PATH))
 
-model.load_state_dict(torch.load('~/rp/ncov-Epoch_00140-auc95p9.pth'))
+model.load_state_dict(torch.load('ncov-Epoch_00140-auc95p9.pth'))
 
 ValidLoader = torch.utils.data.DataLoader(Validset,
                                     batch_size=1,
@@ -2209,7 +2209,7 @@ BATCH_SIZE_PER_GPU = 1
 LEARNING_RATE = 1e-5
 WEIGHT_DECAY = 0
 LR_DECAY = 1
-INIT_MODEL_PATH = '~/rp/ncov-Epoch_00140-auc95p9.pth'
+INIT_MODEL_PATH = 'ncov-Epoch_00140-auc95p9.pth'
 INIT_MODEL_STRICT = "True"
 SNAPSHOT_FREQ = 2
 TRAIN_EPOCH = 10
