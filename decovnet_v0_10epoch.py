@@ -108,7 +108,7 @@ P_lst_test = P_lst[32+11:]
 # write_txt('~/rp/NCOV-BF/ImageSets/lung_test.txt', N_lst_train, C_lst_train, P_lst_train)
 
 def write_txt(path, lst):
-  lines = []]
+  lines = []
   lines.extend(lst)
 
   f = open(path,"w")
