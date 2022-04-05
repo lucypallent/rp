@@ -91,7 +91,7 @@ for pi in P_lst:
     np.save('~/rp/NCOV-BF/NpyData/patient-' + pi + '.npy', imgs.to('cpu').numpy())
 
 #write the .txt files
-path_to_file = '~/rp/NCOV-BF/ImageSets/lung_test.txt'
+path_to_file = 'NCOV-BF/ImageSets/lung_test.txt'
 
 lines = []
 lines.extend(N_lst)
