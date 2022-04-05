@@ -103,15 +103,11 @@ f = open(path_to_file,"w")
 
 for line in lines:
     # need to add 'patient-' to each
-    print('patient-' + line)
     f.write('patient-' + line)
     f.write('\n')
 f.close()
 
 a = list(range(10))
-print(a)
-print(random.shuffle(a))
-print(a)
 
 # random.shuffle(N_lst)
 # random.shuffle(C_lst)
@@ -140,7 +136,6 @@ def write_txt(path, lst):
 
   for line in lines:
       # need to add 'patient-' to each
-      print('patient-' + line)
       f.write('patient-' + line)
       f.write('\n')
   f.close()
@@ -2194,17 +2189,17 @@ print("VALIDATION | E [{}] | CE: {:1.5f} | ValAcc: {:1.3f} | ValAUC: {:1.3f}".fo
 
 """# Getting Training to work"""
 
-import warnings
-
-def fxn():
-    warnings.warn("deprecated", UserWarning)
-
-with warnings.catch_warnings():
-    warnings.simplefilter("once")
-    fxn()
-
-import warnings
-warnings.filterwarnings("ignore", category=UserWarning)
+# import warnings
+#
+# def fxn():
+#     warnings.warn("deprecated", UserWarning)
+#
+# with warnings.catch_warnings():
+#     warnings.simplefilter("once")
+#     fxn()
+#
+# import warnings
+# warnings.filterwarnings("ignore", category=UserWarning)
 
 ############### Set up Variables ###############
 TRAIN_CROP_SIZE = tuple([224, 336])
