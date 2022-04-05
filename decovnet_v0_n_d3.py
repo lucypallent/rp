@@ -2103,7 +2103,7 @@ print("VALIDATION | E [{}] | CE: {:1.5f} | ValAcc: {:1.3f} | ValAUC: {:1.3f}".fo
 ############### Set up Variables ###############
 TRAIN_CROP_SIZE = tuple([224, 336])
 CLIP_RANGE = [float(x) for x in [0.3, 0.7]]
-DATA_ROOT = 'dataset3/dataset3/-BF'
+DATA_ROOT = 'dataset3/NCOV-BF'
 BATCH_SIZE_PER_GPU = 1
 LEARNING_RATE = 1e-5
 WEIGHT_DECAY = 0
