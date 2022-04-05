@@ -9,8 +9,8 @@ Original file is located at
 # Formatting Images from dataset2
 """
 
-# img = io.imread('~/rp/dataset2/1NonCOVID/N314_16.png')
-# io.imsave('~/rp/dataset2/1NonCOVID/N314_15.png', img)
+# img = io.imread('dataset2/1NonCOVID/N314_16.png')
+# io.imsave('dataset2/1NonCOVID/N314_15.png', img)
 
 # creating the dataset to be input as requested in GitHub README.md
 
@@ -42,7 +42,7 @@ random.seed(0); torch.manual_seed(0); np.random.seed(0)
 device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
 
 
-all_df = pd.read_csv('~/rp/dataset2/all_df.csv')
+all_df = pd.read_csv('dataset2/all_df.csv')
 
 N_lst = all_df.loc[all_df['diag_num']==0, 'Patient ID'].drop_duplicates().to_list()
 C_lst = all_df.loc[all_df['diag_num']==1, 'Patient ID'].drop_duplicates().to_list()
@@ -53,42 +53,42 @@ clss = '/1NonCOVID/'
 for pi in N_lst:
     imgs = torch.empty((1, 512, 512)).to(device)
     for i in range(64):
-        img = torch.from_numpy(io.imread('~/rp/dataset2/dataset2' + clss + pi + '_' + str(i) + '.png')).to(device)
+        img = torch.from_numpy(io.imread('dataset2/dataset2' + clss + pi + '_' + str(i) + '.png')).to(device)
         img = p(img.permute(2, 0, 1)[:1])
         imgs = torch.cat((imgs, img), 0)
     imgs = imgs[1:] / 255 # creates a tensor (64, 512, 512) which is TxHxW
 
     # check the directory does not exist
-    if not(os.path.exists('~/rp/NCOV-BF/NpyData/')):
+    if not(os.path.exists('NCOV-BF/NpyData/')):
 
         # create the directory you want to save to
-        os.mkdir('~/rp/NCOV-BF/NpyData/')
+        os.mkdir('NCOV-BF/NpyData/')
 
-    np.save('~/rp/NCOV-BF/NpyData/patient-' + pi + '.npy', imgs.to('cpu').numpy())
+    np.save('NCOV-BF/NpyData/patient-' + pi + '.npy', imgs.to('cpu').numpy())
 
 clss = '/2COVID/'
 for pi in C_lst:
     imgs = torch.empty((1, 512, 512)).to(device)
     for i in range(64):
-        img = torch.from_numpy(io.imread('~/rp/dataset2/dataset2' + clss + pi + '_' + str(i) + '.png' )).to(device)
+        img = torch.from_numpy(io.imread('dataset2/dataset2' + clss + pi + '_' + str(i) + '.png' )).to(device)
         img = p(img.permute(2, 0, 1)[:1])
         imgs = torch.cat((imgs, img), 0)
 
 
     imgs = imgs[1:] / 255 # creates a tensor (64, 512, 512) which is TxHxW
-    np.save('~/rp/NCOV-BF/NpyData/patient-' + pi + '.npy', imgs.to('cpu').numpy())
+    np.save('NCOV-BF/NpyData/patient-' + pi + '.npy', imgs.to('cpu').numpy())
 
 clss = '/3CAP/'
 for pi in P_lst:
     imgs = torch.empty((1, 512, 512)).to(device)
     for i in range(64):
-        img = torch.from_numpy(io.imread('~/rp/dataset2/dataset2' + clss + pi + '_' + str(i) + '.png')).to(device)
+        img = torch.from_numpy(io.imread('dataset2/dataset2' + clss + pi + '_' + str(i) + '.png')).to(device)
         img = p(img.permute(2, 0, 1)[:1])
         imgs = torch.cat((imgs, img), 0)
 
 
     imgs = imgs[1:] / 255 # creates a tensor (64, 512, 512) which is TxHxW
-    np.save('~/rp/NCOV-BF/NpyData/patient-' + pi + '.npy', imgs.to('cpu').numpy())
+    np.save('NCOV-BF/NpyData/patient-' + pi + '.npy', imgs.to('cpu').numpy())
 
 #write the .txt files
 path_to_file = 'NCOV-BF/ImageSets/lung_test.txt'
@@ -126,7 +126,7 @@ P_lst_valid = P_lst[32:32+11]
 P_lst_test = P_lst[32+11:]
 
 
-# write_txt('~/rp/NCOV-BF/ImageSets/lung_test.txt', N_lst_train, C_lst_train, P_lst_train)
+# write_txt('NCOV-BF/ImageSets/lung_test.txt', N_lst_train, C_lst_train, P_lst_train)
 
 def write_txt(path, lst):
   lines = []
@@ -141,17 +141,17 @@ def write_txt(path, lst):
   f.close()
 
 
-write_txt('~/rp/NCOV-BF/ImageSets/normal_train.txt', N_lst_train)
-write_txt('~/rp/NCOV-BF/ImageSets/normal_test.txt', N_lst_test)
-write_txt('~/rp/NCOV-BF/ImageSets/normal_valid.txt', N_lst_valid)
+write_txt('NCOV-BF/ImageSets/normal_train.txt', N_lst_train)
+write_txt('NCOV-BF/ImageSets/normal_test.txt', N_lst_test)
+write_txt('NCOV-BF/ImageSets/normal_valid.txt', N_lst_valid)
 
-write_txt('~/rp/NCOV-BF/ImageSets/ncov_train.txt', C_lst_train)
-write_txt('~/rp/NCOV-BF/ImageSets/ncov_test.txt', C_lst_test)
-write_txt('~/rp/NCOV-BF/ImageSets/ncov_valid.txt', C_lst_valid)
+write_txt('NCOV-BF/ImageSets/ncov_train.txt', C_lst_train)
+write_txt('NCOV-BF/ImageSets/ncov_test.txt', C_lst_test)
+write_txt('NCOV-BF/ImageSets/ncov_valid.txt', C_lst_valid)
 
-# write_txt('~/rp/NCOV-BF/ImageSets/cap_train.txt', P_lst_train)
-# write_txt('~/rp/NCOV-BF/ImageSets/cap_test.txt', P_lst_test)
-# write_txt('~/rp/NCOV-BF/ImageSets/cap_valid.txt', P_lst_valid)
+# write_txt('NCOV-BF/ImageSets/cap_train.txt', P_lst_train)
+# write_txt('NCOV-BF/ImageSets/cap_test.txt', P_lst_test)
+# write_txt('NCOV-BF/ImageSets/cap_valid.txt', P_lst_valid)
 
 """# Unet"""
 
@@ -267,7 +267,7 @@ class CTDataset(data.Dataset):
 
 # if __name__ == "__main__":
 #     # Read valid sliding: 550 seconds
-#     ctd = CTDataset(data_home="~/rp/NCOV-BF", split="train", sample_number=4)
+#     ctd = CTDataset(data_home="NCOV-BF", split="train", sample_number=4)
 #     length = len(ctd)
 #     ctd[10]
 
@@ -426,10 +426,10 @@ if __name__ == "__main__":
     print (bb.shape)
 
 PRETRAINED_MODEL_PATH = 'unet.pth' # "pretrained_model/unet-Epoch_00110-valid98.pth"
-RESULE_HOME = '~/rp/unet-results'
+RESULE_HOME = 'unet-results'
 NUM_WORKERS = 8
 SAMPLE_NUMBER = -1 # All CT images
-DATA_ROOT = '~/rp/NCOV-BF' #'NCOV-BF/size368x368-dlmask'
+DATA_ROOT = 'NCOV-BF' #'NCOV-BF/size368x368-dlmask'
 
 
 Validset = CTDataset(data_home=DATA_ROOT,
@@ -589,9 +589,9 @@ with futures.ProcessPoolExecutor(max_workers=num_threads) as executor:
 
 # now trying to implement DeCoVNet
 
-DATA_ROOT = '~/rp/NCOV-BF'
+DATA_ROOT = 'NCOV-BF'
 
-# ~/rp/NCOV-BF/
+# NCOV-BF/
 
 
 # from ops.acc_ops import topk_accuracies
@@ -2204,7 +2204,7 @@ print("VALIDATION | E [{}] | CE: {:1.5f} | ValAcc: {:1.3f} | ValAUC: {:1.3f}".fo
 ############### Set up Variables ###############
 TRAIN_CROP_SIZE = tuple([224, 336])
 CLIP_RANGE = [float(x) for x in [0.3, 0.7]]
-DATA_ROOT = '~/rp/NCOV-BF'
+DATA_ROOT = 'NCOV-BF'
 BATCH_SIZE_PER_GPU = 1
 LEARNING_RATE = 1e-5
 WEIGHT_DECAY = 0
