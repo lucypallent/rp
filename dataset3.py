@@ -6,6 +6,11 @@ import matplotlib.pyplot as plt
 import pandas as pd
 import numpy as np
 import shutil
+import random
+
+random.seed(0)
+torch.manual_seed(0)
+np.random.seed(0)
 
 all_df = pd.read_csv('dataset3/all_df.csv')
 
