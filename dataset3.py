@@ -35,4 +35,4 @@ for (i, p, d, s) in zip(img_lst, pid_lst, diag_lst, slc_lst):
     elif d == 2:
         clss = '/3CAP/'
 
-    shutil.copy('archive/curated_data/curated_data' + clss + i, 'dataset3' + clss + p + '_' + str(s) + '.png')
+    shutil.copy('curated_data/curated_data' + clss + i, 'dataset3' + clss + p + '_' + str(s) + '.png')
