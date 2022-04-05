@@ -53,7 +53,7 @@ clss = '/1NonCOVID/'
 for (pi, cnt) in zip(n_p_lst, n_p_cnt):
     imgs = torch.empty((1, 512, 512)).to(device)
     for i in range(cnt):
-        img = torch.from_numpy(io.imread('dataset3' + clss + pi + '_' + str(i) + '.png')).to(device)
+        img = torch.from_numpy(io.imread('dataset3' + clss + pi + '_' + str(i) + '.png')).reshape(1, 512, 512).to(device)
 
         imgs = torch.cat((imgs, img), 0)
     imgs = imgs[1:] / 255 # creates a tensor (64, 512, 512) which is TxHxW
@@ -64,7 +64,7 @@ clss = '/2COVID/'
 for (pi, cnt) in zip(c_p_lst, c_p_cnt):
     imgs = torch.empty((1, 512, 512)).to(device)
     for i in range(cnt):
-        img = torch.from_numpy(io.imread('dataset3' + clss + pi + '_' + str(i) + '.png')).to(device)
+        img = torch.from_numpy(io.imread('dataset3' + clss + pi + '_' + str(i) + '.png')).reshape(1, 512, 512).to(device)
 
         imgs = torch.cat((imgs, img), 0)
     imgs = imgs[1:] / 255 # creates a tensor (64, 512, 512) which is TxHxW
@@ -75,7 +75,7 @@ clss = '/3CAP/'
 for (pi, cnt) in zip(p_p_lst, p_p_cnt):
     imgs = torch.empty((1, 512, 512)).to(device)
     for i in range(cnt):
-        img = torch.from_numpy(io.imread('dataset3' + clss + pi + '_' + str(i) + '.png')).to(device)
+        img = torch.from_numpy(io.imread('dataset3' + clss + pi + '_' + str(i) + '.png')).reshape(1, 512, 512).to(device)
 
         imgs = torch.cat((imgs, img), 0)
     imgs = imgs[1:] / 255 # creates a tensor (64, 512, 512) which is TxHxW
