@@ -57,6 +57,13 @@ for pi in N_lst:
         img = p(img.permute(2, 0, 1)[:1])
         imgs = torch.cat((imgs, img), 0)
     imgs = imgs[1:] / 255 # creates a tensor (64, 512, 512) which is TxHxW
+
+    # check the directory does not exist
+    if not(os.path.exists('~/rp/NCOV-BF/NpyData/')):
+
+        # create the directory you want to save to
+        os.mkdir('~/rp/NCOV-BF/NpyData/')
+
     np.save('~/rp/NCOV-BF/NpyData/patient-' + pi + '.npy', imgs.to('cpu').numpy())
 
 clss = '/2COVID/'
