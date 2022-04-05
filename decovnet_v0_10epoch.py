@@ -39,6 +39,8 @@ import random
 from scipy.ndimage import zoom
 
 random.seed(0); torch.manual_seed(0); np.random.seed(0)
+device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
+
 
 all_df = pd.read_csv('~/rp/dataset2/all_df.csv')
 
