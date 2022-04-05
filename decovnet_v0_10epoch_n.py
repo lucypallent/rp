@@ -433,7 +433,7 @@ if __name__ == "__main__":
 
 PRETRAINED_MODEL_PATH = 'unet.pth' # "pretrained_model/unet-Epoch_00110-valid98.pth"
 RESULE_HOME = 'unet-results'
-NUM_WORKERS = 8
+NUM_WORKERS = 2
 SAMPLE_NUMBER = -1 # All CT images
 DATA_ROOT = 'NCOV-BF' #'NCOV-BF/size368x368-dlmask'
 
