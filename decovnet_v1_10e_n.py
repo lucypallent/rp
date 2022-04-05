@@ -117,9 +117,9 @@ f.close()
 
 a = list(range(10))
 
-# random.shuffle(N_lst)
-# random.shuffle(C_lst)
-# random.shuffle(P_lst)
+random.shuffle(N_lst)
+random.shuffle(C_lst)
+random.shuffle(P_lst)
 
 N_lst_train = N_lst[:198]
 N_lst_valid = N_lst[198:198+66]
@@ -157,9 +157,9 @@ write_txt('NCOV-BF/ImageSets/ncov_train.txt', C_lst_train)
 write_txt('NCOV-BF/ImageSets/ncov_test.txt', C_lst_test)
 write_txt('NCOV-BF/ImageSets/ncov_valid.txt', C_lst_valid)
 
-# write_txt('NCOV-BF/ImageSets/cap_train.txt', P_lst_train)
-# write_txt('NCOV-BF/ImageSets/cap_test.txt', P_lst_test)
-# write_txt('NCOV-BF/ImageSets/cap_valid.txt', P_lst_valid)
+write_txt('NCOV-BF/ImageSets/cap_train.txt', P_lst_train)
+write_txt('NCOV-BF/ImageSets/cap_test.txt', P_lst_test)
+write_txt('NCOV-BF/ImageSets/cap_valid.txt', P_lst_valid)
 
 """# Unet"""
 
@@ -780,6 +780,7 @@ class CTDataset(data.Dataset):
 
         _embo_f = os.path.join(data_home, "ImageSets", "ncov_{}.txt".format(split))
         _norm_f = os.path.join(data_home, "ImageSets", "normal_{}.txt".format(split))
+        _cap_f = os.path.join(data_home, "ImageSets", "cap_{}.txt".format(split))
         # Build a dictionary to record {path - label} pair
         meta_pos   = [[os.path.join(data_home, "NpyData-size224x336", "{}.npy".format(x)), 1]
                                 for x in readvdnames(_embo_f)]
@@ -787,15 +788,25 @@ class CTDataset(data.Dataset):
         meta_neg   = [[os.path.join(data_home, "NpyData-size224x336", "{}.npy".format(x)), 0]
                                 for x in readvdnames(_norm_f)]
 
+        meta_cap   = [[os.path.join(data_home, "NpyData-size224x336", "{}.npy".format(x)), 2]
+                                for x in readvdnames(_cap_f)]
+
         if split == "train":
+            lmg = len(meta_neg)
             if len(meta_pos) > len(meta_neg):
                 for i in range(len(meta_pos) - len(meta_neg)):
                     meta_neg.append(random.choice(meta_neg))
             else:
                 for i in range(len(meta_neg) - len(meta_pos)):
                     meta_pos.append(random.choice(meta_pos))
+            if len(meta_cap) > lmg:
+                for i in range(len(meta_cap) - len(meta_neg)):
+                    meta_neg.append(random.choice(meta_cap))
+            else:
+                for i in range(len(meta_neg) - len(meta_cap)):
+                    meta_cap.append(random.choice(meta_cap))
 
-        meta = meta_pos + meta_neg
+        meta = meta_pos + meta_neg + meta_cap
 
         #print (meta)
         self.data_home = data_home
