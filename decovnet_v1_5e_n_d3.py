@@ -2170,9 +2170,18 @@ model = ENModel(arch=ARCH, resnet_depth=DEPTH,
                     crop_h=TRAIN_CROP_SIZE[0],
                     crop_w=TRAIN_CROP_SIZE[1], num_classes=NUM_CLASSES)
 
+model = torch.nn.DataParallel(model).cuda()
+
+# model.load_state_dict(torch.load('ncov-Epoch_00140-auc95p9.pth'))
+
+model.load_state_dict(torch.load(INIT_MODEL_PATH, \
+                 map_location=f'cuda:{local_rank}'), strict=INIT_MODEL_STRICT)
+model.eval()
+model.module.classifier[1] = nn.Linear(model.module.classifier[1].in_features, NUM_CLASSES).cuda()
+
+
 print(model)
 
-model = torch.nn.DataParallel(model).cuda()
 TrainLoader = torch.utils.data.DataLoader(Trainset,
                                     batch_size=BATCH_SIZE_PER_GPU,
                                         num_workers=NUM_WORKERS,
@@ -2190,14 +2199,10 @@ lr_scher = torch.optim.lr_scheduler.ExponentialLR(optimizer, gamma=LR_DECAY, las
 criterion = torch.nn.CrossEntropyLoss(reduction="mean")
 
 
-model.load_state_dict(torch.load(INIT_MODEL_PATH, \
-                 map_location=f'cuda:{local_rank}'), strict=INIT_MODEL_STRICT)
+# model.load_state_dict(torch.load(INIT_MODEL_PATH, \
+#                  map_location=f'cuda:{local_rank}'), strict=INIT_MODEL_STRICT)
 
-model.eval()
-
-# change to classify for 2 classes
-r3d34_1.fc = nn.Linear(r3d34_1.fc.in_features, 2).to(device) # 2 classes
-
+# model.eval()
 
 dset_len, loader_len = len(Trainset), len(TrainLoader)
 
