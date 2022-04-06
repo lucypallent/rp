@@ -114,27 +114,27 @@ tfidf_train_body = tfidf_vectorizer.transform(train['articleBody'].drop_duplicat
 tfidf_train_body = pd.DataFrame.sparse.from_spmatrix(tfidf_train_body)
 tfidf_train_body.columns = dictionary
 tfidf_train_body = train['articleBody'].drop_duplicates() + tfidf_train_body
-tfidf_train_body.to_csv('nlp_csv/tfidf_train_body', index=False)
+tfidf_train_body.to_csv('nlp_csv/tfidf_train_body.csv', index=False)
 
 print('tfidf_train_headlines')
 tfidf_train_head = tfidf_vectorizer.transform(train['Headline'].drop_duplicates().values.astype('U'))
 tfidf_train_head = pd.DataFrame.sparse.from_spmatrix(tfidf_train_head)
 tfidf_train_head.columns = dictionary
 tfidf_train_head = train['Headline'].drop_duplicates() + tfidf_train_head
-tfidf_train_head.to_csv('nlp_csv/tfidf_train_head', index=False)
+tfidf_train_head.to_csv('nlp_csv/tfidf_train_head.csv', index=False)
 
 print('tfidf_test_body')
 tfidf_test_body = tfidf_vectorizer.transform(test['articleBody'].drop_duplicates().values.astype('U'))
 tfidf_test_body = pd.DataFrame.sparse.from_spmatrix(tfidf_test_body)
 tfidf_test_body.columns = dictionary
 tfidf_test_body = test['articleBody'].drop_duplicates() + tfidf_test_body
-tfidf_test_body.to_csv('nlp_csv/tfidf_test_body', index=False)
+tfidf_test_body.to_csv('nlp_csv/tfidf_test_body.csv', index=False)
 
 print('tfidf_test_head')
 tfidf_test_head = tfidf_vectorizer.transform(test['Headline'].drop_duplicates().values.astype('U'))
 tfidf_test_head = pd.DataFrame.sparse.from_spmatrix(tfidf_test_head)
 tfidf_test_head.columns = dictionary
 tfidf_test_head = test['Headline'].drop_duplicates() + tfidf_test_head
-tfidf_test_head.to_csv('nlp_csv/tfidf_test_head', index=False)
+tfidf_test_head.to_csv('nlp_csv/tfidf_test_head.csv', index=False)
 
 print('WORKS!')
