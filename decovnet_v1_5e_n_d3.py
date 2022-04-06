@@ -2021,7 +2021,7 @@ if __name__ == "__main__":
     model_param = sum(x.numel() for x in model.parameters())
     print (model_param)
 
-
+NUM_CLASSES = 3
 # model = import_module(f"model.{MODEL_UID}")
 # ENModel = getattr(model, "ENModel")
 
@@ -2029,20 +2029,11 @@ criterion = torch.nn.CrossEntropyLoss(reduction="mean")
 
 model = ENModel(arch=ARCH, resnet_depth=DEPTH,
                 input_channel=2, num_classes=NUM_CLASSES)
-
-print('2nd model beginning')
-# print('MODEL')
-# print(model)
-
-# print('PRE-TRAINED')
-# print(torch.load(PRETRAINED_MODEL_PATH))
+model = torch.nn.DataParallel(model).cuda()
 
 model.load_state_dict(torch.load('ncov-Epoch_00140-auc95p9.pth'))
 model.eval()
-
-model.classifier[1] = nn.Linear(model.classifier[1].in_features, NUM_CLASSES).to(device)
-
-model = torch.nn.DataParallel(model).cuda()
+model.module.classifier[1] = nn.Linear(model.module.classifier[1].in_features, NUM_CLASSES)
 
 ValidLoader = torch.utils.data.DataLoader(Validset,
                                     batch_size=1,
