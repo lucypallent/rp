@@ -2029,7 +2029,6 @@ criterion = torch.nn.CrossEntropyLoss(reduction="mean")
 
 model = ENModel(arch=ARCH, resnet_depth=DEPTH,
                 input_channel=2, num_classes=NUM_CLASSES)
-model = torch.nn.DataParallel(model).cuda()
 
 print('2nd model beginning')
 # print('MODEL')
@@ -2039,6 +2038,11 @@ print('2nd model beginning')
 # print(torch.load(PRETRAINED_MODEL_PATH))
 
 model.load_state_dict(torch.load('ncov-Epoch_00140-auc95p9.pth'))
+model.eval()
+
+model.classifier[1] = nn.Linear(model.classifier[1].in_features, NUM_CLASSES).to(device)
+
+model = torch.nn.DataParallel(model).cuda()
 
 ValidLoader = torch.utils.data.DataLoader(Validset,
                                     batch_size=1,
@@ -2174,6 +2178,9 @@ model = ENModel(arch=ARCH, resnet_depth=DEPTH,
                     input_channel=2,
                     crop_h=TRAIN_CROP_SIZE[0],
                     crop_w=TRAIN_CROP_SIZE[1], num_classes=NUM_CLASSES)
+
+print(model)
+
 model = torch.nn.DataParallel(model).cuda()
 TrainLoader = torch.utils.data.DataLoader(Trainset,
                                     batch_size=BATCH_SIZE_PER_GPU,
@@ -2183,7 +2190,6 @@ TrainLoader = torch.utils.data.DataLoader(Trainset,
                                         pin_memory=True)
 
 
-model.eval()
 
 
 
@@ -2195,6 +2201,11 @@ criterion = torch.nn.CrossEntropyLoss(reduction="mean")
 
 model.load_state_dict(torch.load(INIT_MODEL_PATH, \
                  map_location=f'cuda:{local_rank}'), strict=INIT_MODEL_STRICT)
+
+model.eval()
+
+# change to classify for 2 classes
+r3d34_1.fc = nn.Linear(r3d34_1.fc.in_features, 2).to(device) # 2 classes
 
 
 dset_len, loader_len = len(Trainset), len(TrainLoader)
