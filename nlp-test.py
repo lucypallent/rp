@@ -5,9 +5,9 @@ from wordcloud import WordCloud
 import matplotlib.pyplot as plt
 import string
 
-import nltk
-from nltk.corpus import stopwords
-nltk.download('stopwords')
+# import nltk
+# from nltk.corpus import stopwords
+# nltk.download('stopwords')
 
 # url_trb = 'https://raw.githubusercontent.com/FakeNewsChallenge/fnc-1/master/train_bodies.csv'
 url_trb = 'nlp_csv/nlp_csv/train_bodies.csv'
@@ -34,13 +34,13 @@ train['Headline'] = train['Headline'].str.lower()
 test['articleBody'] = test['articleBody'].str.lower()
 test['Headline'] = test['Headline'].str.lower()
 
-stop = set(stopwords.words('english'))
-
-train['articleBody'] = train['articleBody'].apply(lambda x: ' '.join([word for word in x.split() if word not in (stop)]))
-train['Headline'] = train['Headline'].apply(lambda x: ' '.join([word for word in x.split() if word not in (stop)]))
-
-test['articleBody'] = test['articleBody'].apply(lambda x: ' '.join([word for word in x.split() if word not in (stop)]))
-test['Headline'] = test['Headline'].apply(lambda x: ' '.join([word for word in x.split() if word not in (stop)]))
+# # stop = set(stopwords.words('english'))
+# #
+# # train['articleBody'] = train['articleBody'].apply(lambda x: ' '.join([word for word in x.split() if word not in (stop)]))
+# # train['Headline'] = train['Headline'].apply(lambda x: ' '.join([word for word in x.split() if word not in (stop)]))
+#
+# test['articleBody'] = test['articleBody'].apply(lambda x: ' '.join([word for word in x.split() if word not in (stop)]))
+# test['Headline'] = test['Headline'].apply(lambda x: ' '.join([word for word in x.split() if word not in (stop)]))
 
 def remove_punct(text):
     table = str.maketrans('', '', string.punctuation)
@@ -56,11 +56,11 @@ train['Headline'] = train['Headline'].apply(lambda x: remove_punct(x))
 test['articleBody'] = test['articleBody'].apply(lambda x: remove_punct(x))
 test['Headline'] = test['Headline'].apply(lambda x: remove_punct(x))
 
-train['articleBody'] = train['articleBody'].apply(lambda x: ' '.join([word for word in x.split() if word not in (stop)]))
-train['Headline'] = train['Headline'].apply(lambda x: ' '.join([word for word in x.split() if word not in (stop)]))
-
-test['articleBody'] = test['articleBody'].apply(lambda x: ' '.join([word for word in x.split() if word not in (stop)]))
-test['Headline'] = test['Headline'].apply(lambda x: ' '.join([word for word in x.split() if word not in (stop)]))
+# train['articleBody'] = train['articleBody'].apply(lambda x: ' '.join([word for word in x.split() if word not in (stop)]))
+# train['Headline'] = train['Headline'].apply(lambda x: ' '.join([word for word in x.split() if word not in (stop)]))
+#
+# test['articleBody'] = test['articleBody'].apply(lambda x: ' '.join([word for word in x.split() if word not in (stop)]))
+# test['Headline'] = test['Headline'].apply(lambda x: ' '.join([word for word in x.split() if word not in (stop)]))
 
 
 
