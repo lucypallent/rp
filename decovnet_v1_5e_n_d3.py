@@ -2103,12 +2103,13 @@ with torch.no_grad():
         prob_preds = F.softmax(preds, dim=1)
         prob_normal = prob_preds[0, 0].item()
         prob_ncov = prob_preds[0, 1].item()
+        prob_cap =  prob_preds[0, 2].item() # this should work
         gt = labels.item()
 
         gts.append(gt)
         pcovs.append(prob_ncov)
 
-        print ("{} {} {} {} {}".format(all_info[0]["name"], pid, prob_normal, prob_ncov, labels.item()))
+        print ("{} {} {} {} {} {}".format(all_info[0]["name"], pid, prob_normal, prob_ncov, prob_cap, labels.item()))
 
         # Val_CE.write(val_loss); Val_Acc.write(val_acc)
 
