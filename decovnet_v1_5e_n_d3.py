@@ -2091,6 +2091,8 @@ with torch.no_grad():
     for i, (all_F, all_L, all_info) in enumerate(ValidLoader):
         labels = all_L.cuda()
         preds = model([all_F.cuda()])
+        print(preds)
+        print(labels)
 
         # val_loss = criterion(preds, labels)
         val_acc = topk_accuracies(preds, labels, [1])[0]
