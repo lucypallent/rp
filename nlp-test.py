@@ -4,6 +4,7 @@ from sklearn.feature_extraction.text import TfidfVectorizer#, CountVectorizer
 from wordcloud import WordCloud
 import matplotlib.pyplot as plt
 import string
+import json
 
 # import nltk
 # from nltk.corpus import stopwords
@@ -34,13 +35,19 @@ train['Headline'] = train['Headline'].str.lower()
 test['articleBody'] = test['articleBody'].str.lower()
 test['Headline'] = test['Headline'].str.lower()
 
+
+#Now read the file back into a Python list object
+with open('nlp_csv/stop.txt', 'r') as f:
+    stop = json.loads(f.read())
+stop = set(stop)
+
 # # stop = set(stopwords.words('english'))
-# #
-# # train['articleBody'] = train['articleBody'].apply(lambda x: ' '.join([word for word in x.split() if word not in (stop)]))
-# # train['Headline'] = train['Headline'].apply(lambda x: ' '.join([word for word in x.split() if word not in (stop)]))
 #
-# test['articleBody'] = test['articleBody'].apply(lambda x: ' '.join([word for word in x.split() if word not in (stop)]))
-# test['Headline'] = test['Headline'].apply(lambda x: ' '.join([word for word in x.split() if word not in (stop)]))
+train['articleBody'] = train['articleBody'].apply(lambda x: ' '.join([word for word in x.split() if word not in (stop)]))
+train['Headline'] = train['Headline'].apply(lambda x: ' '.join([word for word in x.split() if word not in (stop)]))
+
+test['articleBody'] = test['articleBody'].apply(lambda x: ' '.join([word for word in x.split() if word not in (stop)]))
+test['Headline'] = test['Headline'].apply(lambda x: ' '.join([word for word in x.split() if word not in (stop)]))
 
 def remove_punct(text):
     table = str.maketrans('', '', string.punctuation)
@@ -56,12 +63,11 @@ train['Headline'] = train['Headline'].apply(lambda x: remove_punct(x))
 test['articleBody'] = test['articleBody'].apply(lambda x: remove_punct(x))
 test['Headline'] = test['Headline'].apply(lambda x: remove_punct(x))
 
-# train['articleBody'] = train['articleBody'].apply(lambda x: ' '.join([word for word in x.split() if word not in (stop)]))
-# train['Headline'] = train['Headline'].apply(lambda x: ' '.join([word for word in x.split() if word not in (stop)]))
-#
-# test['articleBody'] = test['articleBody'].apply(lambda x: ' '.join([word for word in x.split() if word not in (stop)]))
-# test['Headline'] = test['Headline'].apply(lambda x: ' '.join([word for word in x.split() if word not in (stop)]))
+train['articleBody'] = train['articleBody'].apply(lambda x: ' '.join([word for word in x.split() if word not in (stop)]))
+train['Headline'] = train['Headline'].apply(lambda x: ' '.join([word for word in x.split() if word not in (stop)]))
 
+test['articleBody'] = test['articleBody'].apply(lambda x: ' '.join([word for word in x.split() if word not in (stop)]))
+test['Headline'] = test['Headline'].apply(lambda x: ' '.join([word for word in x.split() if word not in (stop)]))
 
 
 from sklearn.feature_extraction.text import TfidfVectorizer
