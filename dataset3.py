@@ -103,6 +103,10 @@ for line in lines:
     f.write('\n')
 f.close()
 
+# create the version in ImageSets-old
+shutil.copy(path_to_file, 'dataset3/NCOV-BF/ImageSets-old/lung_test.txt')
+
+
 random.shuffle(n_p_lst)
 random.shuffle(c_p_lst)
 random.shuffle(p_p_lst)
