@@ -801,7 +801,7 @@ CFG_FILE = "cfgs/test.yaml"
 Validset = CTDataset(data_home=DATA_ROOT, split='test',)
 
 MODEL_UID = 'baseline_i3d'
-NUM_CLASSES = 2
+NUM_CLASSES = 3
 DEPTH = 50
 ARCH = 'i3d'
 
