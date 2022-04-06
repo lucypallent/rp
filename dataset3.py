@@ -93,7 +93,7 @@ path_to_file = 'dataset3/NCOV-BF/ImageSets/lung_test.txt'
 lines = []
 lines.extend(n_p_lst)
 lines.extend(c_p_lst)
-# lines.extend(p_p_lst)
+lines.extend(p_p_lst)
 
 f = open(path_to_file,"w")
 
@@ -105,7 +105,7 @@ f.close()
 
 random.shuffle(n_p_lst)
 random.shuffle(c_p_lst)
-# random.shuffle(p_p_lst)
+random.shuffle(p_p_lst)
 
 N_lst_train = n_p_lst[:198]
 N_lst_valid = n_p_lst[198:198+66]
@@ -115,9 +115,9 @@ C_lst_train = c_p_lst[:81]
 C_lst_valid = c_p_lst[81:81+27]
 C_lst_test = c_p_lst[81+27:]
 
-# P_lst_train = p_p_lst[:32]
-# P_lst_valid = p_p_lst[32:32+11]
-# P_lst_test = p_p_lst[32+11:]
+P_lst_train = p_p_lst[:32]
+P_lst_valid = p_p_lst[32:32+11]
+P_lst_test = p_p_lst[32+11:]
 
 def write_txt(path, lst):
   lines = []
@@ -139,8 +139,8 @@ write_txt('dataset3/NCOV-BF/ImageSets/ncov_train.txt', C_lst_train)
 write_txt('dataset3/NCOV-BF/ImageSets/ncov_test.txt', C_lst_test)
 write_txt('dataset3/NCOV-BF/ImageSets/ncov_valid.txt', C_lst_valid)
 
-# write_txt('dataset3/NCOV-BF/ImageSets/cap_train.txt', P_lst_train)
-# write_txt('dataset3/NCOV-BF/ImageSets/cap_test.txt', P_lst_test)
-# write_txt('dataset3/NCOV-BF/ImageSets/cap_valid.txt', P_lst_valid)
+write_txt('dataset3/NCOV-BF/ImageSets/cap_train.txt', P_lst_train)
+write_txt('dataset3/NCOV-BF/ImageSets/cap_test.txt', P_lst_test)
+write_txt('dataset3/NCOV-BF/ImageSets/cap_valid.txt', P_lst_valid)
 
 print('DONE AND WORKS')
