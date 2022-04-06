@@ -348,6 +348,8 @@ model = torch.nn.DataParallel(model).cuda()
 
 model.load_state_dict(torch.load(PRETRAINED_MODEL_PATH, map_location=f'cuda:{0}'), strict=True)
 
+print('UNET IS LOADED')
+
 # change so this is the whole dataset
 ValidLoader = torch.utils.data.DataLoader(Validset,
                                     batch_size=1,
@@ -358,8 +360,12 @@ ValidLoader = torch.utils.data.DataLoader(Validset,
 os.makedirs(RESULE_HOME, exist_ok=True)
 os.makedirs("visual", exist_ok=True)
 
+print('LEN OF VALIDLOADER')
+print(len(ValidLoader))
+
 with torch.no_grad():
     for i, (all_F, all_M, all_info) in enumerate(ValidLoader):
+        print(i)
         all_E = []
         images = all_F.cuda()
         # print(images)
@@ -382,6 +388,8 @@ with torch.no_grad():
 
         np.save("{}/{}-dlmask.npy".format(RESULE_HOME, unique_id), all_E)
 
+    print(i)
+print('masks made')
 # # think this is the bit that would load the pre-trained model
 # if INIT_MODEL_PATH != "":
 #     model.load_state_dict(torch.load(INIT_MODEL_PATH, \
@@ -792,6 +800,7 @@ MODEL_UID = 'baseline_i3d'
 NUM_CLASSES = 2
 DEPTH = 50
 ARCH = 'i3d'
+
 
 
 """ ResNet only. """
@@ -2018,6 +2027,7 @@ model = ENModel(arch=ARCH, resnet_depth=DEPTH,
                 input_channel=2, num_classes=NUM_CLASSES)
 model = torch.nn.DataParallel(model).cuda()
 
+print('2nd model beginning')
 # print('MODEL')
 # print(model)
 
@@ -2071,6 +2081,7 @@ def sensitivity_specificity(y_true, y_score):
 
     return sensitivity, specificity, auc
 
+print('2nd valid loader??')
 
 with torch.no_grad():
     for i, (all_F, all_L, all_info) in enumerate(ValidLoader):
@@ -2127,7 +2138,7 @@ LR_DECAY = 1
 INIT_MODEL_PATH = 'ncov-Epoch_00140-auc95p9.pth'
 INIT_MODEL_STRICT = "True"
 SNAPSHOT_FREQ = 5
-TRAIN_EPOCH = 5
+TRAIN_EPOCH = 5 # 300 , will likely stop early
 SNAPSHOT_HOME = "experiments"
 SNAPSHOT_MODEL_TPL = "ncov-Epoch_{:05d}.pth"
 
@@ -2226,6 +2237,8 @@ run["config/hyperparameters"] = parameters
 
 
 ############### Training ###############
+print('2nd model training')
+
 for e in range(TRAIN_EPOCH):
     run["training/batch/epoch"].log(e)
     for i, (all_F, all_L, all_info) in enumerate(TrainLoader):
