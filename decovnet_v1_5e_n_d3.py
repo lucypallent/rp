@@ -2033,7 +2033,7 @@ model = torch.nn.DataParallel(model).cuda()
 
 model.load_state_dict(torch.load('ncov-Epoch_00140-auc95p9.pth'))
 model.eval()
-model.module.classifier[1] = nn.Linear(model.module.classifier[1].in_features, NUM_CLASSES)
+model.module.classifier[1] = nn.Linear(model.module.classifier[1].in_features, NUM_CLASSES).cuda()
 
 ValidLoader = torch.utils.data.DataLoader(Validset,
                                     batch_size=1,
