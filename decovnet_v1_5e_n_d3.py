@@ -364,8 +364,10 @@ print('LEN OF VALIDLOADER')
 print(len(ValidLoader))
 
 with torch.no_grad():
+    print('in loop')
     for i, (all_F, all_M, all_info) in enumerate(ValidLoader):
-        print(i)
+        print('enumerate loop')
+        # print(i)
         all_E = []
         images = all_F.cuda()
         # print(images)
