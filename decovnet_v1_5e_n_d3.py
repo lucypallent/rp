@@ -1,3 +1,6 @@
+import os; os.environ["CUDA_LAUNCH_BLOCKING"] = "1"
+# cuda launch blocking to see what the error is
+
 # -*- coding: utf-8 -*-
 """Welcome To Colaboratory
 
