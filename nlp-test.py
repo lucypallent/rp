@@ -101,5 +101,34 @@ tfidf_vectorizer = TfidfVectorizer(max_features = TFIDF_VOCAB_SIZE, stop_words =
         fit(np.concatenate((train['articleBody'].values.astype('U'), train['Headline'].values.astype('U'),
                 test['articleBody'].values.astype('U'), test['Headline'].values.astype('U')), axis=0))
 ##########################
+dictionary = np.asarray(tfidf_vectorizer.get_feature_names())
 
-print('WORKS!!!!')
+print('tfidf_train_body')
+tfidf_train_body = tfidf_vectorizer.transform(train['articleBody'].drop_duplicates().values.astype('U'))
+tfidf_train_body = pd.DataFrame.sparse.from_spmatrix(tfidf_train_body)
+tfidf_train_body.columns = dictionary
+tfidf_train_body = train['articleBody'].drop_duplicates() + tfidf_train_body
+tfidf_train_body.to_csv('nlp_csv/tfidf_train_body', index=False)
+
+print('tfidf_train_headlines')
+tfidf_train_head = tfidf_vectorizer.transform(train['Headline'].drop_duplicates().values.astype('U'))
+tfidf_train_head = pd.DataFrame.sparse.from_spmatrix(tfidf_train_head)
+tfidf_train_head.columns = dictionary
+tfidf_train_head = train['Headline'].drop_duplicates() + tfidf_train_head
+tfidf_train_head.to_csv('nlp_csv/tfidf_train_head', index=False)
+
+print('tfidf_test_body')
+tfidf_test_body = tfidf_vectorizer.transform(test['articleBody'].drop_duplicates().values.astype('U'))
+tfidf_test_body = pd.DataFrame.sparse.from_spmatrix(tfidf_test_body)
+tfidf_test_body.columns = dictionary
+tfidf_test_body = test['articleBody'].drop_duplicates() + tfidf_test_body
+tfidf_test_body.to_csv('nlp_csv/tfidf_test_body', index=False)
+
+print('tfidf_test_head')
+tfidf_test_head = tfidf_vectorizer.transform(test['Headline'].drop_duplicates().values.astype('U'))
+tfidf_test_head = pd.DataFrame.sparse.from_spmatrix(tfidf_test_head)
+tfidf_test_head.columns = dictionary
+tfidf_test_head = test['Headline'].drop_duplicates() + tfidf_test_head
+tfidf_test_head.to_csv('nlp_csv/tfidf_test_head', index=False)
+
+print('WORKS!')
