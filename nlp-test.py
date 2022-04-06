@@ -10,19 +10,19 @@ from nltk.corpus import stopwords
 nltk.download('stopwords')
 
 # url_trb = 'https://raw.githubusercontent.com/FakeNewsChallenge/fnc-1/master/train_bodies.csv'
-url_trb = 'nlp_csv/train_bodies.csv'
+url_trb = 'nlp_csv/nlp_csv/train_bodies.csv'
 train_bodies = pd.read_csv(url_trb)
 
 # url_trs = 'https://raw.githubusercontent.com/FakeNewsChallenge/fnc-1/master/train_stances.csv'
-url_trs = 'nlp_csv/train_stances.csv'
+url_trs = 'nlp_csv/nlp_csv/train_stances.csv'
 train_stances = pd.read_csv(url_trs)
 
 # url_teb = 'https://raw.githubusercontent.com/FakeNewsChallenge/fnc-1/master/test_bodies.csv'
-url_teb = 'nlp_csv/test_bodies.csv'
+url_teb = 'nlp_csv/nlp_csv/test_bodies.csv'
 test_bodies = pd.read_csv(url_teb)
 
 # url_tes = 'https://raw.githubusercontent.com/FakeNewsChallenge/fnc-1/master/test_stances_unlabeled.csv'
-url_tes = 'nlp_csv/test_stances_unlabeled.csv'
+url_tes = 'nlp_csv/nlp_csv/test_stances_unlabeled.csv'
 test_stances = pd.read_csv(url_tes)
 
 train = train_bodies.merge(train_stances, on='Body ID')
