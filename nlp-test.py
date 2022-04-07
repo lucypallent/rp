@@ -120,7 +120,7 @@ print('tfidf_train_headlines')
 tfidf_train_head = tfidf_vectorizer.transform(train['Headline'].drop_duplicates().values.astype('U'))
 tfidf_th = pd.DataFrame.sparse.from_spmatrix(tfidf_train_head)
 tfidf_th.columns = dictionary
-tfidf_th = tfidf_th.assign(articleBody=train['Headline'].drop_duplicates().tolist())
+tfidf_th = tfidf_th.assign(Headline=train['Headline'].drop_duplicates().tolist())
 tfidf_th.to_csv('nlp_csv/tfidf_train_head.csv', index=False)
 
 print('tfidf_test_body')
@@ -134,7 +134,7 @@ print('tfidf_test_head')
 tfidf_test_head = tfidf_vectorizer.transform(test['Headline'].drop_duplicates().values.astype('U'))
 tfidf_teh = pd.DataFrame.sparse.from_spmatrix(tfidf_test_head)
 tfidf_teh.columns = dictionary
-tfidf_teh = tfidf_teh.assign(articleBody=test['Headline'].drop_duplicates().tolist())
+tfidf_teh = tfidf_teh.assign(Headline=test['Headline'].drop_duplicates().tolist())
 tfidf_teh.to_csv('nlp_csv/tfidf_test_head.csv', index=False)
 
 print('WORKS!')
