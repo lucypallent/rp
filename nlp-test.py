@@ -111,30 +111,30 @@ dictionary = np.asarray(tfidf_vectorizer.get_feature_names())
 
 print('tfidf_train_body')
 tfidf_train_body = tfidf_vectorizer.transform(train['articleBody'].drop_duplicates().values.astype('U'))
-tfidf_train_body = pd.DataFrame.sparse.from_spmatrix(tfidf_train_body)
-tfidf_train_body.columns = dictionary
-tfidf_train_body = train['articleBody'].drop_duplicates() + tfidf_train_body
-tfidf_train_body.to_csv('nlp_csv/tfidf_train_body.csv', index=False)
+tfidf_tb = pd.DataFrame.sparse.from_spmatrix(tfidf_train_body)
+tfidf_tb.columns = dictionary
+tfidf_tb = tfidf_tb.assign(articleBody=train['articleBody'].drop_duplicates().tolist())
+tfidf_tb.to_csv('nlp_csv/tfidf_train_body.csv', index=False)
 
 print('tfidf_train_headlines')
 tfidf_train_head = tfidf_vectorizer.transform(train['Headline'].drop_duplicates().values.astype('U'))
-tfidf_train_head = pd.DataFrame.sparse.from_spmatrix(tfidf_train_head)
-tfidf_train_head.columns = dictionary
-tfidf_train_head = train['Headline'].drop_duplicates() + tfidf_train_head
-tfidf_train_head.to_csv('nlp_csv/tfidf_train_head.csv', index=False)
+tfidf_th = pd.DataFrame.sparse.from_spmatrix(tfidf_train_head)
+tfidf_th.columns = dictionary
+tfidf_th = tfidf_th.assign(articleBody=train['Headline'].drop_duplicates().tolist())
+tfidf_th.to_csv('nlp_csv/tfidf_train_head.csv', index=False)
 
 print('tfidf_test_body')
 tfidf_test_body = tfidf_vectorizer.transform(test['articleBody'].drop_duplicates().values.astype('U'))
-tfidf_test_body = pd.DataFrame.sparse.from_spmatrix(tfidf_test_body)
-tfidf_test_body.columns = dictionary
-tfidf_test_body = test['articleBody'].drop_duplicates() + tfidf_test_body
-tfidf_test_body.to_csv('nlp_csv/tfidf_test_body.csv', index=False)
+tfidf_teb = pd.DataFrame.sparse.from_spmatrix(tfidf_test_body)
+tfidf_teb.columns = dictionary
+tfidf_teb = tfidf_teb.assign(articleBody=test['articleBody'].drop_duplicates().tolist())
+tfidf_teb.to_csv('nlp_csv/tfidf_test_body.csv', index=False)
 
 print('tfidf_test_head')
 tfidf_test_head = tfidf_vectorizer.transform(test['Headline'].drop_duplicates().values.astype('U'))
-tfidf_test_head = pd.DataFrame.sparse.from_spmatrix(tfidf_test_head)
-tfidf_test_head.columns = dictionary
-tfidf_test_head = test['Headline'].drop_duplicates() + tfidf_test_head
-tfidf_test_head.to_csv('nlp_csv/tfidf_test_head.csv', index=False)
+tfidf_teh = pd.DataFrame.sparse.from_spmatrix(tfidf_test_head)
+tfidf_teh.columns = dictionary
+tfidf_teh = tfidf_teh.assign(articleBody=test['Headline'].drop_duplicates().tolist())
+tfidf_teh.to_csv('nlp_csv/tfidf_test_head.csv', index=False)
 
 print('WORKS!')
