@@ -2211,6 +2211,7 @@ run["config/hyperparameters"] = parameters
 
 ############### Training ###############
 for e in range(TRAIN_EPOCH):
+    run["training/batch/epoch"].log(e)
     for i, (all_F, all_L, all_info) in enumerate(TrainLoader):
         optimizer.zero_grad()
 
