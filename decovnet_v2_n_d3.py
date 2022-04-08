@@ -2141,7 +2141,7 @@ INIT_MODEL_PATH = 'ncov-Epoch_00140-auc95p9.pth'
 INIT_MODEL_STRICT = "True"
 SNAPSHOT_FREQ = 5
 TRAIN_EPOCH = 300 #, will likely stop it early
-SNAPSHOT_HOME = "experiments"
+SNAPSHOT_HOME = "experiments_v2"
 SNAPSHOT_MODEL_TPL = "ncov-Epoch_{:05d}.pth"
 
 
@@ -2252,6 +2252,7 @@ run["config/hyperparameters"] = parameters
 
 ############### Training ###############
 print('2nd model training')
+best_acc = 0.0
 
 for e in range(TRAIN_EPOCH):
     run["training/batch/epoch"].log(e)
@@ -2273,7 +2274,6 @@ for e in range(TRAIN_EPOCH):
 
         loss.backward()
         optimizer.step()
-
         # Epoch_CE = loss
         # Epoch_Acc = acc
         #break
@@ -2310,6 +2310,18 @@ for e in range(TRAIN_EPOCH):
 
                     run["validation/batch/loss"].log(val_loss)
                     run["validation/batch/acc"].log(val_acc)
+
+                    if val_acc > best_acc:
+                        best_acc = val_acc
+                        best_model_save_path = os.path.join(SNAPSHOT_HOME, 'ncov-best.pth')
+                        # 'ncov-best.pth'
+                        # SNAPSHOT_MODEL_TPL = "ncov-Epoch_{:05d}.pth"
+                        print(f"Dump weights {best_model_save_path} to disk...")
+                        torch.save(model.state_dict(), best_model_save_path)
+                        run["val/best_model_epoch"].log(e)
+
+
+
 
                     prob_preds = F.softmax(preds, dim=1)
                     prob_normal = prob_preds[0, 0].item()
@@ -2436,3 +2448,7 @@ run["test/batch/E"].log(e)
 run["test/batch/CE"].log(Ece)
 run["test/batch/ValAcc"].log(Eacc)
 run["test/batch/ValAUC"].log(Eauc)
+
+final_model_save_path = os.path.join(SNAPSHOT_HOME, 'ncov-final.pth')
+print(f"Dump weights {final_model_save_path} to disk...")
+torch.save(model.state_dict(), final_model_save_path)
