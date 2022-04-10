@@ -17,7 +17,7 @@ run = neptune.init(
     api_token="eyJhcGlfYWRkcmVzcyI6Imh0dHBzOi8vYXBwLm5lcHR1bmUuYWkiLCJhcGlfdXJsIjoiaHR0cHM6Ly9hcHAubmVwdHVuZS5haSIsImFwaV9rZXkiOiIzMmI3Y2EyOC1kZGMzLTRiNjgtYjY1MS04ZmZlMzA5MjJiYTYifQ==",
 )  # your credentials
 
-img = io.imread('/content/drive/MyDrive/curated_data/curated_data/1NonCOVID/N274_0.png')
+img = io.imread('dataset3/1NonCOVID/N314_16.png')
 run.log_image('test_img', img)
 
 from lungmask import mask
