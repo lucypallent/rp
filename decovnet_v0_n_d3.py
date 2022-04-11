@@ -623,6 +623,9 @@ def apply_fused(image, basemodel = 'LTRCLobes', fillmodel = 'R231', force_cpu=Fa
 pth = 'dataset3/1NonCOVID/N314_16.png'
 model = get_model('unet', 'R231')
 img = sitk.ReadImage(pth)
+print(len(img))
+print(len(img[0]))
+print(img.shape)
 seg = apply(img, model)
 
 run.log_image('test_img', img)
