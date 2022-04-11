@@ -49,7 +49,10 @@ import SimpleITK as sitk
 
 pth = 'dataset3/1NonCOVID/N314_16.png'
 input_image = sitk.ReadImage(pth)
-pritn('done')
+model = mask.get_model('unet','LTRCLobes')
+print('done')
+
+
 
 # # run = neptune.init(
 # #     project="lucypallent/research-project",
