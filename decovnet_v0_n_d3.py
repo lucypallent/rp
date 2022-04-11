@@ -58,9 +58,9 @@ pth3 = 'dataset3/1NonCOVID/N493_9T.png'
 img = io.imread(pth2)
 # print(img.shape)
 
-img0 = np.empty((512, 512, 1))
+img0 = np.empty((512, 512))
 img1 = np.concatenate((img0, img, img, img), axis=2)[:,:,1:] / 255
-
+print(img1.shape)
 io.imsave(pth3)
 
 input_image = sitk.ReadImage(pth3, img1)
