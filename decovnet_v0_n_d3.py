@@ -50,7 +50,7 @@ import SimpleITK as sitk
 pth = 'dataset3/1NonCOVID/N493_9.png'
 input_image = sitk.ReadImage(pth)
 model = mask.get_model('unet','LTRCLobes')
-segmentation = mask.apply(input_image, model, noHU=True)
+segmentation = mask.apply(input_image, model)#, noHU=True)
 
 print('done')
 
