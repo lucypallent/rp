@@ -53,7 +53,7 @@ import numpy as np
 pth = 'dataset2/dataset2/1NonCOVID/N493_9.png' # path is correct
 pth2 = 'dataset3/1NonCOVID/N493_9.png' # path is incorrect
 pth3 = 'dataset3/1NonCOVID/N493_9T.png'
-pth3 = 'dataset3/1NonCOVID/N493_9S.png'
+pth4 = 'dataset3/1NonCOVID/N493_9S.png'
 
 # read in image concat save as png read in the png with sitk
 # this should then work
