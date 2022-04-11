@@ -52,7 +52,7 @@ pth = 'dataset2/dataset2/1NonCOVID/N493_9.png' # path is correct
 
 
 input_image = sitk.ReadImage(pth)
-print(input_image.shape)
+# print(input_image.shape)
 # input_image = skimage.color.gray2rgb(input_image)
 model = mask.get_model('unet','LTRCLobes')
 segmentation = mask.apply(input_image, model, noHU=True)
