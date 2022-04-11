@@ -99,6 +99,7 @@ io.imsave(pth4, result)
 print(type(result))
 print(result)
 print(len(result))
+print(result.shape)
 
 
 print('done')
