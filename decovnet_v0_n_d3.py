@@ -82,10 +82,15 @@ print(type(input_image))
 model = mask.get_model('unet','LTRCLobes')
 result = mask.apply(input_image, model, noHU=True)
 
+print(result.max())
+print(result.min())
+
 result = (result/(result.max())*255).astype(np.uint8)
 result = result[0]
 
 io.imsave(pth4, result)
+
+
 
 print(type(result))
 print(result)
