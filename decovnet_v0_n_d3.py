@@ -66,9 +66,10 @@ print(img1.shape)
 io.imsave(pth3, img1)
 
 input_image = sitk.ReadImage(pth3)
-print(input_image)
-print(len(input_image))
-print(type(input_image))
+print(input_image.max())
+print(input_image.min())
+# print(len(input_image))
+# print(type(input_image))
 
 # print('2nd IMAGE')
 # input_image2 = sitk.ReadImage(pth2)
