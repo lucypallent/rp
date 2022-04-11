@@ -61,9 +61,9 @@ img = io.imread(pth2).reshape((512, 512, 1))
 img0 = np.empty((512, 512, 1))
 img1 = np.concatenate((img0, img, img, img), axis=2)[:,:,1:] / 255
 print(img1.shape)
-io.imsave(pth3)
+io.imsave(pth3, img1)
 
-input_image = sitk.ReadImage(pth3, img1)
+input_image = sitk.ReadImage(pth3)
 print(input_image)
 print(len(input_image))
 print(type(input_image))
