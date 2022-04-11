@@ -55,17 +55,19 @@ pth2 = 'dataset3/1NonCOVID/N493_9.png' # path is incorrect
 pth3 = 'dataset3/1NonCOVID/N493_9T.png'
 pth4 = 'dataset3/1NonCOVID/N493_9S.png'
 pth5 = '62448201'
+pth6 = '62448201_S.png'
 
 input_image = sitk.ReadImage(pth5)
 
 model = mask.get_model('unet','R231CovidWeb')
 result = mask.apply(input_image, model)#, noHU=True)
 print(type(result))
-print(result)
+print(result.shape)
 print(result.max())
 print(result.min())
 print('WORKS!')
 
+io.imsave(pth6, result)
 #
 # # read in image concat save as png read in the png with sitk
 # # this should then work
