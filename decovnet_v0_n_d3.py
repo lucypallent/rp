@@ -53,6 +53,8 @@ import numpy as np
 pth = 'dataset2/dataset2/1NonCOVID/N493_9.png' # path is correct
 pth2 = 'dataset3/1NonCOVID/N493_9.png' # path is incorrect
 pth3 = 'dataset3/1NonCOVID/N493_9T.png'
+pth3 = 'dataset3/1NonCOVID/N493_9S.png'
+
 # read in image concat save as png read in the png with sitk
 # this should then work
 img = io.imread(pth2).reshape((512, 512, 1))
@@ -79,6 +81,13 @@ print(type(input_image))
 # input_image = skimage.color.gray2rgb(input_image)
 model = mask.get_model('unet','LTRCLobes')
 segmentation = mask.apply(input_image, model, noHU=True)
+
+io.imsave(pth4, segmentation)
+
+print(type(segmentation))
+print(segmentation)
+print(len(segmentation))
+
 
 print('done')
 
