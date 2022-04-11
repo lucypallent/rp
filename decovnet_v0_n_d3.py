@@ -48,2348 +48,2931 @@ run = neptune.init(
     api_token="eyJhcGlfYWRkcmVzcyI6Imh0dHBzOi8vYXBwLm5lcHR1bmUuYWkiLCJhcGlfdXJsIjoiaHR0cHM6Ly9hcHAubmVwdHVuZS5haSIsImFwaV9rZXkiOiIzMmI3Y2EyOC1kZGMzLTRiNjgtYjY1MS04ZmZlMzA5MjJiYTYifQ==",
 )  # your credentials
 
-# removed above the bit which made teh dataset and txt files
-# these can now be found in dataset3.py
-# though still need to copy a file over from ImageSets/lung_test.txt to ImageSets-old/lung_test.txt
-
-"""# Unet"""
-
-# using the pretrained model originally
-
-# CT volume needs to be 512x512 TxHxW
-
-
-# from ops.dataset_ops import Train_Collatefn
-# copied code from above file
-
-
-
-def Train_Collatefn(data):
-    all_F, all_L, all_info = [], [], []
-
-    for i in range(len(data)):
-        all_F.append(data[i][0])
-        all_L.append(data[i][1])
-        all_info.append(data[i][2])
-    all_F = torch.cat(all_F, dim=0)
-    all_L = torch.cat(all_L, dim=0)
-    return all_F, all_L, all_info
-
-# from dataset.dataset_test import CTDataset
-# copied code from above file
+############### start of utils.py
+import scipy.ndimage as ndimage
+import skimage.measure
+import numpy as np
+from torch.utils.data import Dataset
+import os
+import sys
+import SimpleITK as sitk
+import pydicom as pyd
+import logging
+from tqdm import tqdm
+import fill_voids
+import skimage.morphology
 
 
-# try:
-#     from ops.dataset_ops import Rand_Transforms
-# except:
-#     #print ("Import external...")
-#     import sys
-#     sys.path.insert(0, "..")
-#     from ops.dataset_ops import Rand_Transforms
+def preprocess(img, label=None, resolution=[192, 192]):
+    imgmtx = np.copy(img)
+    lblsmtx = np.copy(label)
 
-readvdnames = lambda x: open(x).read().rstrip().split('\n')
+    imgmtx[imgmtx < -1024] = -1024
+    imgmtx[imgmtx > 600] = 600
+    cip_xnew = []
+    cip_box = []
+    cip_mask = []
+    for i in range(imgmtx.shape[0]):
+        if label is None:
+            (im, m, box) = crop_and_resize(imgmtx[i, :, :], width=resolution[0], height=resolution[1])
+        else:
+            (im, m, box) = crop_and_resize(imgmtx[i, :, :], mask=lblsmtx[i, :, :], width=resolution[0],
+                                           height=resolution[1])
+            cip_mask.append(m)
+        cip_xnew.append(im)
+        cip_box.append(box)
+    if label is None:
+        return np.asarray(cip_xnew), cip_box
+    else:
+        return np.asarray(cip_xnew), cip_box, np.asarray(cip_mask)
 
-class CTDataset(data.Dataset):
-    def __init__(self, data_home="",
-                       split="train",
-                       sample_number=64,
-                       clip_range=(0.2, 0.8),
-                       logger=None):
 
-        _meta_f = os.path.join(data_home, "ImageSets", "lung_{}.txt".format(split))
-        # dataset3/NCOV-BF/ImageSets/lung_test.txt
-        # Build a dictionary to record {path - label} pair
-        meta    = [os.path.join(data_home, "NpyData", "{}.npy".format(x)) for x in readvdnames(_meta_f)]
+def simple_bodymask(img):
+    maskthreshold = -500
+    oshape = img.shape
+    img = ndimage.zoom(img, 128/np.asarray(img.shape), order=0)
+    bodymask = img > maskthreshold
+    bodymask = ndimage.binary_closing(bodymask)
+    bodymask = ndimage.binary_fill_holes(bodymask, structure=np.ones((3, 3))).astype(int)
+    bodymask = ndimage.binary_erosion(bodymask, iterations=2)
+    bodymask = skimage.measure.label(bodymask.astype(int), connectivity=1)
+    regions = skimage.measure.regionprops(bodymask.astype(int))
+    if len(regions) > 0:
+        max_region = np.argmax(list(map(lambda x: x.area, regions))) + 1
+        bodymask = bodymask == max_region
+        bodymask = ndimage.binary_dilation(bodymask, iterations=2)
+    real_scaling = np.asarray(oshape)/128
+    return ndimage.zoom(bodymask, real_scaling, order=0)
 
-        self.data_home = data_home
-        self.split = split
-        self.sample_number = sample_number
-        self.meta = meta
-        self.clip_range = (0.2, 0.7)
-        #print (self.meta)
-        self.data_len = len(self.meta)
-        print ("[INFO] The true clip range is {}".format(self.clip_range))
 
-    def __getitem__(self, index):
-        data_path = self.meta[index]
-        images = np.load(data_path)
+def crop_and_resize(img, mask=None, width=192, height=192):
+    bmask = simple_bodymask(img)
+    # img[bmask==0] = -1024 # this line removes background outside of the lung.
+    # However, it has been shown problematic with narrow circular field of views that touch the lung.
+    # Possibly doing more harm than help
+    reg = skimage.measure.regionprops(skimage.measure.label(bmask))
+    if len(reg) > 0:
+        bbox = np.asarray(reg[0].bbox)
+    else:
+        bbox = (0, 0, bmask.shape[0], bmask.shape[1])
+    img = img[bbox[0]:bbox[2], bbox[1]:bbox[3]]
+    img = ndimage.zoom(img, np.asarray([width, height]) / np.asarray(img.shape), order=1)
+    if not mask is None:
+        mask = mask[bbox[0]:bbox[2], bbox[1]:bbox[3]]
+        mask = ndimage.zoom(mask, np.asarray([width, height]) / np.asarray(mask.shape), order=0)
+        # mask = ndimage.binary_closing(mask,iterations=5)
+    return img, mask, bbox
 
-        # CT clip
-        num_frames = len(images)
-        left, right = int(num_frames*self.clip_range[0]), int(num_frames*self.clip_range[1])
-        images = images[left:right]
 
-        num_frames = len(images)
-        shape = images.shape
-        #h, w = shape[1:]
+## For some reasons skimage.transform leads to edgy mask borders compared to ndimage.zoom
+# def reshape_mask(mask, tbox, origsize):
+#     res = np.ones(origsize) * 0
+#     resize = [tbox[2] - tbox[0], tbox[3] - tbox[1]]
+#     imgres = skimage.transform.resize(mask, resize, order=0, mode='constant', cval=0, anti_aliasing=False, preserve_range=True)
+#     res[tbox[0]:tbox[2], tbox[1]:tbox[3]] = imgres
+#     return res
 
-        if False:
-            from zqlib import imgs2vid
-            imgs2vid(np.concatenate([images, masks*255], axis=2), "test.avi")
-            import pdb
-            pdb.set_trace()
 
-        # To Tensor and Resize
-        images = np.asarray(images, dtype=np.float32)
-        images = images / 255.
+def reshape_mask(mask, tbox, origsize):
+    res = np.ones(origsize) * 0
+    resize = [tbox[2] - tbox[0], tbox[3] - tbox[1]]
+    imgres = ndimage.zoom(mask, resize / np.asarray(mask.shape), order=0)
+    res[tbox[0]:tbox[2], tbox[1]:tbox[3]] = imgres
+    return res
 
-        images = np.expand_dims(images, axis=1)          # Bx1xHxW, add channel dimension
 
-        #info = {"name": data_path, "num_frames": num_frames, "shape": shape, "pad": ((lh,uh),(lw,uw))}
-        info = {"name": data_path, "num_frames": num_frames, "shape": shape}
-
-        th_img = torch.from_numpy(images.copy()).float()
-        th_label = torch.zeros_like(th_img)
-
-        return th_img, th_label, info
+class LungLabelsDS_inf(Dataset):
+    def __init__(self, ds):
+        self.dataset = ds
 
     def __len__(self):
-        return self.data_len
+        return len(self.dataset)
 
-    def debug(self, index):
-        import cv2
-        from zqlib import assemble_multiple_images
-        th_img, th_label, info = self.__getitem__(index)
-        # th_img: NxCxTxHxW
-
-        img, label = th_img.numpy()[0, 0, :], th_label.numpy()[0]
-        n, h, w = img.shape
-        #if n % 2 != 0:
-        #    img = np.concatenate([img, np.zeros((1, h, w))], axis=0)
-        visual_img = assemble_multiple_images(img*255, number_width=16, pad_index=True)
-        os.makedirs("debug", exist_ok=True)
-        debug_f = os.path.join("debug/{}.jpg".format(\
-                            info["name"].replace('/', '_').replace('.', '')))
-        print ("[DEBUG] Writing to {}".format(debug_f))
-        cv2.imwrite(debug_f, visual_img)
+    def __getitem__(self, idx):
+        return self.dataset[idx, None, :, :].astype(np.float)
 
 
-# if __name__ == "__main__":
-#     # Read valid sliding: 550 seconds
-#     ctd = CTDataset(data_home="dataset3/NCOV-BF", split="train", sample_number=4)
-#     length = len(ctd)
-#     ctd[10]
+def read_dicoms(path, primary=True, original=True):
+    allfnames = []
+    for dir, _, fnames in os.walk(path):
+        [allfnames.append(os.path.join(dir, fname)) for fname in fnames]
 
-#     exit()
-#     ctd.debug(0)
-#     import time
-#     s = time.time()
-#     for i in range(length):
-#         print (i)
-#         th_img, th_label, info = ctd[i]
-#     e = time.time()
-#     print ("time: ", e-s)
+    dcm_header_info = []
+    dcm_parameters = []
+    unique_set = []  # need this because too often there are duplicates of dicom files with different names
+    i = 0
+    for fname in tqdm(allfnames):
+        filename_ = os.path.splitext(os.path.split(fname)[1])
+        i += 1
+        if filename_[0] != 'DICOMDIR':
+            try:
+                dicom_header = pyd.dcmread(fname, defer_size=100, stop_before_pixels=True, force=True)
+                if dicom_header is not None:
+                    if 'ImageType' in dicom_header:
+                        if primary:
+                            is_primary = all([x in dicom_header.ImageType for x in ['PRIMARY']])
+                        else:
+                            is_primary = True
 
-#     #images, labels, info = ctd[0]
-#     #for i in range(10):
-#     #    ctd.debug(i)
-#     import pdb
-#     pdb.set_trace()
+                        if original:
+                            is_original = all([x in dicom_header.ImageType for x in ['ORIGINAL']])
+                        else:
+                            is_original = True
+
+                        # if 'ConvolutionKernel' in dicom_header:
+                        #     ck = dicom_header.ConvolutionKernel
+                        # else:
+                        #     ck = 'unknown'
+                        if is_primary and is_original and 'LOCALIZER' not in dicom_header.ImageType:
+                            h_info_wo_name = [dicom_header.StudyInstanceUID, dicom_header.SeriesInstanceUID,
+                                              dicom_header.ImagePositionPatient]
+                            h_info = [dicom_header.StudyInstanceUID, dicom_header.SeriesInstanceUID, fname,
+                                      dicom_header.ImagePositionPatient]
+                            if h_info_wo_name not in unique_set:
+                                unique_set.append(h_info_wo_name)
+                                dcm_header_info.append(h_info)
+                                # kvp = None
+                                # if 'KVP' in dicom_header:
+                                #     kvp = dicom_header.KVP
+                                # dcm_parameters.append([ck, kvp,dicom_header.SliceThickness])
+            except:
+                logging.error("Unexpected error:", sys.exc_info()[0])
+                logging.warning("Doesn't seem to be DICOM, will be skipped: ", fname)
+
+    conc = [x[1] for x in dcm_header_info]
+    sidx = np.argsort(conc)
+    conc = np.asarray(conc)[sidx]
+    dcm_header_info = np.asarray(dcm_header_info, dtype=object)[sidx]
+    # dcm_parameters = np.asarray(dcm_parameters)[sidx]
+    vol_unique = np.unique(conc, return_index=1, return_inverse=1)  # unique volumes
+    n_vol = len(vol_unique[1])
+    logging.info('There are ' + str(n_vol) + ' volumes in the study')
+
+    relevant_series = []
+    relevant_volumes = []
+
+    for i in range(len(vol_unique[1])):
+        curr_vol = i
+        info_idxs = np.where(vol_unique[2] == curr_vol)[0]
+        vol_files = dcm_header_info[info_idxs, 2]
+        positions = np.asarray([np.asarray(x[2]) for x in dcm_header_info[info_idxs, 3]])
+        slicesort_idx = np.argsort(positions)
+        vol_files = vol_files[slicesort_idx]
+        relevant_series.append(vol_files)
+        reader = sitk.ImageSeriesReader()
+        reader.SetFileNames(vol_files)
+        vol = reader.Execute()
+        relevant_volumes.append(vol)
+
+    return relevant_volumes
 
 
+def get_input_image(path):
+    if os.path.isfile(path):
+        logging.info(f'Read input: {path}')
+        input_image = sitk.ReadImage(path)
+    else:
+        logging.info(f'Looking for dicoms in {path}')
+        dicom_vols = read_dicoms(path, original=False, primary=False)
+        if len(dicom_vols) < 1:
+            sys.exit('No dicoms found!')
+        if len(dicom_vols) > 1:
+            logging.warning("There are more than one volume in the path, will take the largest one")
+        input_image = dicom_vols[np.argmax([np.prod(v.GetSize()) for v in dicom_vols], axis=0)]
+    return input_image
 
 
+def postrocessing(label_image, spare=[]):
+    '''some post-processing mapping small label patches to the neighbout whith which they share the
+        largest border. All connected components smaller than min_area will be removed
+    '''
 
-from importlib import import_module
+    # merge small components to neighbours
+    regionmask = skimage.measure.label(label_image)
+    origlabels = np.unique(label_image)
+    origlabels_maxsub = np.zeros((max(origlabels) + 1,), dtype=np.uint32)  # will hold the largest component for a label
+    regions = skimage.measure.regionprops(regionmask, label_image)
+    regions.sort(key=lambda x: x.area)
+    regionlabels = [x.label for x in regions]
 
-# see above
+    # will hold mapping from regionlabels to original labels
+    region_to_lobemap = np.zeros((len(regionlabels) + 1,), dtype=np.uint8)
+    for r in regions:
+        r_max_intensity = int(r.max_intensity)
+        if r.area > origlabels_maxsub[r_max_intensity]:
+            origlabels_maxsub[r_max_intensity] = r.area
+            region_to_lobemap[r.label] = r_max_intensity
+
+    for r in tqdm(regions):
+        r_max_intensity = int(r.max_intensity)
+        if (r.area < origlabels_maxsub[r_max_intensity] or r_max_intensity in spare) and r.area>2: # area>2 improves runtime because small areas 1 and 2 voxel will be ignored
+            bb = bbox_3D(regionmask == r.label)
+            sub = regionmask[bb[0]:bb[1], bb[2]:bb[3], bb[4]:bb[5]]
+            dil = ndimage.binary_dilation(sub == r.label)
+            neighbours, counts = np.unique(sub[dil], return_counts=True)
+            mapto = r.label
+            maxmap = 0
+            myarea = 0
+            for ix, n in enumerate(neighbours):
+                if n != 0 and n != r.label and counts[ix] > maxmap and n != spare:
+                    maxmap = counts[ix]
+                    mapto = n
+                    myarea = r.area
+            regionmask[regionmask == r.label] = mapto
+            # print(str(region_to_lobemap[r.label]) + ' -> ' + str(region_to_lobemap[mapto])) # for debugging
+            if regions[regionlabels.index(mapto)].area == origlabels_maxsub[
+                int(regions[regionlabels.index(mapto)].max_intensity)]:
+                origlabels_maxsub[int(regions[regionlabels.index(mapto)].max_intensity)] += myarea
+            regions[regionlabels.index(mapto)].__dict__['_cache']['area'] += myarea
+
+    outmask_mapped = region_to_lobemap[regionmask]
+    outmask_mapped[outmask_mapped==spare] = 0
+
+    if outmask_mapped.shape[0] == 1:
+        # holefiller = lambda x: ndimage.morphology.binary_fill_holes(x[0])[None, :, :] # This is bad for slices that show the liver
+        holefiller = lambda x: skimage.morphology.area_closing(x[0].astype(int), area_threshold=64)[None, :, :] == 1
+    else:
+        holefiller = fill_voids.fill
+
+    outmask = np.zeros(outmask_mapped.shape, dtype=np.uint8)
+    for i in np.unique(outmask_mapped)[1:]:
+        outmask[holefiller(keep_largest_connected_component(outmask_mapped == i))] = i
+
+    return outmask
 
 
-random.seed(0); torch.manual_seed(0); np.random.seed(0)
+def bbox_3D(labelmap, margin=2):
+    shape = labelmap.shape
+    r = np.any(labelmap, axis=(1, 2))
+    c = np.any(labelmap, axis=(0, 2))
+    z = np.any(labelmap, axis=(0, 1))
 
-CFG_FILE = "cfgs/test.yaml"
+    rmin, rmax = np.where(r)[0][[0, -1]]
+    rmin -= margin if rmin >= margin else rmin
+    rmax += margin if rmax <= shape[0] - margin else rmax
+    cmin, cmax = np.where(c)[0][[0, -1]]
+    cmin -= margin if cmin >= margin else cmin
+    cmax += margin if cmax <= shape[1] - margin else cmax
+    zmin, zmax = np.where(z)[0][[0, -1]]
+    zmin -= margin if zmin >= margin else zmin
+    zmax += margin if zmax <= shape[2] - margin else zmax
 
-############### Set up Variables ###############
-# with open(CFG_FILE, "r") as f: cfg = yaml.safe_load(f)
+    if rmax-rmin == 0:
+        rmax = rmin+1
 
-# MODEL_UID = 'unet'
+    return np.asarray([rmin, rmax, cmin, cmax, zmin, zmax])
 
-# code to create the u-net model
-""" Parts of the U-Net model """
+
+def keep_largest_connected_component(mask):
+    mask = skimage.measure.label(mask)
+    regions = skimage.measure.regionprops(mask)
+    resizes = np.asarray([x.area for x in regions])
+    max_region = np.argsort(resizes)[-1] + 1
+    mask = mask == max_region
+    return mask
+############### end of utils.py
+
+
+############### start of resunet.py
+
+# Adapted from https://discuss.pytorch.org/t/unet-implementation/426
 
 import torch
-import torch.nn as nn
+from torch import nn
 import torch.nn.functional as F
 
-class DoubleConv(nn.Module):
-    """(convolution => [BN] => ReLU) * 2"""
-
-    def __init__(self, in_channels, out_channels):
-        super().__init__()
-        self.double_conv = nn.Sequential(
-            nn.Conv2d(in_channels, out_channels, kernel_size=3, padding=1),
-            nn.BatchNorm2d(out_channels),
-            nn.ReLU(inplace=True),
-            nn.Conv2d(out_channels, out_channels, kernel_size=3, padding=1),
-            nn.BatchNorm2d(out_channels),
-            nn.ReLU(inplace=True)
-        )
-
-    def forward(self, x):
-        return self.double_conv(x)
-
-
-class Down(nn.Module):
-    """Downscaling with maxpool then double conv"""
-
-    def __init__(self, in_channels, out_channels):
-        super().__init__()
-        self.maxpool_conv = nn.Sequential(
-            nn.MaxPool2d(2),
-            DoubleConv(in_channels, out_channels)
-        )
-
-    def forward(self, x):
-        return self.maxpool_conv(x)
-
-
-class Up(nn.Module):
-    """Upscaling then double conv"""
-
-    def __init__(self, in_channels, out_channels, bilinear=True):
-        super().__init__()
-
-        # if bilinear, use the normal convolutions to reduce the number of channels
-        if bilinear:
-            self.up = nn.Upsample(scale_factor=2, mode='bilinear', align_corners=True)
-        else:
-            self.up = nn.ConvTranspose2d(in_channels // 2, in_channels // 2, kernel_size=2, stride=2)
-
-        self.conv = DoubleConv(in_channels, out_channels)
-
-    def forward(self, x1, x2):
-        x1 = self.up(x1)
-        # input is CHW
-        diffY = torch.tensor([x2.size()[2] - x1.size()[2]])
-        diffX = torch.tensor([x2.size()[3] - x1.size()[3]])
-
-        x1 = F.pad(x1, [diffX // 2, diffX - diffX // 2,
-                        diffY // 2, diffY - diffY // 2])
-        # if you have padding issues, see
-        # https://github.com/HaiyongJiang/U-Net-Pytorch-Unstructured-Buggy/commit/0e854509c2cea854e247a9c615f175f76fbb2e3a
-        # https://github.com/xiaopeng-liao/Pytorch-UNet/commit/8ebac70e633bac59fc22bb5195e513d5832fb3bd
-        x = torch.cat([x2, x1], dim=1)
-        return self.conv(x)
-
-
-class OutConv(nn.Module):
-    def __init__(self, in_channels, out_channels):
-        super(OutConv, self).__init__()
-        self.conv = nn.Conv2d(in_channels, out_channels, kernel_size=1)
-
-    def forward(self, x):
-        return self.conv(x)
-
-
-""" Full assembly of the parts to form the complete network """
 
 class UNet(nn.Module):
-    def __init__(self, n_channels, n_classes, bilinear=True):
+    def __init__(self, in_channels=1, n_classes=2, depth=5, wf=6, padding=False,
+                 batch_norm=False, up_mode='upconv', residual=False):
+        """
+        Implementation of
+        U-Net: Convolutional Networks for Biomedical Image Segmentation
+        (Ronneberger et al., 2015)
+        https://arxiv.org/abs/1505.04597
+        Using the default arguments will yield the exact version used
+        in the original paper
+        Args:
+            in_channels (int): number of input channels
+            n_classes (int): number of output channels
+            depth (int): depth of the network
+            wf (int): number of filters in the first layer is 2**wf
+            padding (bool): if True, apply padding such that the input shape
+                            is the same as the output.
+                            This may introduce artifacts
+            batch_norm (bool): Use BatchNorm after layers with an
+                               activation function
+            up_mode (str): one of 'upconv' or 'upsample'.
+                           'upconv' will use transposed convolutions for
+                           learned upsampling.
+                           'upsample' will use bilinear upsampling.
+            residual: if True, residual connections will be added
+        """
         super(UNet, self).__init__()
-        self.n_channels = n_channels
-        self.n_classes = n_classes
-        self.bilinear = bilinear
+        assert up_mode in ('upconv', 'upsample')
+        self.padding = padding
+        self.depth = depth
+        prev_channels = in_channels
+        self.down_path = nn.ModuleList()
+        for i in range(depth):
+            if i == 0 and residual:
+                self.down_path.append(UNetConvBlock(prev_channels, 2 ** (wf + i),
+                                                    padding, batch_norm, residual, first=True))
+            else:
+                self.down_path.append(UNetConvBlock(prev_channels, 2 ** (wf + i),
+                                                    padding, batch_norm, residual))
+            prev_channels = 2 ** (wf + i)
 
-        inter_channel = 16
+        self.up_path = nn.ModuleList()
+        for i in reversed(range(depth - 1)):
+            self.up_path.append(UNetUpBlock(prev_channels, 2 ** (wf + i), up_mode,
+                                            padding, batch_norm, residual))
+            prev_channels = 2 ** (wf + i)
 
-        self.inc = DoubleConv(n_channels, inter_channel)
-        self.down1 = Down(inter_channel, inter_channel*2)
-        self.down2 = Down(inter_channel*2, inter_channel*4)
-        self.down3 = Down(inter_channel*4, inter_channel*8)
-        self.down4 = Down(inter_channel*8, inter_channel*8)
-        self.up1 = Up(inter_channel*16, inter_channel*4, bilinear)
-        self.up2 = Up(inter_channel*8, inter_channel*2, bilinear)
-        self.up3 = Up(inter_channel*4, inter_channel, bilinear)
-        self.up4 = Up(inter_channel*2, inter_channel, bilinear)
-        self.outc = OutConv(inter_channel, n_classes)
+        self.last = nn.Conv2d(prev_channels, n_classes, kernel_size=1)
+        self.softmax = nn.LogSoftmax(dim=1)
 
     def forward(self, x):
-        x1 = self.inc(x)
-        x2 = self.down1(x1)
-        x3 = self.down2(x2)
-        x4 = self.down3(x3)
-        x5 = self.down4(x4) # 1/16
-        x = self.up1(x5, x4)
-        x = self.up2(x, x3)
-        x = self.up3(x, x2)
-        x = self.up4(x, x1)
-        logits = self.outc(x)
-        return logits
+        blocks = []
+        for i, down in enumerate(self.down_path):
+            x = down(x)
+            if i != len(self.down_path) - 1:
+                blocks.append(x)
+                x = F.avg_pool2d(x, 2)
+
+        for i, up in enumerate(self.up_path):
+            x = up(x, blocks[-i - 1])
+
+        res = self.last(x)
+        return self.softmax(res)
 
 
+class UNetConvBlock(nn.Module):
+    def __init__(self, in_size, out_size, padding, batch_norm, residual=False, first=False):
+        super(UNetConvBlock, self).__init__()
+        self.residual = residual
+        self.out_size = out_size
+        self.in_size = in_size
+        self.batch_norm = batch_norm
+        self.first = first
+        self.residual_input_conv = nn.Conv2d(self.in_size, self.out_size, kernel_size=1)
+        self.residual_batchnorm = nn.BatchNorm2d(self.out_size)
 
-if __name__ == "__main__":
-    unet = UNet(n_channels=1, n_classes=2)
-    aa = torch.ones((2, 1, 128, 128))
-    bb = unet(aa)
-    print (bb.shape)
+        if residual:
+            padding = 1
+        block = []
 
-PRETRAINED_MODEL_PATH = 'unet.pth' # "pretrained_model/unet-Epoch_00110-valid98.pth"
-RESULE_HOME = 'unet-results'
-NUM_WORKERS = 2
-SAMPLE_NUMBER = -1 # All CT images
-DATA_ROOT = 'dataset3/NCOV-BF' #'NCOV-BF/size368x368-dlmask'
+        if residual and not first:
+            block.append(nn.ReLU())
+            if batch_norm:
+                block.append(nn.BatchNorm2d(in_size))
+
+        block.append(nn.Conv2d(in_size, out_size, kernel_size=3,
+                               padding=int(padding)))
+        block.append(nn.ReLU())
+        if batch_norm:
+            block.append(nn.BatchNorm2d(out_size))
+
+        block.append(nn.Conv2d(out_size, out_size, kernel_size=3,
+                               padding=int(padding)))
+
+        if not residual:
+            block.append(nn.ReLU())
+            if batch_norm:
+                block.append(nn.BatchNorm2d(out_size))
+        self.block = nn.Sequential(*block)
+
+    def forward(self, x):
+        out = self.block(x)
+        if self.residual:
+            if self.in_size != self.out_size:
+                x = self.residual_input_conv(x)
+                x = self.residual_batchnorm(x)
+            out = out + x
+
+        return out
 
 
-Validset = CTDataset(data_home=DATA_ROOT,
-                               split='test',
-                               sample_number=SAMPLE_NUMBER)
+class UNetUpBlock(nn.Module):
+    def __init__(self, in_size, out_size, up_mode, padding, batch_norm, residual=False):
+        super(UNetUpBlock, self).__init__()
+        self.residual = residual
+        self.in_size = in_size
+        self.out_size = out_size
+        self.residual_input_conv = nn.Conv2d(self.in_size, self.out_size, kernel_size=1)
+        self.residual_batchnorm = nn.BatchNorm2d(self.out_size)
 
-# model = import_module(f"model.{MODEL_UID}")
-# UNet = getattr(model, "UNet")
+        if up_mode == 'upconv':
+            self.up = nn.ConvTranspose2d(in_size, out_size, kernel_size=2,
+                                         stride=2)
+        elif up_mode == 'upsample':
+            self.up = nn.Sequential(nn.Upsample(mode='bilinear', scale_factor=2),
+                                    nn.Conv2d(in_size, out_size, kernel_size=1))
 
-model = UNet(n_channels=1, n_classes=2)
-model = torch.nn.DataParallel(model).cuda()
+        self.conv_block = UNetConvBlock(in_size, out_size, padding, batch_norm)
 
-model.load_state_dict(torch.load(PRETRAINED_MODEL_PATH, map_location=f'cuda:{0}'), strict=True)
+    @staticmethod
+    def center_crop(layer, target_size):
+        _, _, layer_height, layer_width = layer.size()
+        diff_y = (layer_height - target_size[0]) // 2
+        diff_x = (layer_width - target_size[1]) // 2
+        return layer[:, :, diff_y:(diff_y + target_size[0]), diff_x:(diff_x + target_size[1])]
 
-# change so this is the whole dataset
-ValidLoader = torch.utils.data.DataLoader(Validset,
-                                    batch_size=1,
-                                    num_workers=NUM_WORKERS,
-                                    collate_fn=Train_Collatefn,
-                                    shuffle=False,)
+    def forward(self, x, bridge):
+        up = self.up(x)
+        crop1 = self.center_crop(bridge, up.shape[2:])
+        out_orig = torch.cat([up, crop1], 1)
+        out = self.conv_block(out_orig)
+        if self.residual:
+            if self.in_size != self.out_size:
+                out_orig = self.residual_input_conv(out_orig)
+                out_orig = self.residual_batchnorm(out_orig)
+            out = out + out_orig
 
-os.makedirs(RESULE_HOME, exist_ok=True)
-os.makedirs("visual", exist_ok=True)
-
-with torch.no_grad():
-    for i, (all_F, all_M, all_info) in enumerate(ValidLoader):
-        all_E = []
-        images = all_F.cuda()
-        # print(images)
-        #(lh, uh), (lw, uw) = all_info[0]["pad"]
-        num = len(images)
-
-        for ii in range(num):
-            image = images[ii:ii+1]
-            pred = model(image)
-            pred = torch.argmax(F.softmax(pred, dim=1), dim=1)
-            all_E.append(pred)
-
-        all_E = torch.cat(all_E, dim=0).cpu().numpy().astype('uint8')
-        all_OF2 = all_F[:, 0, :, :].cpu().numpy().astype('float32') * 255
-        all_OF = np.uint8(all_F[:, 0, :, :].cpu().numpy().astype('float32') * 255)
-
-        unique_id = all_info[0]["name"].split('/')[-1].replace('.npy', '')
-        np.save("{}/{}.npy".format(RESULE_HOME, unique_id), all_OF)
-        np.save("{}/{}-2.npy".format(RESULE_HOME, unique_id), all_OF2)
-
-        np.save("{}/{}-dlmask.npy".format(RESULE_HOME, unique_id), all_E)
-
-# # think this is the bit that would load the pre-trained model
-# if INIT_MODEL_PATH != "":
-#     model.load_state_dict(torch.load(INIT_MODEL_PATH, \
-#                  map_location=f'cuda:{0}'), strict=INIT_MODEL_STRICT)
-
-"""# Preprocess images"""
-
-# !pip install zqlib
-# !pip install fvcore
-
-# processing the images so they work with DeCoVNet
-
-# cropped and resized to 224x336 in TxHxW
-# using cropresize.py
-
-# create a list file of CT volumes
-
-# move the npydata and npymask to 'dataset3/NCOV-BF/NpyData-size224x336',
-# move the list file to 'dataset3/NCOV-BF/ImageSets'
-
-import os
-import numpy as np
-
-from scipy.ndimage import zoom
-
-readvdnames = lambda x: open(x).read().rstrip().split('\n')
-
-src_home = 'unet-results'
-des_home = 'dataset3/NCOV-BF/NpyData-size224x336'
-
-os.makedirs(des_home, exist_ok=True)
-
-#for d in dirs:
-#    os.makedirs(os.path.join(des_home, d), exist_ok=True)
-
-pe_list = readvdnames(f"dataset3/NCOV-BF/ImageSets-old/lung_test.txt")[::-1]
-
-new_size = (224, 336)   # 224x336       # average isotropic shape: 193x281
-
-new_height, new_width = new_size
-
-clip_range = (0.15, 1)
-
-slice_resolution = 1
-from zqlib import imgs2vid
-import cv2
-
-def resize_cta_images(x):        # dtype is "PE"/"NORMAL"
-    print (x)
-    if os.path.isfile(os.path.join(des_home, x+".npy")) is True:
         return
-    raw_imgs = np.uint8(np.load(os.path.join(src_home, x+".npy")))
-    raw_masks = np.load(os.path.join(src_home, x+"-dlmask.npy"))
-    length = len(raw_imgs)
+############### end of resunet.py
 
-    clip_imgs = raw_imgs[int(length*clip_range[0]):int(length*clip_range[1])]
-    clip_masks = raw_masks[int(length*clip_range[0]):int(length*clip_range[1])]
+############### start of lungmask.py
 
-    raw_imgs = clip_imgs
-    raw_masks = clip_masks
-
-    #xdata = np.concatenate([raw_imgs[length//2], raw_masks[length//2]*255], axis=1)
-    #print (xdata.shape)
-    #cv2.imwrite(f"debug/{x}.png", xdata)
-    #return
-
-    zz, yy, xx = np.where(raw_masks)
-    cropbox = np.array([[np.min(zz), np.max(zz)], [np.min(yy), np.max(yy)], [np.min(xx), np.max(xx)]])
-    crop_imgs = raw_imgs[cropbox[0, 0]:cropbox[0, 1],
-                         cropbox[1, 0]:cropbox[1, 1],
-                         cropbox[2, 0]:cropbox[2, 1]]
-
-    crop_masks = raw_masks[cropbox[0, 0]:cropbox[0, 1],
-                          cropbox[1, 0]:cropbox[1, 1],
-                          cropbox[2, 0]:cropbox[2, 1]]
-
-    raw_imgs = crop_imgs
-    raw_masks = crop_masks
-
-    height, width = raw_imgs.shape[1:3]
-    zoomed_imgs = zoom(raw_imgs, (slice_resolution, new_height/height, new_width/width))
-    np.save(os.path.join(des_home, x+".npy"), zoomed_imgs)
-    zoomed_masks = zoom(raw_masks, (slice_resolution, new_height/height, new_width/width))
-    np.save(os.path.join(des_home, x+"-dlmask.npy"), zoomed_masks)
-
-    immasks = np.concatenate([zoomed_imgs, zoomed_masks*255], axis=2)[length//2]
-    cv2.imwrite(f"debug/{x}.png", immasks)
-    #imgs2vid(immasks, "debug/{}.avi".format(x))
-
-
-#for x in pe_list:
-#    resize_cta_images(x)
-#
-#exit()
-
-#for x in orcale_normal_list:
-#    resize_cta_images(x, "orcale_normal")
-
-from concurrent import futures
-
-num_threads=10
-
-with futures.ProcessPoolExecutor(max_workers=num_threads) as executor:
-    fs = [executor.submit(resize_cta_images, x, ) for x in pe_list[::-1]]
-    for i, f in enumerate(futures.as_completed(fs)):
-        print ("{}/{} done...".format(i, len(fs)))
-
-"""#DeCOVNet"""
-
-# now trying to implement DeCoVNet
-
-DATA_ROOT = 'dataset3/NCOV-BF'
-
-# dataset3/NCOV-BF/
-
-
-# from ops.acc_ops import topk_accuracies
-def topks_correct(preds, labels, ks):
-    """
-    Given the predictions, labels, and a list of top-k values, compute the
-    number of correct predictions for each top-k value.
-    Args:
-        preds (array): array of predictions. Dimension is batchsize
-            N x ClassNum.
-        labels (array): array of labels. Dimension is batchsize N.
-        ks (list): list of top-k values. For example, ks = [1, 5] correspods
-            to top-1 and top-5.
-    Returns:
-        topks_correct (list): list of numbers, where the `i`-th entry
-            corresponds to the number of top-`ks[i]` correct predictions.
-    """
-    assert preds.size(0) == labels.size(
-        0
-    ), "Batch dim of predictions and labels must match"
-    # Find the top max_k predictions for each sample
-    _top_max_k_vals, top_max_k_inds = torch.topk(
-        preds, max(ks), dim=1, largest=True, sorted=True
-    )
-    # (batch_size, max_k) -> (max_k, batch_size).
-    top_max_k_inds = top_max_k_inds.t()
-    # (batch_size, ) -> (max_k, batch_size).
-    rep_max_k_labels = labels.view(1, -1).expand_as(top_max_k_inds)
-    # (i, j) = 1 if top i-th prediction for the j-th sample is correct.
-    top_max_k_correct = top_max_k_inds.eq(rep_max_k_labels)
-    # Compute the number of topk correct predictions for each k.
-    topks_correct = [
-        top_max_k_correct[:k, :].view(-1).float().sum() for k in ks
-    ]
-    return topks_correct
-
-def topk_accuracies(preds, labels, ks):
-    """
-    Computes the top-k accuracy for each k.
-    Args:
-        preds (array): array of predictions. Dimension is N.
-        labels (array): array of labels. Dimension is N.
-        ks (list): list of ks to calculate the top accuracies.
-    """
-    num_topks_correct = topks_correct(preds, labels, ks)
-    return [(x / preds.size(0)) * 100.0 for x in num_topks_correct]
-
-
-# from ops.stat_ops import ScalarContainer
-class ScalarContainer(object):
-    def __init__(self):
-        self.scalar_list = []
-    def write(self, s):
-        self.scalar_list.append(float(s))
-    def read(self):
-        ave = np.mean(np.array(self.scalar_list))
-        self.scalar_list = []
-        return ave
-
-
-#! /usr/bin/env python
-# -*- coding: utf-8 -*-
-# vim:fenc=utf-8
-#
-# Copyright © 2019-12-04 14:23 qiang.zhou <theodoruszq@gmail.com>
-#
-# Distributed under terms of the MIT license.
-
-"""
-Load each patient's all/specfied CT images.
-"""
-
-from torch.utils import data
-from PIL import Image
-import os
-import torchvision.transforms.functional as TF
 import numpy as np
 import torch
-import random
-from scipy.ndimage import zoom
-
-# try:
-#     from ops.dataset_ops import Rand_Affine, Rand_Crop, Rand_Transforms
-
-
-
-# except:
-#     #print ("Import external...")
-#     import sys
-#     sys.path.insert(0, "..")
-#     from ops.dataset_ops import Rand_Affine, Rand_Crop, Rand_Transforms
-
-
-# Rand_Affine
-def Rand_Affine(img, ANGLE_R=10, TRANS_R=0.2, SCALE_R=0.3, SHEAR_R=15, FLIP_B=False):
-    assert isinstance(img, Image.Image) or isinstance(img[0], Image.Image)
-
-    def affop(img, angle, translate, scale, shear, flip):
-        if flip:
-            img = img.transpose(Image.FLIP_LEFT_RIGHT)
-        _img = TF.affine(img, angle, translate, scale, shear, resample=Image.BILINEAR)
-        return _img
-    if isinstance(img, list):
-        w, h = img[0].size
-    else:
-        w, h = img.size
-    angle = random.randint(-ANGLE_R, ANGLE_R)
-    translate = (random.randint(int(-w*TRANS_R), int(w*TRANS_R)),
-                 random.randint(int(-h*TRANS_R), int(h*TRANS_R)))  # x, y axis
-    scale = 1 + round(random.uniform(-SCALE_R, SCALE_R), 1)
-    shear = random.randint(-SHEAR_R, SHEAR_R)
-    flip = FLIP_B and random.random() >= 0.5
-    #print (angle, translate, scale, shear)
-    if isinstance(img, list):
-        img_L = []
-        for i_img in img:
-            i_img = affop(i_img, angle, translate, scale, shear, flip)
-            img_L.append(i_img)
-        return img_L
-    else:
-        _img = affop(img, angle, translate, scale, shear, flip)
-        return _img
-
-#Rand_Crop
-# img must be a np.uint8 TxHxW datatype numpy
-def Rand_Crop(img, crop_size):
-    shape = img.shape[1:]	# h, w
-    crop_y = random.randint(0, shape[0] - crop_size[0])
-    crop_x = random.randint(0, shape[1] - crop_size[1])
-    crop_img = img[:, crop_y:crop_y+crop_size[0], crop_x:crop_x+crop_size[1]]
-    return crop_img
-
-# Rand_Transforms
-def Rand_Transforms(imgs, masks,
-                    ANGLE_R=10, TRANS_R=0.1,
-                    SCALE_R=0.2, SHEAR_R=10,
-                    BRIGHT_R=0.5, CONTRAST_R=0.3):
-    # To Image.Image instances
-    pil_imgs = [Image.fromarray(x) for x in imgs]
-    pil_masks = [Image.fromarray(x) for x in masks]
-    w, h = pil_imgs[0].size
-
-    # Affine Transforms
-    def affop(img, angle, translate, scale, shear):
-        _img = TF.affine(img, angle, translate, scale, shear, resample=Image.BILINEAR)
-        return _img
-    angle = random.randint(-ANGLE_R, ANGLE_R)
-    translate = (random.randint(int(-w*TRANS_R), int(w*TRANS_R)),
-                 random.randint(int(-h*TRANS_R), int(h*TRANS_R)))  # x, y axis
-    scale = 1 + round(random.uniform(-SCALE_R, SCALE_R), 1)
-    shear = random.randint(-SHEAR_R, SHEAR_R)
-    pil_imgs = [affop(x, angle, translate, scale, shear) for x in pil_imgs]
-    pil_masks = [affop(x, angle, translate, scale, shear) for x in pil_masks]
-
-    # Color Transforms
-    def colorop(img, bright, contrast):
-        _img = TF.adjust_brightness(img, bright)
-        _img = TF.adjust_contrast(_img, contrast)
-        return _img
-    bright = 1 + round(random.uniform(-BRIGHT_R, BRIGHT_R), 1)
-    contrast = 1 + round(random.uniform(-CONTRAST_R, CONTRAST_R), 1)
-    pil_imgs = [colorop(x, bright, contrast) for x in pil_imgs]
-
-    imgs = np.asarray([np.asarray(x, dtype=np.uint8) for x in pil_imgs], dtype=np.uint8)
-    masks = np.asarray([np.asarray(x, dtype=np.uint8) for x in pil_masks], dtype=np.uint8)
-    return imgs, masks
-
-
-readvdnames = lambda x: open(x).read().rstrip().split('\n')
-
-class CTDataset(data.Dataset):
-    def __init__(self, data_home="",
-                       split="train",
-                       fold_id=None,
-                       crop_size=(196, 288),
-                       clip_range=(0.2, 0.7),   # useless
-                       logger=None):
-
-        _embo_f = os.path.join(data_home, "ImageSets", "ncov_{}.txt".format(split))
-        _norm_f = os.path.join(data_home, "ImageSets", "normal_{}.txt".format(split))
-        # Build a dictionary to record {path - label} pair
-        meta_pos   = [[os.path.join(data_home, "NpyData-size224x336", "{}.npy".format(x)), 1]
-                                for x in readvdnames(_embo_f)]
-
-        meta_neg   = [[os.path.join(data_home, "NpyData-size224x336", "{}.npy".format(x)), 0]
-                                for x in readvdnames(_norm_f)]
-
-        if split == "train":
-            if len(meta_pos) > len(meta_neg):
-                for i in range(len(meta_pos) - len(meta_neg)):
-                    meta_neg.append(random.choice(meta_neg))
-            else:
-                for i in range(len(meta_neg) - len(meta_pos)):
-                    meta_pos.append(random.choice(meta_pos))
-
-        meta = meta_pos + meta_neg
-
-        #print (meta)
-        self.data_home = data_home
-        self.split = split
-        self.meta = meta
-        self.crop_size = crop_size
-        self.clip_range = clip_range
-        #print (self.meta)
-        self.data_len = len(self.meta)
-
-    def __getitem__(self, index):
-        data_path, label = self.meta[index]
-        mask_path = data_path.replace('.npy', '-dlmask.npy')
-
-        cta_images = np.load(data_path)
-        cta_masks = np.load(mask_path)
-
-        num_frames = len(cta_images)
-        shape = cta_images.shape
-
-        # Data augmentation
-        if self.split == "train":
-            cta_images, cta_masks = Rand_Transforms(cta_images, cta_masks, ANGLE_R=10, TRANS_R=0.1, SCALE_R=0.2, SHEAR_R=10,
-                                             BRIGHT_R=0.5, CONTRAST_R=0.3)
-
-        # To Tensor and Resize
-        cta_images = np.asarray(cta_images, dtype=np.float32)
-        cta_images = cta_images / 255.
-
-        images = np.concatenate([cta_images[None, :, :, :], cta_masks[None, :, :, :]], axis=0)
-        label = np.uint8([label])
-
-        info = {"name": data_path, "num_frames": num_frames, "shape": shape}
-
-        th_img = torch.unsqueeze(torch.from_numpy(images.copy()), 0).float()
-        th_label = torch.from_numpy(label.copy()).long()
-
-        return th_img, th_label, info
-
-    def __len__(self):
-        return self.data_len
-
-    def debug(self, index):
-        import cv2
-        from zqlib import assemble_multiple_images
-        th_img, th_label, info = self.__getitem__(index)
-        # th_img: NxCxTxHxW
-
-        img, label = th_img.numpy()[0, 0, :], th_label.numpy()[0]
-        n, h, w = img.shape
-        #if n % 2 != 0:
-        #    img = np.concatenate([img, np.zeros((1, h, w))], axis=0)
-        visual_img = assemble_multiple_images(img*255, number_width=16, pad_index=True)
-        os.makedirs("debug", exist_ok=True)
-        debug_f = os.path.join("debug/{}.jpg".format(\
-                            info["name"].replace('/', '_').replace('.', '')))
-        print ("[DEBUG] Writing to {}".format(debug_f))
-        cv2.imwrite(debug_f, visual_img)
-
-
-# if __name__ == "__main__":
-#     # Read valid sliding: 550 seconds
-#     ctd = CTDataset(data_home="dataset3/NCOV-SEG/size192x288-dlmask", split="train", crop_size=(192, 288))
-#     length = len(ctd)
-#     ctd[0]
-
-#     exit()
-#     ctd.debug(0)
-#     import time
-#     s = time.time()
-#     for i in range(length):
-#         print (i)
-#         th_img, th_label, info = ctd[i]
-#     e = time.time()
-#     print ("time: ", e-s)
-
-#     #images, labels, info = ctd[0]
-#     #for i in range(10):
-#     #    ctd.debug(i)
-#     import pdb
-#     pdb.set_trace()
-
-CFG_FILE = "cfgs/test.yaml"
-Validset = CTDataset(data_home=DATA_ROOT, split='test',)
-
-MODEL_UID = 'baseline_i3d'
-NUM_CLASSES = 2
-DEPTH = 50
-ARCH = 'i3d'
-
-
-""" ResNet only. """
-
-import torch
-import torch.nn as nn
+from lungmask import utils
+import SimpleITK as sitk
+# from .resunet import UNet
+import warnings
 import sys
-sys.path.insert(0, "..")
-# from model.stem_helper import VideoModelStem
-import torch.nn as nn
+from tqdm import tqdm
+import skimage
+import logging
+
+logging.basicConfig(stream=sys.stdout, level=logging.INFO)
+warnings.filterwarnings("ignore", category=UserWarning)
+
+# stores urls and number of classes of the models
+model_urls = {('unet', 'R231'): ('https://github.com/JoHof/lungmask/releases/download/v0.0/unet_r231-d5d2fc3d.pth', 3),
+              ('unet', 'LTRCLobes'): (
+                  'https://github.com/JoHof/lungmask/releases/download/v0.0/unet_ltrclobes-3a07043d.pth', 6),
+              ('unet', 'R231CovidWeb'): (
+                  'https://github.com/JoHof/lungmask/releases/download/v0.0/unet_r231covid-0de78a7e.pth', 3)}
 
 
-class VideoModelStem(nn.Module):
-    """
-    Video 3D stem module. Provides stem operations of Conv, BN, ReLU, MaxPool
-    on input data tensor for one or multiple pathways.
-    """
+def apply(image, model=None, force_cpu=False, batch_size=20, volume_postprocessing=True, noHU=False):
+    if model is None:
+        model = get_model('unet', 'R231')
 
-    def __init__(
-        self,
-        dim_in,
-        dim_out,
-        kernel,
-        stride,
-        padding,
-        inplace_relu=True,
-        eps=1e-5,
-        bn_mmt=0.1,
-    ):
-        """
-        The `__init__` method of any subclass should also contain these
-        arguments. List size of 1 for single pathway models (C2D, I3D, SlowOnly
-        and etc), list size of 2 for two pathway models (SlowFast).
-        Args:
-            dim_in (list): the list of channel dimensions of the inputs.
-            dim_out (list): the output dimension of the convolution in the stem
-                layer.
-            kernel (list): the kernels' size of the convolutions in the stem
-                layers. Temporal kernel size, height kernel size, width kernel
-                size in order.
-            stride (list): the stride sizes of the convolutions in the stem
-                layer. Temporal kernel stride, height kernel size, width kernel
-                size in order.
-            padding (list): the paddings' sizes of the convolutions in the stem
-                layer. Temporal padding size, height padding size, width padding
-                size in order.
-            inplace_relu (bool): calculate the relu on the original input
-                without allocating new memory.
-            eps (float): epsilon for batch norm.
-            bn_mmt (float): momentum for batch norm. Noted that BN momentum in
-                PyTorch = 1 - BN momentum in Caffe2.
-        """
-        super(VideoModelStem, self).__init__()
+    numpy_mode = isinstance(image, np.ndarray)
+    if numpy_mode:
+        inimg_raw = image.copy()
+    else:
+        inimg_raw = sitk.GetArrayFromImage(image)
+        directions = np.asarray(image.GetDirection())
+        if len(directions) == 9:
+            inimg_raw = np.flip(inimg_raw, np.where(directions[[0,4,8]][::-1]<0)[0])
+    del image
 
-        assert (
-            len(
-                {
-                    len(dim_in),
-                    len(dim_out),
-                    len(kernel),
-                    len(stride),
-                    len(padding),
-                }
-            )
-            == 1
-        ), "Input pathway dimensions are not consistent."
-        self.num_pathways = len(dim_in)
-        self.kernel = kernel
-        self.stride = stride
-        self.padding = padding
-        self.inplace_relu = inplace_relu
-        self.eps = eps
-        self.bn_mmt = bn_mmt
-
-        # Construct the stem layer.
-        self._construct_stem(dim_in, dim_out)
-
-    def _construct_stem(self, dim_in, dim_out):
-        for pathway in range(len(dim_in)):
-            stem = ResNetBasicStem(
-                dim_in[pathway],
-                dim_out[pathway],
-                self.kernel[pathway],
-                self.stride[pathway],
-                self.padding[pathway],
-                self.inplace_relu,
-                self.eps,
-                self.bn_mmt,
-            )
-            self.add_module("pathway{}_stem".format(pathway), stem)
-
-    def forward(self, x):
-        assert (
-            len(x) == self.num_pathways
-        ), "Input tensor does not contain {} pathway".format(self.num_pathways)
-        for pathway in range(len(x)):
-            m = getattr(self, "pathway{}_stem".format(pathway))
-            x[pathway] = m(x[pathway])
-        return x
-
-
-class ResNetBasicStem(nn.Module):
-    """
-    ResNe(X)t 3D stem module.
-    Performs spatiotemporal Convolution, BN, and Relu following by a
-        spatiotemporal pooling.
-    """
-
-    def __init__(
-        self,
-        dim_in,
-        dim_out,
-        kernel,
-        stride,
-        padding,
-        inplace_relu=True,
-        eps=1e-5,
-        bn_mmt=0.1,
-    ):
-        """
-        The `__init__` method of any subclass should also contain these arguments.
-        Args:
-            dim_in (int): the channel dimension of the input. Normally 3 is used
-                for rgb input, and 2 or 3 is used for optical flow input.
-            dim_out (int): the output dimension of the convolution in the stem
-                layer.
-            kernel (list): the kernel size of the convolution in the stem layer.
-                temporal kernel size, height kernel size, width kernel size in
-                order.
-            stride (list): the stride size of the convolution in the stem layer.
-                temporal kernel stride, height kernel size, width kernel size in
-                order.
-            padding (int): the padding size of the convolution in the stem
-                layer, temporal padding size, height padding size, width
-                padding size in order.
-            inplace_relu (bool): calculate the relu on the original input
-                without allocating new memory.
-            eps (float): epsilon for batch norm.
-            bn_mmt (float): momentum for batch norm. Noted that BN momentum in
-                PyTorch = 1 - BN momentum in Caffe2.
-        """
-        super(ResNetBasicStem, self).__init__()
-        self.kernel = kernel
-        self.stride = stride
-        self.padding = padding
-        self.inplace_relu = inplace_relu
-        self.eps = eps
-        self.bn_mmt = bn_mmt
-
-        # Construct the stem layer.
-        self._construct_stem(dim_in, dim_out)
-
-    def _construct_stem(self, dim_in, dim_out):
-        self.conv = nn.Conv3d(
-            dim_in,
-            dim_out,
-            self.kernel,
-            stride=self.stride,
-            padding=self.padding,
-            bias=False,
-        )
-        self.bn = nn.BatchNorm3d(dim_out, eps=self.eps, momentum=self.bn_mmt)
-        self.relu = nn.ReLU(self.inplace_relu)
-        self.pool_layer = nn.MaxPool3d(
-            kernel_size=[1, 3, 3], stride=[1, 2, 2], padding=[0, 1, 1]
-        )
-
-    def forward(self, x):
-        x = self.conv(x)
-        x = self.bn(x)
-        x = self.relu(x)
-        x = self.pool_layer(x)
-        return x
-
-
-
-# from model.resnet_helper import ResStage
-import torch.nn as nn
-
-# from model.nonlocal_helper import Nonlocal
-"""Non-local helper"""
-
-import torch
-import torch.nn as nn
-
-
-class Nonlocal(nn.Module):
-    """
-    Builds Non-local Neural Networks as a generic family of building
-    blocks for capturing long-range dependencies. Non-local Network
-    computes the response at a position as a weighted sum of the
-    features at all positions. This building block can be plugged into
-    many computer vision architectures.
-    More details in the paper: https://arxiv.org/pdf/1711.07971.pdf
-    """
-
-    def __init__(
-        self,
-        dim,
-        dim_inner,
-        pool_size=None,
-        instantiation="softmax",
-        norm_type="batchnorm",
-        zero_init_final_conv=False,
-        zero_init_final_norm=True,
-        norm_eps=1e-5,
-        norm_momentum=0.1,
-    ):
-        """
-        Args:
-            dim (int): number of dimension for the input.
-            dim_inner (int): number of dimension inside of the Non-local block.
-            pool_size (list): the kernel size of spatial temporal pooling,
-                temporal pool kernel size, spatial pool kernel size, spatial
-                pool kernel size in order. By default pool_size is None,
-                then there would be no pooling used.
-            instantiation (string): supports two different instantiation method:
-                "dot_product": normalizing correlation matrix with L2.
-                "softmax": normalizing correlation matrix with Softmax.
-            norm_type (string): support BatchNorm and LayerNorm for
-                normalization.
-                "batchnorm": using BatchNorm for normalization.
-                "layernorm": using LayerNorm for normalization.
-                "none": not using any normalization.
-            zero_init_final_conv (bool): If true, zero initializing the final
-                convolution of the Non-local block.
-            zero_init_final_norm (bool):
-                If true, zero initializing the final batch norm of the Non-local
-                block.
-        """
-        super(Nonlocal, self).__init__()
-        self.dim = dim
-        self.dim_inner = dim_inner
-        self.pool_size = pool_size
-        self.instantiation = instantiation
-        self.norm_type = norm_type
-        self.use_pool = (
-            False
-            if pool_size is None
-            else any((size > 1 for size in pool_size))
-        )
-        self.norm_eps = norm_eps
-        self.norm_momentum = norm_momentum
-        self._construct_nonlocal(zero_init_final_conv, zero_init_final_norm)
-
-    def _construct_nonlocal(self, zero_init_final_conv, zero_init_final_norm):
-        # Three convolution heads: theta, phi, and g.
-        self.conv_theta = nn.Conv3d(
-            self.dim, self.dim_inner, kernel_size=1, stride=1, padding=0
-        )
-        self.conv_phi = nn.Conv3d(
-            self.dim, self.dim_inner, kernel_size=1, stride=1, padding=0
-        )
-        self.conv_g = nn.Conv3d(
-            self.dim, self.dim_inner, kernel_size=1, stride=1, padding=0
-        )
-
-        # Final convolution output.
-        self.conv_out = nn.Conv3d(
-            self.dim_inner, self.dim, kernel_size=1, stride=1, padding=0
-        )
-        # Zero initializing the final convolution output.
-        self.conv_out.zero_init = zero_init_final_conv
-
-        if self.norm_type == "batchnorm":
-            self.bn = nn.BatchNorm3d(
-                self.dim, eps=self.norm_eps, momentum=self.norm_momentum
-            )
-            # Zero initializing the final bn.
-            self.bn.transform_final_bn = zero_init_final_norm
-        elif self.norm_type == "layernorm":
-            # In Caffe2 the LayerNorm op does not contain the scale an bias
-            # terms described in the paper:
-            # https://caffe2.ai/docs/operators-catalogue.html#layernorm
-            # Builds LayerNorm as GroupNorm with one single group.
-            # Setting Affine to false to align with Caffe2.
-            self.ln = nn.GroupNorm(1, self.dim, eps=self.norm_eps, affine=False)
-        elif self.norm_type == "none":
-            # Does not use any norm.
-            pass
+    if force_cpu:
+        device = torch.device('cpu')
+    else:
+        if torch.cuda.is_available():
+            device = torch.device('cuda')
         else:
-            raise NotImplementedError(
-                "Norm type {} is not supported".format(self.norm_type)
-            )
-
-        # Optional to add the spatial-temporal pooling.
-        if self.use_pool:
-            self.pool = nn.MaxPool3d(
-                kernel_size=self.pool_size,
-                stride=self.pool_size,
-                padding=[0, 0, 0],
-            )
-
-    def forward(self, x):
-        x_identity = x
-        N, C, T, H, W = x.size()
-
-        theta = self.conv_theta(x)
-
-        # Perform temporal-spatial pooling to reduce the computation.
-        if self.use_pool:
-            x = self.pool(x)
-
-        phi = self.conv_phi(x)
-        g = self.conv_g(x)
-
-        theta = theta.view(N, self.dim_inner, -1)
-        phi = phi.view(N, self.dim_inner, -1)
-        g = g.view(N, self.dim_inner, -1)
-
-        # (N, C, TxHxW) * (N, C, TxHxW) => (N, TxHxW, TxHxW).
-        theta_phi = torch.einsum("nct,ncp->ntp", (theta, phi))
-        # For original Non-local paper, there are two main ways to normalize
-        # the affinity tensor:
-        #   1) Softmax normalization (norm on exp).
-        #   2) dot_product normalization.
-        if self.instantiation == "softmax":
-            # Normalizing the affinity tensor theta_phi before softmax.
-            theta_phi = theta_phi * (self.dim_inner ** -0.5)
-            theta_phi = nn.functional.softmax(theta_phi, dim=2)
-        elif self.instantiation == "dot_product":
-            spatial_temporal_dim = theta_phi.shape[2]
-            theta_phi = theta_phi / spatial_temporal_dim
-        else:
-            raise NotImplementedError(
-                "Unknown norm type {}".format(self.instantiation)
-            )
-
-        # (N, TxHxW, TxHxW) * (N, C, TxHxW) => (N, C, TxHxW).
-        theta_phi_g = torch.einsum("ntg,ncg->nct", (theta_phi, g))
-
-        # (N, C, TxHxW) => (N, C, T, H, W).
-        theta_phi_g = theta_phi_g.view(N, self.dim_inner, T, H, W)
-
-        p = self.conv_out(theta_phi_g)
-        if self.norm_type == "batchnorm":
-            p = self.bn(p)
-        elif self.norm_type == "layernorm":
-            p = self.ln(p)
-        return x_identity + p
-
-
-def get_trans_func(name):
-    """
-    Retrieves the transformation module by name.
-    """
-    trans_funcs = {
-        "bottleneck_transform": BottleneckTransform,
-        "basic_transform": BasicTransform,
-    }
-    assert (
-        name in trans_funcs.keys()
-    ), "Transformation function '{}' not supported".format(name)
-    return trans_funcs[name]
-
-
-class BasicTransform(nn.Module):
-    """
-    Basic transformation: Tx3x3, 1x3x3, where T is the size of temporal kernel.
-    """
-
-    def __init__(
-        self,
-        dim_in,
-        dim_out,
-        temp_kernel_size,
-        stride,
-        dim_inner=None,
-        num_groups=1,
-        stride_1x1=None,
-        inplace_relu=True,
-        eps=1e-5,
-        bn_mmt=0.1,
-    ):
-        """
-        Args:
-            dim_in (int): the channel dimensions of the input.
-            dim_out (int): the channel dimension of the output.
-            temp_kernel_size (int): the temporal kernel sizes of the middle
-                convolution in the bottleneck.
-            stride (int): the stride of the bottleneck.
-            dim_inner (None): the inner dimension would not be used in
-                BasicTransform.
-            num_groups (int): number of groups for the convolution. Number of
-                group is always 1 for BasicTransform.
-            stride_1x1 (None): stride_1x1 will not be used in BasicTransform.
-            inplace_relu (bool): if True, calculate the relu on the original
-                input without allocating new memory.
-            eps (float): epsilon for batch norm.
-            bn_mmt (float): momentum for batch norm. Noted that BN momentum in
-                PyTorch = 1 - BN momentum in Caffe2.
-        """
-        super(BasicTransform, self).__init__()
-        self.temp_kernel_size = temp_kernel_size
-        self._inplace_relu = inplace_relu
-        self._eps = eps
-        self._bn_mmt = bn_mmt
-        self._construct(dim_in, dim_out, stride)
-
-    def _construct(self, dim_in, dim_out, stride):
-        # Tx3x3, BN, ReLU.
-        self.a = nn.Conv3d(
-            dim_in,
-            dim_out,
-            kernel_size=[self.temp_kernel_size, 3, 3],
-            stride=[1, stride, stride],
-            padding=[int(self.temp_kernel_size // 2), 1, 1],
-            bias=False,
-        )
-        self.a_bn = nn.BatchNorm3d(
-            dim_out, eps=self._eps, momentum=self._bn_mmt
-        )
-        self.a_relu = nn.ReLU(inplace=self._inplace_relu)
-        # 1x3x3, BN.
-        self.b = nn.Conv3d(
-            dim_out,
-            dim_out,
-            kernel_size=[1, 3, 3],
-            stride=[1, 1, 1],
-            padding=[0, 1, 1],
-            bias=False,
-        )
-        self.b_bn = nn.BatchNorm3d(
-            dim_out, eps=self._eps, momentum=self._bn_mmt
-        )
-        self.b_bn.transform_final_bn = True
-
-    def forward(self, x):
-        x = self.a(x)
-        x = self.a_bn(x)
-        x = self.a_relu(x)
-
-        x = self.b(x)
-        x = self.b_bn(x)
-        return x
-
-
-class BottleneckTransform(nn.Module):
-    """
-    Bottleneck transformation: Tx1x1, 1x3x3, 1x1x1, where T is the size of
-        temporal kernel.
-    """
-
-    def __init__(
-        self,
-        dim_in,
-        dim_out,
-        temp_kernel_size,
-        stride,
-        dim_inner,
-        num_groups,
-        stride_1x1=False,
-        inplace_relu=True,
-        eps=1e-5,
-        bn_mmt=0.1,
-    ):
-        """
-        Args:
-            dim_in (int): the channel dimensions of the input.
-            dim_out (int): the channel dimension of the output.
-            temp_kernel_size (int): the temporal kernel sizes of the middle
-                convolution in the bottleneck.
-            stride (int): the stride of the bottleneck.
-            dim_inner (int): the inner dimension of the block.
-            num_groups (int): number of groups for the convolution. num_groups=1
-                is for standard ResNet like networks, and num_groups>1 is for
-                ResNeXt like networks.
-            stride_1x1 (bool): if True, apply stride to 1x1 conv, otherwise
-                apply stride to the 3x3 conv.
-            inplace_relu (bool): if True, calculate the relu on the original
-                input without allocating new memory.
-            eps (float): epsilon for batch norm.
-            bn_mmt (float): momentum for batch norm. Noted that BN momentum in
-                PyTorch = 1 - BN momentum in Caffe2.
-        """
-        super(BottleneckTransform, self).__init__()
-        self.temp_kernel_size = temp_kernel_size
-        self._inplace_relu = inplace_relu
-        self._eps = eps
-        self._bn_mmt = bn_mmt
-        self._stride_1x1 = stride_1x1
-        self._construct(dim_in, dim_out, stride, dim_inner, num_groups)
-
-    def _construct(self, dim_in, dim_out, stride, dim_inner, num_groups):
-        (str1x1, str3x3) = (stride, 1) if self._stride_1x1 else (1, stride)
-
-        # Tx1x1, BN, ReLU.
-        self.a = nn.Conv3d(
-            dim_in,
-            dim_inner,
-            kernel_size=[self.temp_kernel_size, 1, 1],
-            stride=[1, str1x1, str1x1],
-            padding=[int(self.temp_kernel_size // 2), 0, 0],
-            bias=False,
-        )
-        self.a_bn = nn.BatchNorm3d(
-            dim_inner, eps=self._eps, momentum=self._bn_mmt
-        )
-        self.a_relu = nn.ReLU(inplace=self._inplace_relu)
-
-        # 1x3x3, BN, ReLU.
-        self.b = nn.Conv3d(
-            dim_inner,
-            dim_inner,
-            [1, 3, 3],
-            stride=[1, str3x3, str3x3],
-            padding=[0, 1, 1],
-            groups=num_groups,
-            bias=False,
-        )
-        self.b_bn = nn.BatchNorm3d(
-            dim_inner, eps=self._eps, momentum=self._bn_mmt
-        )
-        self.b_relu = nn.ReLU(inplace=self._inplace_relu)
-
-        # 1x1x1, BN.
-        self.c = nn.Conv3d(
-            dim_inner,
-            dim_out,
-            kernel_size=[1, 1, 1],
-            stride=[1, 1, 1],
-            padding=[0, 0, 0],
-            bias=False,
-        )
-        self.c_bn = nn.BatchNorm3d(
-            dim_out, eps=self._eps, momentum=self._bn_mmt
-        )
-        self.c_bn.transform_final_bn = True
-
-    def forward(self, x):
-        # Explicitly forward every layer.
-        # Branch2a.
-        x = self.a(x)
-        x = self.a_bn(x)
-        x = self.a_relu(x)
-
-        # Branch2b.
-        x = self.b(x)
-        x = self.b_bn(x)
-        x = self.b_relu(x)
-
-        # Branch2c
-        x = self.c(x)
-        x = self.c_bn(x)
-        return x
-
-
-class ResBlock(nn.Module):
-    """
-    Residual block.
-    """
-
-    def __init__(
-        self,
-        dim_in,
-        dim_out,
-        temp_kernel_size,
-        stride,
-        trans_func,
-        dim_inner,
-        num_groups=1,
-        stride_1x1=False,
-        inplace_relu=True,
-        eps=1e-5,
-        bn_mmt=0.1,
-    ):
-        """
-        ResBlock class constructs redisual blocks. More details can be found in:
-            Kaiming He, Xiangyu Zhang, Shaoqing Ren, and Jian Sun.
-            "Deep residual learning for image recognition."
-            https://arxiv.org/abs/1512.03385
-        Args:
-            dim_in (int): the channel dimensions of the input.
-            dim_out (int): the channel dimension of the output.
-            temp_kernel_size (int): the temporal kernel sizes of the middle
-                convolution in the bottleneck.
-            stride (int): the stride of the bottleneck.
-            trans_func (string): transform function to be used to construct the
-                bottleneck.
-            dim_inner (int): the inner dimension of the block.
-            num_groups (int): number of groups for the convolution. num_groups=1
-                is for standard ResNet like networks, and num_groups>1 is for
-                ResNeXt like networks.
-            stride_1x1 (bool): if True, apply stride to 1x1 conv, otherwise
-                apply stride to the 3x3 conv.
-            inplace_relu (bool): calculate the relu on the original input
-                without allocating new memory.
-            eps (float): epsilon for batch norm.
-            bn_mmt (float): momentum for batch norm. Noted that BN momentum in
-                PyTorch = 1 - BN momentum in Caffe2.
-        """
-        super(ResBlock, self).__init__()
-        self._inplace_relu = inplace_relu
-        self._eps = eps
-        self._bn_mmt = bn_mmt
-        self._construct(
-            dim_in,
-            dim_out,
-            temp_kernel_size,
-            stride,
-            trans_func,
-            dim_inner,
-            num_groups,
-            stride_1x1,
-            inplace_relu,
-        )
-
-    def _construct(
-        self,
-        dim_in,
-        dim_out,
-        temp_kernel_size,
-        stride,
-        trans_func,
-        dim_inner,
-        num_groups,
-        stride_1x1,
-        inplace_relu,
-    ):
-        # Use skip connection with projection if dim or res change.
-        if (dim_in != dim_out) or (stride != 1):
-            self.branch1 = nn.Conv3d(
-                dim_in,
-                dim_out,
-                kernel_size=1,
-                stride=[1, stride, stride],
-                padding=0,
-                bias=False,
-            )
-            self.branch1_bn = nn.BatchNorm3d(
-                dim_out, eps=self._eps, momentum=self._bn_mmt
-            )
-        self.branch2 = trans_func(
-            dim_in,
-            dim_out,
-            temp_kernel_size,
-            stride,
-            dim_inner,
-            num_groups,
-            stride_1x1=stride_1x1,
-            inplace_relu=inplace_relu,
-        )
-        self.relu = nn.ReLU(self._inplace_relu)
-
-    def forward(self, x):
-        if hasattr(self, "branch1"):
-            x = self.branch1_bn(self.branch1(x)) + self.branch2(x)
-        else:
-            x = x + self.branch2(x)
-        x = self.relu(x)
-        return x
-
-
-class ResStage(nn.Module):
-    """
-    Stage of 3D ResNet. It expects to have one or more tensors as input for
-        single pathway (C2D, I3D, SlowOnly), and multi-pathway (SlowFast) cases.
-        More details can be found here:
-        Christoph Feichtenhofer, Haoqi Fan, Jitendra Malik, and Kaiming He.
-        "Slowfast networks for video recognition."
-        https://arxiv.org/pdf/1812.03982.pdf
-    """
-
-    def __init__(
-        self,
-        dim_in,
-        dim_out,
-        stride,
-        temp_kernel_sizes,
-        num_blocks,
-        dim_inner,
-        num_groups,
-        num_block_temp_kernel,
-        nonlocal_inds,
-        nonlocal_group,
-        instantiation="softmax",
-        trans_func_name="bottleneck_transform",
-        stride_1x1=False,
-        inplace_relu=True,
-    ):
-        """
-        The `__init__` method of any subclass should also contain these arguments.
-        ResStage builds p streams, where p can be greater or equal to one.
-        Args:
-            dim_in (list): list of p the channel dimensions of the input.
-                Different channel dimensions control the input dimension of
-                different pathways.
-            dim_out (list): list of p the channel dimensions of the output.
-                Different channel dimensions control the input dimension of
-                different pathways.
-            temp_kernel_sizes (list): list of the p temporal kernel sizes of the
-                convolution in the bottleneck. Different temp_kernel_sizes
-                control different pathway.
-            stride (list): list of the p strides of the bottleneck. Different
-                stride control different pathway.
-            num_blocks (list): list of p numbers of blocks for each of the
-                pathway.
-            dim_inner (list): list of the p inner channel dimensions of the
-                input. Different channel dimensions control the input dimension
-                of different pathways.
-            num_groups (list): list of number of p groups for the convolution.
-                num_groups=1 is for standard ResNet like networks, and
-                num_groups>1 is for ResNeXt like networks.
-            num_block_temp_kernel (list): extent the temp_kernel_sizes to
-                num_block_temp_kernel blocks, then fill temporal kernel size
-                of 1 for the rest of the layers.
-            nonlocal_inds (list): If the tuple is empty, no nonlocal layer will
-                be added. If the tuple is not empty, add nonlocal layers after
-                the index-th block.
-            nonlocal_group (list): list of number of p nonlocal groups. Each
-                number controls how to fold temporal dimension to batch
-                dimension before applying nonlocal transformation.
-                https://github.com/facebookresearch/video-nonlocal-net.
-            instantiation (string): different instantiation for nonlocal layer.
-                Supports two different instantiation method:
-                    "dot_product": normalizing correlation matrix with L2.
-                    "softmax": normalizing correlation matrix with Softmax.
-            trans_func_name (string): name of the the transformation function apply
-                on the network.
-        """
-        super(ResStage, self).__init__()
-        assert all(
-            (
-                num_block_temp_kernel[i] <= num_blocks[i]
-                for i in range(len(temp_kernel_sizes))
-            )
-        )
-        self.num_blocks = num_blocks
-        self.nonlocal_group = nonlocal_group
-        self.temp_kernel_sizes = [
-            (temp_kernel_sizes[i] * num_blocks[i])[: num_block_temp_kernel[i]]
-            + [1] * (num_blocks[i] - num_block_temp_kernel[i])
-            for i in range(len(temp_kernel_sizes))
-        ]
-        assert (
-            len(
-                {
-                    len(dim_in),
-                    len(dim_out),
-                    len(temp_kernel_sizes),
-                    len(stride),
-                    len(num_blocks),
-                    len(dim_inner),
-                    len(num_groups),
-                    len(num_block_temp_kernel),
-                    len(nonlocal_inds),
-                    len(nonlocal_group),
-                }
-            )
-            == 1
-        )
-        self.num_pathways = len(self.num_blocks)
-        self._construct(
-            dim_in,
-            dim_out,
-            stride,
-            dim_inner,
-            num_groups,
-            trans_func_name,
-            stride_1x1,
-            inplace_relu,
-            nonlocal_inds,
-            instantiation,
-        )
-
-    def _construct(
-        self,
-        dim_in,
-        dim_out,
-        stride,
-        dim_inner,
-        num_groups,
-        trans_func_name,
-        stride_1x1,
-        inplace_relu,
-        nonlocal_inds,
-        instantiation,
-    ):
-        for pathway in range(self.num_pathways):
-            for i in range(self.num_blocks[pathway]):
-                # Retrieve the transformation function.
-                trans_func = get_trans_func(trans_func_name)
-                # Construct the block.
-                res_block = ResBlock(
-                    dim_in[pathway] if i == 0 else dim_out[pathway],
-                    dim_out[pathway],
-                    self.temp_kernel_sizes[pathway][i],
-                    stride[pathway] if i == 0 else 1,
-                    trans_func,
-                    dim_inner[pathway],
-                    num_groups[pathway],
-                    stride_1x1=stride_1x1,
-                    inplace_relu=inplace_relu,
-                )
-                self.add_module("pathway{}_res{}".format(pathway, i), res_block)
-                if i in nonlocal_inds[pathway]:
-                    nln = Nonlocal(
-                        dim_out[pathway],
-                        dim_out[pathway] // 2,
-                        [1, 2, 2],
-                        instantiation=instantiation,
-                    )
-                    self.add_module(
-                        "pathway{}_nonlocal{}".format(pathway, i), nln
-                    )
-
-    def forward(self, inputs):
-        output = []
-        for pathway in range(self.num_pathways):
-            x = inputs[pathway]
-            for i in range(self.num_blocks[pathway]):
-                m = getattr(self, "pathway{}_res{}".format(pathway, i))
-                x = m(x)
-                if hasattr(self, "pathway{}_nonlocal{}".format(pathway, i)):
-                    nln = getattr(
-                        self, "pathway{}_nonlocal{}".format(pathway, i)
-                    )
-                    b, c, t, h, w = x.shape
-                    if self.nonlocal_group[pathway] > 1:
-                        # Fold temporal dimension into batch dimension.
-                        x = x.permute(0, 2, 1, 3, 4)
-                        x = x.reshape(
-                            b * self.nonlocal_group[pathway],
-                            t // self.nonlocal_group[pathway],
-                            c,
-                            h,
-                            w,
-                        )
-                        x = x.permute(0, 2, 1, 3, 4)
-                    x = nln(x)
-                    if self.nonlocal_group[pathway] > 1:
-                        # Fold back to temporal dimension.
-                        x = x.permute(0, 2, 1, 3, 4)
-                        x = x.reshape(b, t, c, h, w)
-                        x = x.permute(0, 2, 1, 3, 4)
-            output.append(x)
-
-        return output
-
-
-# from model.head_helper import ResNetBasicHead
-
-import torch
-import torch.nn as nn
-
-
-class ResNetBasicHead(nn.Module):
-    """
-    ResNe(X)t 3D head.
-    This layer performs a fully-connected projection during training, when the
-    input size is 1x1x1. It performs a convolutional projection during testing
-    when the input size is larger than 1x1x1. If the inputs are from multiple
-    different pathways, the inputs will be concatenated after pooling.
-    """
-
-    def __init__(
-        self,
-        dim_in,
-        num_classes,
-        pool_size,
-        dropout_rate=0.0,
-        act_func="softmax",
-    ):
-        """
-        The `__init__` method of any subclass should also contain these
-            arguments.
-        ResNetBasicHead takes p pathways as input where p in [1, infty].
-        Args:
-            dim_in (list): the list of channel dimensions of the p inputs to the
-                ResNetHead.
-            num_classes (int): the channel dimensions of the p outputs to the
-                ResNetHead.
-            pool_size (list): the list of kernel sizes of p spatial temporal
-                poolings, temporal pool kernel size, spatial pool kernel size,
-                spatial pool kernel size in order.
-            dropout_rate (float): dropout rate. If equal to 0.0, perform no
-                dropout.
-            act_func (string): activation function to use. 'softmax': applies
-                softmax on the output. 'sigmoid': applies sigmoid on the output.
-        """
-        super(ResNetBasicHead, self).__init__()
-        assert (
-            len({len(pool_size), len(dim_in)}) == 1
-        ), "pathway dimensions are not consistent."
-        self.num_pathways = len(pool_size)
-
-        for pathway in range(self.num_pathways):
-            avg_pool = nn.AvgPool3d(pool_size[pathway], stride=1)
-            self.add_module("pathway{}_avgpool".format(pathway), avg_pool)
-
-        if dropout_rate > 0.0:
-            self.dropout = nn.Dropout(dropout_rate)
-        # Perform FC in a fully convolutional manner. The FC layer will be
-        # initialized with a different std comparing to convolutional layers.
-        self.projection = nn.Linear(sum(dim_in), num_classes, bias=True)
-
-        # Softmax for evaluation and testing.
-        if act_func == "softmax":
-            self.act = nn.Softmax(dim=4)
-        elif act_func == "sigmoid":
-            self.act = nn.Sigmoid()
-        else:
-            raise NotImplementedError(
-                "{} is not supported as an activation"
-                "function.".format(act_func)
-            )
-
-    def forward(self, inputs):
-        assert (
-            len(inputs) == self.num_pathways
-        ), "Input tensor does not contain {} pathway".format(self.num_pathways)
-        pool_out = []
-        for pathway in range(self.num_pathways):
-            m = getattr(self, "pathway{}_avgpool".format(pathway))
-            pool_out.append(m(inputs[pathway]))
-        x = torch.cat(pool_out, 1)
-        # (N, C, T, H, W) -> (N, T, H, W, C).
-        x = x.permute((0, 2, 3, 4, 1))
-        # Perform dropout.
-        if hasattr(self, "dropout"):
-            x = self.dropout(x)
-        x = self.projection(x)
-
-        # Performs fully convlutional inference.
-        if not self.training:
-            x = self.act(x)
-            x = x.mean([1, 2, 3])
-
-        x = x.view(x.shape[0], -1)
-        return x
-
-# import ops.weight_init_helper as init_helper
-"""Utility function for weight initialization"""
-
-import torch.nn as nn
-from fvcore.nn.weight_init import c2_msra_fill
-
-
-def init_weights(model, fc_init_std=0.01, zero_init_final_bn=True):
-    """
-    Performs ResNet style weight initialization.
-    Args:
-        fc_init_std (float): the expected standard deviation for fc layer.
-        zero_init_final_bn (bool): if True, zero initialize the final bn for
-            every bottleneck.
-    """
-    for m in model.modules():
-        if isinstance(m, nn.Conv3d):
-            """
-            Follow the initialization method proposed in:
-            {He, Kaiming, et al.
-            "Delving deep into rectifiers: Surpassing human-level
-            performance on imagenet classification."
-            arXiv preprint arXiv:1502.01852 (2015)}
-            """
-            c2_msra_fill(m)
-        elif isinstance(m, nn.BatchNorm3d):
-            if (
-                hasattr(m, "transform_final_bn")
-                and m.transform_final_bn
-                and zero_init_final_bn
-            ):
-                batchnorm_weight = 0.0
-            else:
-                batchnorm_weight = 1.0
-            m.weight.data.fill_(batchnorm_weight)
-            m.bias.data.zero_()
-        if isinstance(m, nn.Linear):
-            m.weight.data.normal_(mean=0.0, std=fc_init_std)
-            m.bias.data.zero_()
-
-#_MODEL_STAGE_DEPTH = {50: (3, 4, 6, 3), 101: (3, 4, 23, 3)}
-_MODEL_STAGE_DEPTH = {50: (1, 1, 1, 1), 101: (3, 4, 23, 3)}
-
-_POOL1 = {
-    "c2d": [[2, 1, 1]],
-    "c2d_nopool": [[1, 1, 1]],
-    "i3d": [[2, 1, 1]],
-    "i3d_nopool": [[1, 1, 1]],
-    "slowonly": [[1, 1, 1]],
-    "slowfast": [[1, 1, 1], [1, 1, 1]],
-}
-
-# Basis of temporal kernel sizes for each of the stage.
-_TEMPORAL_KERNEL_BASIS = {
-    "c2d": [
-        [[1]],  # conv1 temporal kernel.
-        [[1]],  # res2 temporal kernel.
-        [[1]],  # res3 temporal kernel.
-        [[1]],  # res4 temporal kernel.
-        [[1]],  # res5 temporal kernel.
-    ],
-    "c2d_nopool": [
-        [[1]],  # conv1 temporal kernel.
-        [[1]],  # res2 temporal kernel.
-        [[1]],  # res3 temporal kernel.
-        [[1]],  # res4 temporal kernel.
-        [[1]],  # res5 temporal kernel.
-    ],
-    "i3d": [
-        [[5]],  # conv1 temporal kernel.
-        [[3]],  # res2 temporal kernel.
-        [[3, 1]],  # res3 temporal kernel.
-        [[3, 1]],  # res4 temporal kernel.
-        [[1, 3]],  # res5 temporal kernel.
-    ],
-    "i3d_nopool": [
-        [[5]],  # conv1 temporal kernel.
-        [[3]],  # res2 temporal kernel.
-        [[3, 1]],  # res3 temporal kernel.
-        [[3, 1]],  # res4 temporal kernel.
-        [[1, 3]],  # res5 temporal kernel.
-    ],
-    "slowonly": [
-        [[1]],  # conv1 temporal kernel.
-        [[1]],  # res2 temporal kernel.
-        [[1]],  # res3 temporal kernel.
-        [[3]],  # res4 temporal kernel.
-        [[3]],  # res5 temporal kernel.
-    ],
-    "slowfast": [
-        [[1], [5]],  # conv1 temporal kernel for slow and fast pathway.
-        [[1], [3]],  # res2 temporal kernel for slow and fast pathway.
-        [[1], [3]],  # res3 temporal kernel for slow and fast pathway.
-        [[3], [3]],  # res4 temporal kernel for slow and fast pathway.
-        [[3], [3]],  # res5 temporal kernel for slow and fast pathway.
-    ],
-}
-
-_POOL1 = {
-    "c2d": [[2, 1, 1]],
-    "c2d_nopool": [[1, 1, 1]],
-    "i3d": [[2, 1, 1]],
-    "i3d_nopool": [[1, 1, 1]],
-    "slowonly": [[1, 1, 1]],
-    "slowfast": [[1, 1, 1], [1, 1, 1]],
-}
-
-
-class ENModel(nn.Module):
-    """
-    It builds a ResNet like network backbone without lateral connection.
-    Copied from https://github.com/facebookresearch/SlowFast/blob/master/slowfast/models/model_builder.py
-    """
-    def __init__(self, arch="i3d",
-                       resnet_depth=50,     # 50/101
-                       input_channel=1,
-                       num_frames=-1,
-                       crop_h=-1,
-                       crop_w=-1,
-                       num_classes=2,
-                       ):
-        super(ENModel, self).__init__()
-
-        self.num_pathways = 1        # Because it is only slow, so it is 1
-        assert arch in _POOL1.keys()
-        pool_size = _POOL1[arch]
-        assert len({len(pool_size), self.num_pathways}) == 1
-        assert resnet_depth in _MODEL_STAGE_DEPTH.keys()
-        (d2, d3, d4, d5) = _MODEL_STAGE_DEPTH[resnet_depth]
-
-        # vanilla params
-        num_groups = 1
-        width_per_group = 16        # origin: 64
-        dim_inner = num_groups * width_per_group
-
-        temp_kernel = _TEMPORAL_KERNEL_BASIS[arch]
-
-        self.s1 = VideoModelStem(
-                dim_in=[input_channel],
-                dim_out=[width_per_group],
-                kernel=[temp_kernel[0][0] + [7, 7]],
-                stride=[[1, 2, 2]],
-                padding=[[temp_kernel[0][0][0] // 2, 3, 3]],
-        )
-
-        self.s2 = ResStage(
-                dim_in=[width_per_group],
-                dim_out=[width_per_group * 4],
-                dim_inner=[dim_inner],
-                temp_kernel_sizes=temp_kernel[1],
-                stride=[1],
-                num_blocks=[d2],
-                num_groups=[num_groups],
-                num_block_temp_kernel=[d2],
-                nonlocal_inds=[[]],
-                nonlocal_group=[1],
-                instantiation='softmax',
-                trans_func_name='bottleneck_transform',
-                stride_1x1=False,
-                inplace_relu=True,
-        )
-
-        for pathway in range(self.num_pathways):
-            pool = nn.MaxPool3d(
-                    kernel_size=pool_size[pathway],
-                    stride=pool_size[pathway],
-                    padding=[0, 0, 0]
-            )
-            self.add_module("pathway{}_pool".format(pathway), pool)
-
-        self.s3 = ResStage(
-                dim_in=[width_per_group * 4],
-                dim_out=[width_per_group * 8],
-                dim_inner=[dim_inner * 2],
-                temp_kernel_sizes=temp_kernel[2],
-                stride=[2],
-                num_blocks=[d3],
-                num_groups=[num_groups],
-                num_block_temp_kernel=[d3],
-                nonlocal_inds=[[]],
-                nonlocal_group=[1],
-                instantiation='softmax',
-                trans_func_name='bottleneck_transform',
-                stride_1x1=False,
-                inplace_relu=True,
-        )
-
-        self.s4 = ResStage(
-                dim_in=[width_per_group * 8],
-                dim_out=[width_per_group * 16],
-                dim_inner=[dim_inner * 4],
-                temp_kernel_sizes=temp_kernel[3],
-                stride=[2],
-                num_blocks=[d4],
-                num_groups=[num_groups],
-                num_block_temp_kernel=[d4],
-                nonlocal_inds=[[]],
-                nonlocal_group=[1],
-                instantiation='softmax',
-                trans_func_name='bottleneck_transform',
-                stride_1x1=False,
-                inplace_relu=True,
-        )
-
-        self.s5 = ResStage(
-                dim_in=[width_per_group * 16],
-                dim_out=[width_per_group * 32],
-                dim_inner=[dim_inner * 8],
-                temp_kernel_sizes=temp_kernel[4],
-                stride=[2],
-                num_blocks=[d5],
-                num_groups=[num_groups],
-                num_block_temp_kernel=[d5],
-                nonlocal_inds=[[]],
-                nonlocal_group=[1],
-                instantiation='softmax',
-                trans_func_name='bottleneck_transform',
-                stride_1x1=False,
-                inplace_relu=True,
-        )
-
-        # Classifier
-        #self.head = ResNetBasicHead(
-        #        dim_in=[width_per_group * 32],
-        #        num_classes=num_classes,
-        #        pool_size=[
-        #            [
-        #                num_frames // pool_size[0][0],
-        #                crop_h // 32 // pool_size[0][1],
-        #                crop_w // 32 // pool_size[0][2],
-        #            ]
-        #        ],
-        #        dropout_rate=0.5,
-        #)
-
-
-        self.head = nn.Sequential(
-                            nn.AdaptiveMaxPool3d((16, 24, 36)),
-                            nn.Conv3d(128, 64, kernel_size = 3, padding = 1),
-                            nn.ReLU(inplace=True),
-                            nn.AdaptiveMaxPool3d((4, 12, 18)),
-                            nn.Conv3d(64, 32, kernel_size=3, padding=1),
-                            nn.ReLU(inplace=True),
-                            nn.AdaptiveMaxPool3d((1, 6, 9)),
-                            nn.Dropout3d(p = 0),
-                            nn.Conv3d(32, 32, kernel_size=3, padding=1),
-                            nn.ReLU(inplace=True),
-                            nn.AdaptiveMaxPool3d((1, 1, 1)),
-                        )
-        self.classifier = nn.Sequential(
-                            nn.Linear(32, 32),
-                            nn.Linear(32, 2)
-                        )
-
-        # init weights
-        init_weights(
-            self, fc_init_std=0.01, zero_init_final_bn=True
-        )
-
-
-    def forward(self, x):
-        # for pathway in range(self.num_pathways):
-        #    x[pathway] = x[pathway] - self.mean
-        x = self.s1(x)
-        x = self.s2(x)
-        for pathway in range(self.num_pathways):
-            pool = getattr(self, "pathway{}_pool".format(pathway))
-            x[pathway] = pool(x[pathway])
-        x = self.s3(x)
-        x = self.head(x[0])
-        n, c = x.size(0), x.size(1)
-        x = self.classifier(x.view(n, c))
-        #x = self.s4(x)
-        #x = self.s5(x)
-        #x = self.head(x)
-        return x
-
-
-if __name__ == "__main__":
-    model = ENModel()
-    aa = torch.ones((1, 1, 10, 128, 128))
-    model([aa])
-    model_param = sum(x.numel() for x in model.parameters())
-    print (model_param)
-
-
-# model = import_module(f"model.{MODEL_UID}")
-# ENModel = getattr(model, "ENModel")
-
-criterion = torch.nn.CrossEntropyLoss(reduction="mean")
-
-model = ENModel(arch=ARCH, resnet_depth=DEPTH,
-                input_channel=2, num_classes=NUM_CLASSES)
-model = torch.nn.DataParallel(model).cuda()
-
-# print('MODEL')
-# print(model)
-
-# print('PRE-TRAINED')
-# print(torch.load(PRETRAINED_MODEL_PATH))
-
-model.load_state_dict(torch.load('ncov-Epoch_00140-auc95p9.pth'))
-
-ValidLoader = torch.utils.data.DataLoader(Validset,
-                                    batch_size=1,
-                                    num_workers=NUM_WORKERS,
-                                    collate_fn=Train_Collatefn,
-                                    shuffle=False,)
-
-Val_CE, Val_Acc = [ScalarContainer() for _ in range(2)]
-
-gts, pcovs = [], []
-
-# copied from metrics
-def sensitivity_specificity(y_true, y_score):
-    desc_score_indices = np.argsort(y_score, kind="mergesort")[::-1]
-    y_score = y_score[desc_score_indices]
-    y_true = y_true[desc_score_indices]
-
-    N = len(y_score)
-    tp, fp = 0, 0
-    condition_positive, condition_negative = np.sum(y_true), N-np.sum(y_true)
-
-    sensitivity, specificity = np.zeros(N), np.zeros(N)
-
-    for i in range(N):
-        predicted_positive = i+1
-        predicted_negative = N - predicted_positive
-        if y_true[i] == 1:
-            tp += 1
-        else:
-            fp += 1
-
-        tn = condition_negative - fp
-
-        sensitivity[i] = tp / float(condition_positive)
-        specificity[i] = tn / float(condition_negative + 1e-6)
-
-        # print( "tp: {}, fp: {}, tn: {}, sens: {}, spec: {}".format( tp,fp,tn,sensitivity[i], specificity[i]  )  )
-
-    sensitivity, specificity = np.r_[0, sensitivity, 1], np.r_[1, specificity, 0]
-    auc = 0
-    for i in range(len(sensitivity)-1):
-        # auc += (sensitivity[i+1]-sensitivity[i]) * specificity[i]
-        auc += (sensitivity[i+1]-sensitivity[i]) * specificity[i]
-
-    return sensitivity, specificity, auc
-
-
-with torch.no_grad():
-    for i, (all_F, all_L, all_info) in enumerate(ValidLoader):
-        labels = all_L.cuda()
-        preds = model([all_F.cuda()])
-
-        # val_loss = criterion(preds, labels)
-        val_acc = topk_accuracies(preds, labels, [1])[0]
-
-        name = all_info[0]["name"]
-        pid = name.split('/')[-1][:-4]
-
-        prob_preds = F.softmax(preds, dim=1)
-        prob_normal = prob_preds[0, 0].item()
-        prob_ncov = prob_preds[0, 1].item()
-        gt = labels.item()
-
-        gts.append(gt)
-        pcovs.append(prob_ncov)
-
-        print ("{} {} {} {} {}".format(all_info[0]["name"], pid, prob_normal, prob_ncov, labels.item()))
-
-        # Val_CE.write(val_loss); Val_Acc.write(val_acc)
-
-# from metrics import sensitivity_specificity
-Ece, Eacc = Val_CE.read(), Val_Acc.read()
-gts, pcovs = np.asarray(gts), np.asarray(pcovs)
-_, _, Eauc = sensitivity_specificity(gts, pcovs)
-e = 0
-print("VALIDATION | E [{}] | CE: {:1.5f} | ValAcc: {:1.3f} | ValAUC: {:1.3f}".format(e, Ece, Eacc, Eauc))
-
-"""# Getting Training to work"""
-
-# import warnings
+            logging.info("No GPU support available, will use CPU. Note, that this is significantly slower!")
+            batch_size = 1
+            device = torch.device('cpu')
+    model.to(device)
+
+
+    if not noHU:
+        tvolslices, xnew_box = utils.preprocess(inimg_raw, resolution=[256, 256])
+        tvolslices[tvolslices > 600] = 600
+        tvolslices = np.divide((tvolslices + 1024), 1624)
+    else:
+        # support for non HU images. This is just a hack. The models were not trained with this in mind
+        tvolslices = skimage.color.rgb2gray(inimg_raw)
+        tvolslices = skimage.transform.resize(tvolslices, [256, 256])
+        tvolslices = np.asarray([tvolslices*x for x in np.linspace(0.3,2,20)])
+        tvolslices[tvolslices>1] = 1
+        sanity = [(tvolslices[x]>0.6).sum()>25000 for x in range(len(tvolslices))]
+        tvolslices = tvolslices[sanity]
+    torch_ds_val = utils.LungLabelsDS_inf(tvolslices)
+    dataloader_val = torch.utils.data.DataLoader(torch_ds_val, batch_size=batch_size, shuffle=False, pin_memory=False)
+
+    timage_res = np.empty((np.append(0, tvolslices[0].shape)), dtype=np.uint8)
+
+    with torch.no_grad():
+        for X in tqdm(dataloader_val):
+            X = X.float().to(device)
+            prediction = model(X)
+            pls = torch.max(prediction, 1)[1].detach().cpu().numpy().astype(np.uint8)
+            timage_res = np.vstack((timage_res, pls))
+
+    # postprocessing includes removal of small connected components, hole filling and mapping of small components to
+    # neighbors
+    if volume_postprocessing:
+        outmask = utils.postrocessing(timage_res)
+    else:
+        outmask = timage_res
+
+    if noHU:
+        outmask = skimage.transform.resize(outmask[np.argmax((outmask==1).sum(axis=(1,2)))], inimg_raw.shape[:2], order=0, anti_aliasing=False, preserve_range=True)[None,:,:]
+    else:
+         outmask = np.asarray(
+            [utils.reshape_mask(outmask[i], xnew_box[i], inimg_raw.shape[1:]) for i in range(outmask.shape[0])],
+            dtype=np.uint8)
+
+    if not numpy_mode:
+        if len(directions) == 9:
+            outmask = np.flip(outmask, np.where(directions[[0,4,8]][::-1]<0)[0])
+
+    return outmask.astype(np.uint8)
+
+
+def get_model(modeltype, modelname, modelpath=None, n_classes=3):
+    if modelpath is None:
+        model_url, n_classes = model_urls[(modeltype, modelname)]
+        state_dict = torch.hub.load_state_dict_from_url(model_url, progress=True, map_location=torch.device('cpu'))
+    else:
+        state_dict = torch.load(modelpath, map_location=torch.device('cpu'))
+
+    if modeltype == 'unet':
+        model = UNet(n_classes=n_classes, padding=True, depth=5, up_mode='upsample', batch_norm=True, residual=False)
+    elif modeltype == 'resunet':
+        model = UNet(n_classes=n_classes, padding=True, depth=5, up_mode='upsample', batch_norm=True, residual=True)
+    else:
+        logging.exception(f"Model {modelname} not known")
+    model.load_state_dict(state_dict)
+    model.eval()
+    return model
+
+
+def apply_fused(image, basemodel = 'LTRCLobes', fillmodel = 'R231', force_cpu=False, batch_size=20, volume_postprocessing=True, noHU=False):
+    '''Will apply basemodel and use fillmodel to mitiage false negatives'''
+    mdl_r = get_model('unet',fillmodel)
+    mdl_l = get_model('unet',basemodel)
+    logging.info("Apply: %s" % basemodel)
+    res_l = apply(image, mdl_l, force_cpu=force_cpu, batch_size=batch_size,  volume_postprocessing=volume_postprocessing, noHU=noHU)
+    logging.info("Apply: %s" % fillmodel)
+    res_r = apply(image, mdl_r, force_cpu=force_cpu, batch_size=batch_size,  volume_postprocessing=volume_postprocessing, noHU=noHU)
+    spare_value = res_l.max()+1
+    res_l[np.logical_and(res_l==0, res_r>0)] = spare_value
+    res_l[res_r==0] = 0
+    logging.info("Fusing results... this may take up to several minutes!")
+    return utils.postrocessing(res_l, spare=[spare_value])
+############### end of lungmask.py
+
+pth = 'dataset3/1NonCOVID/N314_16.png'
+model = get_model('unet', 'R231')
+img = sitk.ReadImage(pth)
+seg = mask.apply(img, model)
+
+run.log_image('test_img', img)
+run.log_image('test_seg', seg)
+
+
+
+#################### below to end commented out temporatily to try to get this to work
+# # removed above the bit which made teh dataset and txt files
+# # these can now be found in dataset3.py
+# # though still need to copy a file over from ImageSets/lung_test.txt to ImageSets-old/lung_test.txt
 #
-# def fxn():
-#     warnings.warn("deprecated", UserWarning)
+# """# Unet"""
 #
-# with warnings.catch_warnings():
-#     warnings.simplefilter("once")
-#     fxn()
+# # using the pretrained model originally
 #
-# import warnings
-# warnings.filterwarnings("ignore", category=UserWarning)
-
-############### Set up Variables ###############
-TRAIN_CROP_SIZE = tuple([224, 336])
-CLIP_RANGE = [float(x) for x in [0.3, 0.7]]
-DATA_ROOT = 'dataset3/NCOV-BF'
-BATCH_SIZE_PER_GPU = 1
-LEARNING_RATE = 1e-5
-WEIGHT_DECAY = 0
-LR_DECAY = 1
-INIT_MODEL_PATH = 'ncov-Epoch_00140-auc95p9.pth'
-INIT_MODEL_STRICT = "True"
-SNAPSHOT_FREQ = 5
-TRAIN_EPOCH = 300
-SNAPSHOT_HOME = "experiments"
-SNAPSHOT_MODEL_TPL = "ncov-Epoch_{:05d}.pth"
-
-
-
-random.seed(0); torch.manual_seed(0); np.random.seed(0)
-local_rank = 0
-
-
-############### Set up Dataloaders ###############
-Trainset = CTDataset(data_home=DATA_ROOT,
-                     split='train',
-                     #fold_id=FOLD_ID,
-                     crop_size=TRAIN_CROP_SIZE,
-                     clip_range=CLIP_RANGE)
-
-Validset = CTDataset(data_home=DATA_ROOT,
-                     split='valid',
-                     #fold_id=FOLD_ID,
-                     crop_size=TRAIN_CROP_SIZE,
-                     clip_range=CLIP_RANGE)
-
-
-
-model = ENModel(arch=ARCH, resnet_depth=DEPTH,
-                    input_channel=2,
-                    crop_h=TRAIN_CROP_SIZE[0],
-                    crop_w=TRAIN_CROP_SIZE[1], num_classes=NUM_CLASSES)
-model = torch.nn.DataParallel(model).cuda()
-TrainLoader = torch.utils.data.DataLoader(Trainset,
-                                    batch_size=BATCH_SIZE_PER_GPU,
-                                        num_workers=NUM_WORKERS,
-                                        collate_fn=Train_Collatefn,
-                                        shuffle=True,
-                                        pin_memory=True)
-
-
-model.eval()
-
-
-
-############### Set up Optimization ###############
-optimizer = torch.optim.Adam(model.parameters(), lr=LEARNING_RATE, weight_decay=WEIGHT_DECAY)
-lr_scher = torch.optim.lr_scheduler.ExponentialLR(optimizer, gamma=LR_DECAY, last_epoch=-1)
-criterion = torch.nn.CrossEntropyLoss(reduction="mean")
-
-
-model.load_state_dict(torch.load(INIT_MODEL_PATH, \
-                 map_location=f'cuda:{local_rank}'), strict=INIT_MODEL_STRICT)
-
-
-dset_len, loader_len = len(Trainset), len(TrainLoader)
-
-Epoch_CE, Epoch_Acc = [ScalarContainer() for _ in range(2)]
-
-############### Sending Model data to Neptune ###############
-run["config/model"] = type(model).__name__
-run["config/criterion"] = type(criterion).__name__
-run["config/optimizer"] = type(optimizer).__name__
-
-
-dataset_size = {"train": len(Trainset), "val": len(Validset), 'test': len(Validset)}
-# currently Validset & Testset are the same size
-
-data_tfms = {'function': 'cta_images, cta_masks = Rand_Transforms(cta_images, cta_masks, ANGLE_R=10, TRANS_R=0.1, SCALE_R=0.2, SHEAR_R=10, BRIGHT_R=0.5, CONTRAST_R=0.3)',
-'ANGLE_R': 10,
-'TRANS_R': 0.1,
-'SCALE_R': 0.2,
-'SHEAR_R': 10,
-'BRIGHT_R': 0.5,
-'CONTRAST_R': 0.3,
-}
-
-run["config/dataset/path"] = 'dataset3/NCOV-BF'
-run["config/dataset/transforms"] =  data_tfms
-run["config/dataset/size"] = dataset_size
-
-
-parameters = {
-    "lr": LEARNING_RATE,
-    "bs": BATCH_SIZE_PER_GPU,
-    "input_sz": 224 * 336 ,
-    "n_classes": NUM_CLASSES,
-    "model_filename": "decovnet_v0_10ep",
-    "device": torch.device("cuda:0" if torch.cuda.is_available() else "cpu"),
-    'weight_decay': WEIGHT_DECAY,
-    'lr_decay': LR_DECAY,
-    'train_crop_size': TRAIN_CROP_SIZE,
-    'clip_range': CLIP_RANGE,
-    'SNAPSHOT_FREQ': SNAPSHOT_FREQ,
-    'train_epoch': TRAIN_EPOCH,
-    'pre-trained-DeCoVNet': 'ncov-Epoch_00140-auc95p9.pth',
-}
-
-run["config/hyperparameters"] = parameters
-
-
-############### Training ###############
-for e in range(TRAIN_EPOCH):
-    run["training/batch/epoch"].log(e)
-    for i, (all_F, all_L, all_info) in enumerate(TrainLoader):
-        optimizer.zero_grad()
-
-        # tik = time.time()
-        preds = model([all_F.cuda(non_blocking=True)])   # I3D
-        labels = all_L.cuda(non_blocking=True)
-        loss = criterion(preds, labels)
-
-
-        acc = topk_accuracies(preds, labels, [1])[0]
-        # rT += time.time()-tik
-        Epoch_CE.write(loss); Epoch_Acc.write(acc);
-
-        run["training/batch/loss"].log(loss)
-        run["training/batch/acc"].log(acc)
-
-        loss.backward()
-        optimizer.step()
-
-        # Epoch_CE = loss
-        # Epoch_Acc = acc
-        #break
-
-    Ece, Eacc = Epoch_CE.read(), Epoch_Acc.read()
-
-    # Ece, Eacc = Epoch_CE, Epoch_Acc
-    print("EN | E-R [{}-{}] | I [{}] | CE: {:1.5f} | TrainAcc: {:1.3f}".format(e, local_rank, loader_len, Ece, Eacc))
-
-    if local_rank == 0:
-        if e % SNAPSHOT_FREQ == 0 or e >= TRAIN_EPOCH-1:
-            #model.eval()
-            model_save_path = os.path.join(SNAPSHOT_HOME, SNAPSHOT_MODEL_TPL.format(e))
-            print(f"Dump weights {model_save_path} to disk...")
-            torch.save(model.state_dict(), model_save_path)
-
-            ValidLoader = torch.utils.data.DataLoader(Validset,
-                                                batch_size=1,
-                                                num_workers=NUM_WORKERS,
-                                                collate_fn=Train_Collatefn,
-                                                shuffle=True,)
-
-            Val_CE, Val_Acc = [ScalarContainer() for _ in range(2)]
-
-            print("Do evaluation...")
-            with torch.no_grad():
-                gts = []
-                pcovs = []
-                for i, (all_F, all_L, all_info) in enumerate(ValidLoader):
-                    labels = all_L.cuda(non_blocking=True)
-                    preds = model([all_F.cuda(non_blocking=True)])
-                    val_loss = criterion(preds, labels)
-                    val_acc = topk_accuracies(preds, labels, [1])[0]
-
-                    run["validation/batch/loss"].log(val_loss)
-                    run["validation/batch/acc"].log(val_acc)
-
-                    prob_preds = F.softmax(preds, dim=1)
-                    prob_normal = prob_preds[0, 0].item()
-                    prob_ncov = prob_preds[0, 1].item()
-                    gt = labels.item()
-
-                    gts.append(gt)
-                    pcovs.append(prob_ncov)
-
-                    Val_CE.write(val_loss); Val_Acc.write(val_acc)
-
-                    # Val_CE = val_loss
-                    # Val_Acc = val_acc
-
-                #Eap = average_precision_score(gts, pcovs)
-                gts, pcovs = np.asarray(gts), np.asarray(pcovs)
-                _, _, Eauc = sensitivity_specificity(gts, pcovs)
-
-                # Ece = Val_CE
-                # Eacc = Val_Acc
-                Ece, Eacc = Val_CE.read(), Val_Acc.read()
-
-                print("VALIDATION | E [{}] | CE: {:1.5f} | ValAcc: {:1.3f} | ValAUC: {:1.3f}".format(e, Ece, Eacc, Eauc))
-
-    if LR_DECAY != 1:
-        lr_scher.step()
-        if local_rank == 0:
-            print("Setting LR: {}".format(optimizer.param_groups[0]["lr"]))
-
-# get testing to work
-
-# define Testset
-SAMPLE_NUMBER = -1
-
-Testset = CTDataset(data_home=DATA_ROOT,
-                               split='test')#,
-                              #  sample_number=SAMPLE_NUMBER)
-
-criterion = torch.nn.CrossEntropyLoss(reduction="mean")
-
-TestLoader = torch.utils.data.DataLoader(Testset,
-                                    batch_size=1,
-                                    num_workers=NUM_WORKERS,
-                                    collate_fn=Train_Collatefn,
-                                    shuffle=False,)
-
-Tes_CE, Tes_Acc = [ScalarContainer() for _ in range(2)]
-
-gts, pcovs = [], []
-
-# copied from metrics
-def sensitivity_specificity(y_true, y_score):
-    desc_score_indices = np.argsort(y_score, kind="mergesort")[::-1]
-    y_score = y_score[desc_score_indices]
-    y_true = y_true[desc_score_indices]
-
-    N = len(y_score)
-    tp, fp = 0, 0
-    condition_positive, condition_negative = np.sum(y_true), N-np.sum(y_true)
-
-    sensitivity, specificity = np.zeros(N), np.zeros(N)
-
-    for i in range(N):
-        predicted_positive = i+1
-        predicted_negative = N - predicted_positive
-        if y_true[i] == 1:
-            tp += 1
-        else:
-            fp += 1
-
-        tn = condition_negative - fp
-
-        sensitivity[i] = tp / float(condition_positive)
-        specificity[i] = tn / float(condition_negative + 1e-6)
-
-        # print( "tp: {}, fp: {}, tn: {}, sens: {}, spec: {}".format( tp,fp,tn,sensitivity[i], specificity[i]  )  )
-
-    sensitivity, specificity = np.r_[0, sensitivity, 1], np.r_[1, specificity, 0]
-    auc = 0
-    for i in range(len(sensitivity)-1):
-        # auc += (sensitivity[i+1]-sensitivity[i]) * specificity[i]
-        auc += (sensitivity[i+1]-sensitivity[i]) * specificity[i]
-
-    return sensitivity, specificity, auc
-
-
-with torch.no_grad():
-    for i, (all_F, all_L, all_info) in enumerate(TestLoader):
-        labels = all_L.cuda()
-        preds = model([all_F.cuda(non_blocking=True)])
-
-        # preds = model([all_F.cuda(non_blocking=True)])   # I3D
-
-        val_loss = criterion(preds, labels)
-        val_acc = topk_accuracies(preds, labels, [1])[0]
-
-        run["test/batch/loss"].log(val_loss)
-        run["test/batch/acc"].log(val_acc)
-
-
-        name = all_info[0]["name"]
-        pid = name.split('/')[-1][:-4]
-
-        prob_preds = F.softmax(preds, dim=1)
-        prob_normal = prob_preds[0, 0].item()
-        prob_ncov = prob_preds[0, 1].item()
-        gt = labels.item()
-
-        gts.append(gt)
-        pcovs.append(prob_ncov)
-
-        print ("{} {} {} {} {}".format(all_info[0]["name"], pid, prob_normal, prob_ncov, labels.item()))
-
-        Tes_CE.write(val_loss); Tes_Acc.write(val_acc)
-
-# from metrics import sensitivity_specificity
-Ece, Eacc = Tes_CE.read(), Tes_Acc.read()
-gts, pcovs = np.asarray(gts), np.asarray(pcovs)
-_, _, Eauc = sensitivity_specificity(gts, pcovs)
-e = 0
-print("VALIDATION | E [{}] | CE: {:1.5f} | ValAcc: {:1.3f} | ValAUC: {:1.3f}".format(e, Ece, Eacc, Eauc))
-
-run["test/batch/E"].log(e)
-run["test/batch/CE"].log(Ece)
-run["test/batch/ValAcc"].log(Eacc)
-run["test/batch/ValAUC"].log(Eauc)
+# # CT volume needs to be 512x512 TxHxW
+#
+#
+# # from ops.dataset_ops import Train_Collatefn
+# # copied code from above file
+#
+#
+#
+# def Train_Collatefn(data):
+#     all_F, all_L, all_info = [], [], []
+#
+#     for i in range(len(data)):
+#         all_F.append(data[i][0])
+#         all_L.append(data[i][1])
+#         all_info.append(data[i][2])
+#     all_F = torch.cat(all_F, dim=0)
+#     all_L = torch.cat(all_L, dim=0)
+#     return all_F, all_L, all_info
+#
+# # from dataset.dataset_test import CTDataset
+# # copied code from above file
+#
+#
+# # try:
+# #     from ops.dataset_ops import Rand_Transforms
+# # except:
+# #     #print ("Import external...")
+# #     import sys
+# #     sys.path.insert(0, "..")
+# #     from ops.dataset_ops import Rand_Transforms
+#
+# readvdnames = lambda x: open(x).read().rstrip().split('\n')
+#
+# class CTDataset(data.Dataset):
+#     def __init__(self, data_home="",
+#                        split="train",
+#                        sample_number=64,
+#                        clip_range=(0.2, 0.8),
+#                        logger=None):
+#
+#         _meta_f = os.path.join(data_home, "ImageSets", "lung_{}.txt".format(split))
+#         # dataset3/NCOV-BF/ImageSets/lung_test.txt
+#         # Build a dictionary to record {path - label} pair
+#         meta    = [os.path.join(data_home, "NpyData", "{}.npy".format(x)) for x in readvdnames(_meta_f)]
+#
+#         self.data_home = data_home
+#         self.split = split
+#         self.sample_number = sample_number
+#         self.meta = meta
+#         self.clip_range = (0.2, 0.7)
+#         #print (self.meta)
+#         self.data_len = len(self.meta)
+#         print ("[INFO] The true clip range is {}".format(self.clip_range))
+#
+#     def __getitem__(self, index):
+#         data_path = self.meta[index]
+#         images = np.load(data_path)
+#
+#         # CT clip
+#         num_frames = len(images)
+#         left, right = int(num_frames*self.clip_range[0]), int(num_frames*self.clip_range[1])
+#         images = images[left:right]
+#
+#         num_frames = len(images)
+#         shape = images.shape
+#         #h, w = shape[1:]
+#
+#         if False:
+#             from zqlib import imgs2vid
+#             imgs2vid(np.concatenate([images, masks*255], axis=2), "test.avi")
+#             import pdb
+#             pdb.set_trace()
+#
+#         # To Tensor and Resize
+#         images = np.asarray(images, dtype=np.float32)
+#         images = images / 255.
+#
+#         images = np.expand_dims(images, axis=1)          # Bx1xHxW, add channel dimension
+#
+#         #info = {"name": data_path, "num_frames": num_frames, "shape": shape, "pad": ((lh,uh),(lw,uw))}
+#         info = {"name": data_path, "num_frames": num_frames, "shape": shape}
+#
+#         th_img = torch.from_numpy(images.copy()).float()
+#         th_label = torch.zeros_like(th_img)
+#
+#         return th_img, th_label, info
+#
+#     def __len__(self):
+#         return self.data_len
+#
+#     def debug(self, index):
+#         import cv2
+#         from zqlib import assemble_multiple_images
+#         th_img, th_label, info = self.__getitem__(index)
+#         # th_img: NxCxTxHxW
+#
+#         img, label = th_img.numpy()[0, 0, :], th_label.numpy()[0]
+#         n, h, w = img.shape
+#         #if n % 2 != 0:
+#         #    img = np.concatenate([img, np.zeros((1, h, w))], axis=0)
+#         visual_img = assemble_multiple_images(img*255, number_width=16, pad_index=True)
+#         os.makedirs("debug", exist_ok=True)
+#         debug_f = os.path.join("debug/{}.jpg".format(\
+#                             info["name"].replace('/', '_').replace('.', '')))
+#         print ("[DEBUG] Writing to {}".format(debug_f))
+#         cv2.imwrite(debug_f, visual_img)
+#
+#
+# # if __name__ == "__main__":
+# #     # Read valid sliding: 550 seconds
+# #     ctd = CTDataset(data_home="dataset3/NCOV-BF", split="train", sample_number=4)
+# #     length = len(ctd)
+# #     ctd[10]
+#
+# #     exit()
+# #     ctd.debug(0)
+# #     import time
+# #     s = time.time()
+# #     for i in range(length):
+# #         print (i)
+# #         th_img, th_label, info = ctd[i]
+# #     e = time.time()
+# #     print ("time: ", e-s)
+#
+# #     #images, labels, info = ctd[0]
+# #     #for i in range(10):
+# #     #    ctd.debug(i)
+# #     import pdb
+# #     pdb.set_trace()
+#
+#
+#
+#
+#
+# from importlib import import_module
+#
+# # see above
+#
+#
+# random.seed(0); torch.manual_seed(0); np.random.seed(0)
+#
+# CFG_FILE = "cfgs/test.yaml"
+#
+# ############### Set up Variables ###############
+# # with open(CFG_FILE, "r") as f: cfg = yaml.safe_load(f)
+#
+# # MODEL_UID = 'unet'
+#
+# # code to create the u-net model
+# """ Parts of the U-Net model """
+#
+# import torch
+# import torch.nn as nn
+# import torch.nn.functional as F
+#
+# class DoubleConv(nn.Module):
+#     """(convolution => [BN] => ReLU) * 2"""
+#
+#     def __init__(self, in_channels, out_channels):
+#         super().__init__()
+#         self.double_conv = nn.Sequential(
+#             nn.Conv2d(in_channels, out_channels, kernel_size=3, padding=1),
+#             nn.BatchNorm2d(out_channels),
+#             nn.ReLU(inplace=True),
+#             nn.Conv2d(out_channels, out_channels, kernel_size=3, padding=1),
+#             nn.BatchNorm2d(out_channels),
+#             nn.ReLU(inplace=True)
+#         )
+#
+#     def forward(self, x):
+#         return self.double_conv(x)
+#
+#
+# class Down(nn.Module):
+#     """Downscaling with maxpool then double conv"""
+#
+#     def __init__(self, in_channels, out_channels):
+#         super().__init__()
+#         self.maxpool_conv = nn.Sequential(
+#             nn.MaxPool2d(2),
+#             DoubleConv(in_channels, out_channels)
+#         )
+#
+#     def forward(self, x):
+#         return self.maxpool_conv(x)
+#
+#
+# class Up(nn.Module):
+#     """Upscaling then double conv"""
+#
+#     def __init__(self, in_channels, out_channels, bilinear=True):
+#         super().__init__()
+#
+#         # if bilinear, use the normal convolutions to reduce the number of channels
+#         if bilinear:
+#             self.up = nn.Upsample(scale_factor=2, mode='bilinear', align_corners=True)
+#         else:
+#             self.up = nn.ConvTranspose2d(in_channels // 2, in_channels // 2, kernel_size=2, stride=2)
+#
+#         self.conv = DoubleConv(in_channels, out_channels)
+#
+#     def forward(self, x1, x2):
+#         x1 = self.up(x1)
+#         # input is CHW
+#         diffY = torch.tensor([x2.size()[2] - x1.size()[2]])
+#         diffX = torch.tensor([x2.size()[3] - x1.size()[3]])
+#
+#         x1 = F.pad(x1, [diffX // 2, diffX - diffX // 2,
+#                         diffY // 2, diffY - diffY // 2])
+#         # if you have padding issues, see
+#         # https://github.com/HaiyongJiang/U-Net-Pytorch-Unstructured-Buggy/commit/0e854509c2cea854e247a9c615f175f76fbb2e3a
+#         # https://github.com/xiaopeng-liao/Pytorch-UNet/commit/8ebac70e633bac59fc22bb5195e513d5832fb3bd
+#         x = torch.cat([x2, x1], dim=1)
+#         return self.conv(x)
+#
+#
+# class OutConv(nn.Module):
+#     def __init__(self, in_channels, out_channels):
+#         super(OutConv, self).__init__()
+#         self.conv = nn.Conv2d(in_channels, out_channels, kernel_size=1)
+#
+#     def forward(self, x):
+#         return self.conv(x)
+#
+#
+# """ Full assembly of the parts to form the complete network """
+#
+# class UNet(nn.Module):
+#     def __init__(self, n_channels, n_classes, bilinear=True):
+#         super(UNet, self).__init__()
+#         self.n_channels = n_channels
+#         self.n_classes = n_classes
+#         self.bilinear = bilinear
+#
+#         inter_channel = 16
+#
+#         self.inc = DoubleConv(n_channels, inter_channel)
+#         self.down1 = Down(inter_channel, inter_channel*2)
+#         self.down2 = Down(inter_channel*2, inter_channel*4)
+#         self.down3 = Down(inter_channel*4, inter_channel*8)
+#         self.down4 = Down(inter_channel*8, inter_channel*8)
+#         self.up1 = Up(inter_channel*16, inter_channel*4, bilinear)
+#         self.up2 = Up(inter_channel*8, inter_channel*2, bilinear)
+#         self.up3 = Up(inter_channel*4, inter_channel, bilinear)
+#         self.up4 = Up(inter_channel*2, inter_channel, bilinear)
+#         self.outc = OutConv(inter_channel, n_classes)
+#
+#     def forward(self, x):
+#         x1 = self.inc(x)
+#         x2 = self.down1(x1)
+#         x3 = self.down2(x2)
+#         x4 = self.down3(x3)
+#         x5 = self.down4(x4) # 1/16
+#         x = self.up1(x5, x4)
+#         x = self.up2(x, x3)
+#         x = self.up3(x, x2)
+#         x = self.up4(x, x1)
+#         logits = self.outc(x)
+#         return logits
+#
+#
+#
+# if __name__ == "__main__":
+#     unet = UNet(n_channels=1, n_classes=2)
+#     aa = torch.ones((2, 1, 128, 128))
+#     bb = unet(aa)
+#     print (bb.shape)
+#
+# PRETRAINED_MODEL_PATH = 'unet.pth' # "pretrained_model/unet-Epoch_00110-valid98.pth"
+# RESULE_HOME = 'unet-results'
+# NUM_WORKERS = 2
+# SAMPLE_NUMBER = -1 # All CT images
+# DATA_ROOT = 'dataset3/NCOV-BF' #'NCOV-BF/size368x368-dlmask'
+#
+#
+# Validset = CTDataset(data_home=DATA_ROOT,
+#                                split='test',
+#                                sample_number=SAMPLE_NUMBER)
+#
+# # model = import_module(f"model.{MODEL_UID}")
+# # UNet = getattr(model, "UNet")
+#
+# model = UNet(n_channels=1, n_classes=2)
+# model = torch.nn.DataParallel(model).cuda()
+#
+# model.load_state_dict(torch.load(PRETRAINED_MODEL_PATH, map_location=f'cuda:{0}'), strict=True)
+#
+# # change so this is the whole dataset
+# ValidLoader = torch.utils.data.DataLoader(Validset,
+#                                     batch_size=1,
+#                                     num_workers=NUM_WORKERS,
+#                                     collate_fn=Train_Collatefn,
+#                                     shuffle=False,)
+#
+# os.makedirs(RESULE_HOME, exist_ok=True)
+# os.makedirs("visual", exist_ok=True)
+#
+# with torch.no_grad():
+#     for i, (all_F, all_M, all_info) in enumerate(ValidLoader):
+#         all_E = []
+#         images = all_F.cuda()
+#         # print(images)
+#         #(lh, uh), (lw, uw) = all_info[0]["pad"]
+#         num = len(images)
+#
+#         for ii in range(num):
+#             image = images[ii:ii+1]
+#             pred = model(image)
+#             pred = torch.argmax(F.softmax(pred, dim=1), dim=1)
+#             all_E.append(pred)
+#
+#         all_E = torch.cat(all_E, dim=0).cpu().numpy().astype('uint8')
+#         all_OF2 = all_F[:, 0, :, :].cpu().numpy().astype('float32') * 255
+#         all_OF = np.uint8(all_F[:, 0, :, :].cpu().numpy().astype('float32') * 255)
+#
+#         unique_id = all_info[0]["name"].split('/')[-1].replace('.npy', '')
+#         np.save("{}/{}.npy".format(RESULE_HOME, unique_id), all_OF)
+#         np.save("{}/{}-2.npy".format(RESULE_HOME, unique_id), all_OF2)
+#
+#         np.save("{}/{}-dlmask.npy".format(RESULE_HOME, unique_id), all_E)
+#
+# # # think this is the bit that would load the pre-trained model
+# # if INIT_MODEL_PATH != "":
+# #     model.load_state_dict(torch.load(INIT_MODEL_PATH, \
+# #                  map_location=f'cuda:{0}'), strict=INIT_MODEL_STRICT)
+#
+# """# Preprocess images"""
+#
+# # !pip install zqlib
+# # !pip install fvcore
+#
+# # processing the images so they work with DeCoVNet
+#
+# # cropped and resized to 224x336 in TxHxW
+# # using cropresize.py
+#
+# # create a list file of CT volumes
+#
+# # move the npydata and npymask to 'dataset3/NCOV-BF/NpyData-size224x336',
+# # move the list file to 'dataset3/NCOV-BF/ImageSets'
+#
+# import os
+# import numpy as np
+#
+# from scipy.ndimage import zoom
+#
+# readvdnames = lambda x: open(x).read().rstrip().split('\n')
+#
+# src_home = 'unet-results'
+# des_home = 'dataset3/NCOV-BF/NpyData-size224x336'
+#
+# os.makedirs(des_home, exist_ok=True)
+#
+# #for d in dirs:
+# #    os.makedirs(os.path.join(des_home, d), exist_ok=True)
+#
+# pe_list = readvdnames(f"dataset3/NCOV-BF/ImageSets-old/lung_test.txt")[::-1]
+#
+# new_size = (224, 336)   # 224x336       # average isotropic shape: 193x281
+#
+# new_height, new_width = new_size
+#
+# clip_range = (0.15, 1)
+#
+# slice_resolution = 1
+# from zqlib import imgs2vid
+# import cv2
+#
+# def resize_cta_images(x):        # dtype is "PE"/"NORMAL"
+#     print (x)
+#     if os.path.isfile(os.path.join(des_home, x+".npy")) is True:
+#         return
+#     raw_imgs = np.uint8(np.load(os.path.join(src_home, x+".npy")))
+#     raw_masks = np.load(os.path.join(src_home, x+"-dlmask.npy"))
+#     length = len(raw_imgs)
+#
+#     clip_imgs = raw_imgs[int(length*clip_range[0]):int(length*clip_range[1])]
+#     clip_masks = raw_masks[int(length*clip_range[0]):int(length*clip_range[1])]
+#
+#     raw_imgs = clip_imgs
+#     raw_masks = clip_masks
+#
+#     #xdata = np.concatenate([raw_imgs[length//2], raw_masks[length//2]*255], axis=1)
+#     #print (xdata.shape)
+#     #cv2.imwrite(f"debug/{x}.png", xdata)
+#     #return
+#
+#     zz, yy, xx = np.where(raw_masks)
+#     cropbox = np.array([[np.min(zz), np.max(zz)], [np.min(yy), np.max(yy)], [np.min(xx), np.max(xx)]])
+#     crop_imgs = raw_imgs[cropbox[0, 0]:cropbox[0, 1],
+#                          cropbox[1, 0]:cropbox[1, 1],
+#                          cropbox[2, 0]:cropbox[2, 1]]
+#
+#     crop_masks = raw_masks[cropbox[0, 0]:cropbox[0, 1],
+#                           cropbox[1, 0]:cropbox[1, 1],
+#                           cropbox[2, 0]:cropbox[2, 1]]
+#
+#     raw_imgs = crop_imgs
+#     raw_masks = crop_masks
+#
+#     height, width = raw_imgs.shape[1:3]
+#     zoomed_imgs = zoom(raw_imgs, (slice_resolution, new_height/height, new_width/width))
+#     np.save(os.path.join(des_home, x+".npy"), zoomed_imgs)
+#     zoomed_masks = zoom(raw_masks, (slice_resolution, new_height/height, new_width/width))
+#     np.save(os.path.join(des_home, x+"-dlmask.npy"), zoomed_masks)
+#
+#     immasks = np.concatenate([zoomed_imgs, zoomed_masks*255], axis=2)[length//2]
+#     cv2.imwrite(f"debug/{x}.png", immasks)
+#     #imgs2vid(immasks, "debug/{}.avi".format(x))
+#
+#
+# #for x in pe_list:
+# #    resize_cta_images(x)
+# #
+# #exit()
+#
+# #for x in orcale_normal_list:
+# #    resize_cta_images(x, "orcale_normal")
+#
+# from concurrent import futures
+#
+# num_threads=10
+#
+# with futures.ProcessPoolExecutor(max_workers=num_threads) as executor:
+#     fs = [executor.submit(resize_cta_images, x, ) for x in pe_list[::-1]]
+#     for i, f in enumerate(futures.as_completed(fs)):
+#         print ("{}/{} done...".format(i, len(fs)))
+#
+# """#DeCOVNet"""
+#
+# # now trying to implement DeCoVNet
+#
+# DATA_ROOT = 'dataset3/NCOV-BF'
+#
+# # dataset3/NCOV-BF/
+#
+#
+# # from ops.acc_ops import topk_accuracies
+# def topks_correct(preds, labels, ks):
+#     """
+#     Given the predictions, labels, and a list of top-k values, compute the
+#     number of correct predictions for each top-k value.
+#     Args:
+#         preds (array): array of predictions. Dimension is batchsize
+#             N x ClassNum.
+#         labels (array): array of labels. Dimension is batchsize N.
+#         ks (list): list of top-k values. For example, ks = [1, 5] correspods
+#             to top-1 and top-5.
+#     Returns:
+#         topks_correct (list): list of numbers, where the `i`-th entry
+#             corresponds to the number of top-`ks[i]` correct predictions.
+#     """
+#     assert preds.size(0) == labels.size(
+#         0
+#     ), "Batch dim of predictions and labels must match"
+#     # Find the top max_k predictions for each sample
+#     _top_max_k_vals, top_max_k_inds = torch.topk(
+#         preds, max(ks), dim=1, largest=True, sorted=True
+#     )
+#     # (batch_size, max_k) -> (max_k, batch_size).
+#     top_max_k_inds = top_max_k_inds.t()
+#     # (batch_size, ) -> (max_k, batch_size).
+#     rep_max_k_labels = labels.view(1, -1).expand_as(top_max_k_inds)
+#     # (i, j) = 1 if top i-th prediction for the j-th sample is correct.
+#     top_max_k_correct = top_max_k_inds.eq(rep_max_k_labels)
+#     # Compute the number of topk correct predictions for each k.
+#     topks_correct = [
+#         top_max_k_correct[:k, :].view(-1).float().sum() for k in ks
+#     ]
+#     return topks_correct
+#
+# def topk_accuracies(preds, labels, ks):
+#     """
+#     Computes the top-k accuracy for each k.
+#     Args:
+#         preds (array): array of predictions. Dimension is N.
+#         labels (array): array of labels. Dimension is N.
+#         ks (list): list of ks to calculate the top accuracies.
+#     """
+#     num_topks_correct = topks_correct(preds, labels, ks)
+#     return [(x / preds.size(0)) * 100.0 for x in num_topks_correct]
+#
+#
+# # from ops.stat_ops import ScalarContainer
+# class ScalarContainer(object):
+#     def __init__(self):
+#         self.scalar_list = []
+#     def write(self, s):
+#         self.scalar_list.append(float(s))
+#     def read(self):
+#         ave = np.mean(np.array(self.scalar_list))
+#         self.scalar_list = []
+#         return ave
+#
+#
+# #! /usr/bin/env python
+# # -*- coding: utf-8 -*-
+# # vim:fenc=utf-8
+# #
+# # Copyright © 2019-12-04 14:23 qiang.zhou <theodoruszq@gmail.com>
+# #
+# # Distributed under terms of the MIT license.
+#
+# """
+# Load each patient's all/specfied CT images.
+# """
+#
+# from torch.utils import data
+# from PIL import Image
+# import os
+# import torchvision.transforms.functional as TF
+# import numpy as np
+# import torch
+# import random
+# from scipy.ndimage import zoom
+#
+# # try:
+# #     from ops.dataset_ops import Rand_Affine, Rand_Crop, Rand_Transforms
+#
+#
+#
+# # except:
+# #     #print ("Import external...")
+# #     import sys
+# #     sys.path.insert(0, "..")
+# #     from ops.dataset_ops import Rand_Affine, Rand_Crop, Rand_Transforms
+#
+#
+# # Rand_Affine
+# def Rand_Affine(img, ANGLE_R=10, TRANS_R=0.2, SCALE_R=0.3, SHEAR_R=15, FLIP_B=False):
+#     assert isinstance(img, Image.Image) or isinstance(img[0], Image.Image)
+#
+#     def affop(img, angle, translate, scale, shear, flip):
+#         if flip:
+#             img = img.transpose(Image.FLIP_LEFT_RIGHT)
+#         _img = TF.affine(img, angle, translate, scale, shear, resample=Image.BILINEAR)
+#         return _img
+#     if isinstance(img, list):
+#         w, h = img[0].size
+#     else:
+#         w, h = img.size
+#     angle = random.randint(-ANGLE_R, ANGLE_R)
+#     translate = (random.randint(int(-w*TRANS_R), int(w*TRANS_R)),
+#                  random.randint(int(-h*TRANS_R), int(h*TRANS_R)))  # x, y axis
+#     scale = 1 + round(random.uniform(-SCALE_R, SCALE_R), 1)
+#     shear = random.randint(-SHEAR_R, SHEAR_R)
+#     flip = FLIP_B and random.random() >= 0.5
+#     #print (angle, translate, scale, shear)
+#     if isinstance(img, list):
+#         img_L = []
+#         for i_img in img:
+#             i_img = affop(i_img, angle, translate, scale, shear, flip)
+#             img_L.append(i_img)
+#         return img_L
+#     else:
+#         _img = affop(img, angle, translate, scale, shear, flip)
+#         return _img
+#
+# #Rand_Crop
+# # img must be a np.uint8 TxHxW datatype numpy
+# def Rand_Crop(img, crop_size):
+#     shape = img.shape[1:]	# h, w
+#     crop_y = random.randint(0, shape[0] - crop_size[0])
+#     crop_x = random.randint(0, shape[1] - crop_size[1])
+#     crop_img = img[:, crop_y:crop_y+crop_size[0], crop_x:crop_x+crop_size[1]]
+#     return crop_img
+#
+# # Rand_Transforms
+# def Rand_Transforms(imgs, masks,
+#                     ANGLE_R=10, TRANS_R=0.1,
+#                     SCALE_R=0.2, SHEAR_R=10,
+#                     BRIGHT_R=0.5, CONTRAST_R=0.3):
+#     # To Image.Image instances
+#     pil_imgs = [Image.fromarray(x) for x in imgs]
+#     pil_masks = [Image.fromarray(x) for x in masks]
+#     w, h = pil_imgs[0].size
+#
+#     # Affine Transforms
+#     def affop(img, angle, translate, scale, shear):
+#         _img = TF.affine(img, angle, translate, scale, shear, resample=Image.BILINEAR)
+#         return _img
+#     angle = random.randint(-ANGLE_R, ANGLE_R)
+#     translate = (random.randint(int(-w*TRANS_R), int(w*TRANS_R)),
+#                  random.randint(int(-h*TRANS_R), int(h*TRANS_R)))  # x, y axis
+#     scale = 1 + round(random.uniform(-SCALE_R, SCALE_R), 1)
+#     shear = random.randint(-SHEAR_R, SHEAR_R)
+#     pil_imgs = [affop(x, angle, translate, scale, shear) for x in pil_imgs]
+#     pil_masks = [affop(x, angle, translate, scale, shear) for x in pil_masks]
+#
+#     # Color Transforms
+#     def colorop(img, bright, contrast):
+#         _img = TF.adjust_brightness(img, bright)
+#         _img = TF.adjust_contrast(_img, contrast)
+#         return _img
+#     bright = 1 + round(random.uniform(-BRIGHT_R, BRIGHT_R), 1)
+#     contrast = 1 + round(random.uniform(-CONTRAST_R, CONTRAST_R), 1)
+#     pil_imgs = [colorop(x, bright, contrast) for x in pil_imgs]
+#
+#     imgs = np.asarray([np.asarray(x, dtype=np.uint8) for x in pil_imgs], dtype=np.uint8)
+#     masks = np.asarray([np.asarray(x, dtype=np.uint8) for x in pil_masks], dtype=np.uint8)
+#     return imgs, masks
+#
+#
+# readvdnames = lambda x: open(x).read().rstrip().split('\n')
+#
+# class CTDataset(data.Dataset):
+#     def __init__(self, data_home="",
+#                        split="train",
+#                        fold_id=None,
+#                        crop_size=(196, 288),
+#                        clip_range=(0.2, 0.7),   # useless
+#                        logger=None):
+#
+#         _embo_f = os.path.join(data_home, "ImageSets", "ncov_{}.txt".format(split))
+#         _norm_f = os.path.join(data_home, "ImageSets", "normal_{}.txt".format(split))
+#         # Build a dictionary to record {path - label} pair
+#         meta_pos   = [[os.path.join(data_home, "NpyData-size224x336", "{}.npy".format(x)), 1]
+#                                 for x in readvdnames(_embo_f)]
+#
+#         meta_neg   = [[os.path.join(data_home, "NpyData-size224x336", "{}.npy".format(x)), 0]
+#                                 for x in readvdnames(_norm_f)]
+#
+#         if split == "train":
+#             if len(meta_pos) > len(meta_neg):
+#                 for i in range(len(meta_pos) - len(meta_neg)):
+#                     meta_neg.append(random.choice(meta_neg))
+#             else:
+#                 for i in range(len(meta_neg) - len(meta_pos)):
+#                     meta_pos.append(random.choice(meta_pos))
+#
+#         meta = meta_pos + meta_neg
+#
+#         #print (meta)
+#         self.data_home = data_home
+#         self.split = split
+#         self.meta = meta
+#         self.crop_size = crop_size
+#         self.clip_range = clip_range
+#         #print (self.meta)
+#         self.data_len = len(self.meta)
+#
+#     def __getitem__(self, index):
+#         data_path, label = self.meta[index]
+#         mask_path = data_path.replace('.npy', '-dlmask.npy')
+#
+#         cta_images = np.load(data_path)
+#         cta_masks = np.load(mask_path)
+#
+#         num_frames = len(cta_images)
+#         shape = cta_images.shape
+#
+#         # Data augmentation
+#         if self.split == "train":
+#             cta_images, cta_masks = Rand_Transforms(cta_images, cta_masks, ANGLE_R=10, TRANS_R=0.1, SCALE_R=0.2, SHEAR_R=10,
+#                                              BRIGHT_R=0.5, CONTRAST_R=0.3)
+#
+#         # To Tensor and Resize
+#         cta_images = np.asarray(cta_images, dtype=np.float32)
+#         cta_images = cta_images / 255.
+#
+#         images = np.concatenate([cta_images[None, :, :, :], cta_masks[None, :, :, :]], axis=0)
+#         label = np.uint8([label])
+#
+#         info = {"name": data_path, "num_frames": num_frames, "shape": shape}
+#
+#         th_img = torch.unsqueeze(torch.from_numpy(images.copy()), 0).float()
+#         th_label = torch.from_numpy(label.copy()).long()
+#
+#         return th_img, th_label, info
+#
+#     def __len__(self):
+#         return self.data_len
+#
+#     def debug(self, index):
+#         import cv2
+#         from zqlib import assemble_multiple_images
+#         th_img, th_label, info = self.__getitem__(index)
+#         # th_img: NxCxTxHxW
+#
+#         img, label = th_img.numpy()[0, 0, :], th_label.numpy()[0]
+#         n, h, w = img.shape
+#         #if n % 2 != 0:
+#         #    img = np.concatenate([img, np.zeros((1, h, w))], axis=0)
+#         visual_img = assemble_multiple_images(img*255, number_width=16, pad_index=True)
+#         os.makedirs("debug", exist_ok=True)
+#         debug_f = os.path.join("debug/{}.jpg".format(\
+#                             info["name"].replace('/', '_').replace('.', '')))
+#         print ("[DEBUG] Writing to {}".format(debug_f))
+#         cv2.imwrite(debug_f, visual_img)
+#
+#
+# # if __name__ == "__main__":
+# #     # Read valid sliding: 550 seconds
+# #     ctd = CTDataset(data_home="dataset3/NCOV-SEG/size192x288-dlmask", split="train", crop_size=(192, 288))
+# #     length = len(ctd)
+# #     ctd[0]
+#
+# #     exit()
+# #     ctd.debug(0)
+# #     import time
+# #     s = time.time()
+# #     for i in range(length):
+# #         print (i)
+# #         th_img, th_label, info = ctd[i]
+# #     e = time.time()
+# #     print ("time: ", e-s)
+#
+# #     #images, labels, info = ctd[0]
+# #     #for i in range(10):
+# #     #    ctd.debug(i)
+# #     import pdb
+# #     pdb.set_trace()
+#
+# CFG_FILE = "cfgs/test.yaml"
+# Validset = CTDataset(data_home=DATA_ROOT, split='test',)
+#
+# MODEL_UID = 'baseline_i3d'
+# NUM_CLASSES = 2
+# DEPTH = 50
+# ARCH = 'i3d'
+#
+#
+# """ ResNet only. """
+#
+# import torch
+# import torch.nn as nn
+# import sys
+# sys.path.insert(0, "..")
+# # from model.stem_helper import VideoModelStem
+# import torch.nn as nn
+#
+#
+# class VideoModelStem(nn.Module):
+#     """
+#     Video 3D stem module. Provides stem operations of Conv, BN, ReLU, MaxPool
+#     on input data tensor for one or multiple pathways.
+#     """
+#
+#     def __init__(
+#         self,
+#         dim_in,
+#         dim_out,
+#         kernel,
+#         stride,
+#         padding,
+#         inplace_relu=True,
+#         eps=1e-5,
+#         bn_mmt=0.1,
+#     ):
+#         """
+#         The `__init__` method of any subclass should also contain these
+#         arguments. List size of 1 for single pathway models (C2D, I3D, SlowOnly
+#         and etc), list size of 2 for two pathway models (SlowFast).
+#         Args:
+#             dim_in (list): the list of channel dimensions of the inputs.
+#             dim_out (list): the output dimension of the convolution in the stem
+#                 layer.
+#             kernel (list): the kernels' size of the convolutions in the stem
+#                 layers. Temporal kernel size, height kernel size, width kernel
+#                 size in order.
+#             stride (list): the stride sizes of the convolutions in the stem
+#                 layer. Temporal kernel stride, height kernel size, width kernel
+#                 size in order.
+#             padding (list): the paddings' sizes of the convolutions in the stem
+#                 layer. Temporal padding size, height padding size, width padding
+#                 size in order.
+#             inplace_relu (bool): calculate the relu on the original input
+#                 without allocating new memory.
+#             eps (float): epsilon for batch norm.
+#             bn_mmt (float): momentum for batch norm. Noted that BN momentum in
+#                 PyTorch = 1 - BN momentum in Caffe2.
+#         """
+#         super(VideoModelStem, self).__init__()
+#
+#         assert (
+#             len(
+#                 {
+#                     len(dim_in),
+#                     len(dim_out),
+#                     len(kernel),
+#                     len(stride),
+#                     len(padding),
+#                 }
+#             )
+#             == 1
+#         ), "Input pathway dimensions are not consistent."
+#         self.num_pathways = len(dim_in)
+#         self.kernel = kernel
+#         self.stride = stride
+#         self.padding = padding
+#         self.inplace_relu = inplace_relu
+#         self.eps = eps
+#         self.bn_mmt = bn_mmt
+#
+#         # Construct the stem layer.
+#         self._construct_stem(dim_in, dim_out)
+#
+#     def _construct_stem(self, dim_in, dim_out):
+#         for pathway in range(len(dim_in)):
+#             stem = ResNetBasicStem(
+#                 dim_in[pathway],
+#                 dim_out[pathway],
+#                 self.kernel[pathway],
+#                 self.stride[pathway],
+#                 self.padding[pathway],
+#                 self.inplace_relu,
+#                 self.eps,
+#                 self.bn_mmt,
+#             )
+#             self.add_module("pathway{}_stem".format(pathway), stem)
+#
+#     def forward(self, x):
+#         assert (
+#             len(x) == self.num_pathways
+#         ), "Input tensor does not contain {} pathway".format(self.num_pathways)
+#         for pathway in range(len(x)):
+#             m = getattr(self, "pathway{}_stem".format(pathway))
+#             x[pathway] = m(x[pathway])
+#         return x
+#
+#
+# class ResNetBasicStem(nn.Module):
+#     """
+#     ResNe(X)t 3D stem module.
+#     Performs spatiotemporal Convolution, BN, and Relu following by a
+#         spatiotemporal pooling.
+#     """
+#
+#     def __init__(
+#         self,
+#         dim_in,
+#         dim_out,
+#         kernel,
+#         stride,
+#         padding,
+#         inplace_relu=True,
+#         eps=1e-5,
+#         bn_mmt=0.1,
+#     ):
+#         """
+#         The `__init__` method of any subclass should also contain these arguments.
+#         Args:
+#             dim_in (int): the channel dimension of the input. Normally 3 is used
+#                 for rgb input, and 2 or 3 is used for optical flow input.
+#             dim_out (int): the output dimension of the convolution in the stem
+#                 layer.
+#             kernel (list): the kernel size of the convolution in the stem layer.
+#                 temporal kernel size, height kernel size, width kernel size in
+#                 order.
+#             stride (list): the stride size of the convolution in the stem layer.
+#                 temporal kernel stride, height kernel size, width kernel size in
+#                 order.
+#             padding (int): the padding size of the convolution in the stem
+#                 layer, temporal padding size, height padding size, width
+#                 padding size in order.
+#             inplace_relu (bool): calculate the relu on the original input
+#                 without allocating new memory.
+#             eps (float): epsilon for batch norm.
+#             bn_mmt (float): momentum for batch norm. Noted that BN momentum in
+#                 PyTorch = 1 - BN momentum in Caffe2.
+#         """
+#         super(ResNetBasicStem, self).__init__()
+#         self.kernel = kernel
+#         self.stride = stride
+#         self.padding = padding
+#         self.inplace_relu = inplace_relu
+#         self.eps = eps
+#         self.bn_mmt = bn_mmt
+#
+#         # Construct the stem layer.
+#         self._construct_stem(dim_in, dim_out)
+#
+#     def _construct_stem(self, dim_in, dim_out):
+#         self.conv = nn.Conv3d(
+#             dim_in,
+#             dim_out,
+#             self.kernel,
+#             stride=self.stride,
+#             padding=self.padding,
+#             bias=False,
+#         )
+#         self.bn = nn.BatchNorm3d(dim_out, eps=self.eps, momentum=self.bn_mmt)
+#         self.relu = nn.ReLU(self.inplace_relu)
+#         self.pool_layer = nn.MaxPool3d(
+#             kernel_size=[1, 3, 3], stride=[1, 2, 2], padding=[0, 1, 1]
+#         )
+#
+#     def forward(self, x):
+#         x = self.conv(x)
+#         x = self.bn(x)
+#         x = self.relu(x)
+#         x = self.pool_layer(x)
+#         return x
+#
+#
+#
+# # from model.resnet_helper import ResStage
+# import torch.nn as nn
+#
+# # from model.nonlocal_helper import Nonlocal
+# """Non-local helper"""
+#
+# import torch
+# import torch.nn as nn
+#
+#
+# class Nonlocal(nn.Module):
+#     """
+#     Builds Non-local Neural Networks as a generic family of building
+#     blocks for capturing long-range dependencies. Non-local Network
+#     computes the response at a position as a weighted sum of the
+#     features at all positions. This building block can be plugged into
+#     many computer vision architectures.
+#     More details in the paper: https://arxiv.org/pdf/1711.07971.pdf
+#     """
+#
+#     def __init__(
+#         self,
+#         dim,
+#         dim_inner,
+#         pool_size=None,
+#         instantiation="softmax",
+#         norm_type="batchnorm",
+#         zero_init_final_conv=False,
+#         zero_init_final_norm=True,
+#         norm_eps=1e-5,
+#         norm_momentum=0.1,
+#     ):
+#         """
+#         Args:
+#             dim (int): number of dimension for the input.
+#             dim_inner (int): number of dimension inside of the Non-local block.
+#             pool_size (list): the kernel size of spatial temporal pooling,
+#                 temporal pool kernel size, spatial pool kernel size, spatial
+#                 pool kernel size in order. By default pool_size is None,
+#                 then there would be no pooling used.
+#             instantiation (string): supports two different instantiation method:
+#                 "dot_product": normalizing correlation matrix with L2.
+#                 "softmax": normalizing correlation matrix with Softmax.
+#             norm_type (string): support BatchNorm and LayerNorm for
+#                 normalization.
+#                 "batchnorm": using BatchNorm for normalization.
+#                 "layernorm": using LayerNorm for normalization.
+#                 "none": not using any normalization.
+#             zero_init_final_conv (bool): If true, zero initializing the final
+#                 convolution of the Non-local block.
+#             zero_init_final_norm (bool):
+#                 If true, zero initializing the final batch norm of the Non-local
+#                 block.
+#         """
+#         super(Nonlocal, self).__init__()
+#         self.dim = dim
+#         self.dim_inner = dim_inner
+#         self.pool_size = pool_size
+#         self.instantiation = instantiation
+#         self.norm_type = norm_type
+#         self.use_pool = (
+#             False
+#             if pool_size is None
+#             else any((size > 1 for size in pool_size))
+#         )
+#         self.norm_eps = norm_eps
+#         self.norm_momentum = norm_momentum
+#         self._construct_nonlocal(zero_init_final_conv, zero_init_final_norm)
+#
+#     def _construct_nonlocal(self, zero_init_final_conv, zero_init_final_norm):
+#         # Three convolution heads: theta, phi, and g.
+#         self.conv_theta = nn.Conv3d(
+#             self.dim, self.dim_inner, kernel_size=1, stride=1, padding=0
+#         )
+#         self.conv_phi = nn.Conv3d(
+#             self.dim, self.dim_inner, kernel_size=1, stride=1, padding=0
+#         )
+#         self.conv_g = nn.Conv3d(
+#             self.dim, self.dim_inner, kernel_size=1, stride=1, padding=0
+#         )
+#
+#         # Final convolution output.
+#         self.conv_out = nn.Conv3d(
+#             self.dim_inner, self.dim, kernel_size=1, stride=1, padding=0
+#         )
+#         # Zero initializing the final convolution output.
+#         self.conv_out.zero_init = zero_init_final_conv
+#
+#         if self.norm_type == "batchnorm":
+#             self.bn = nn.BatchNorm3d(
+#                 self.dim, eps=self.norm_eps, momentum=self.norm_momentum
+#             )
+#             # Zero initializing the final bn.
+#             self.bn.transform_final_bn = zero_init_final_norm
+#         elif self.norm_type == "layernorm":
+#             # In Caffe2 the LayerNorm op does not contain the scale an bias
+#             # terms described in the paper:
+#             # https://caffe2.ai/docs/operators-catalogue.html#layernorm
+#             # Builds LayerNorm as GroupNorm with one single group.
+#             # Setting Affine to false to align with Caffe2.
+#             self.ln = nn.GroupNorm(1, self.dim, eps=self.norm_eps, affine=False)
+#         elif self.norm_type == "none":
+#             # Does not use any norm.
+#             pass
+#         else:
+#             raise NotImplementedError(
+#                 "Norm type {} is not supported".format(self.norm_type)
+#             )
+#
+#         # Optional to add the spatial-temporal pooling.
+#         if self.use_pool:
+#             self.pool = nn.MaxPool3d(
+#                 kernel_size=self.pool_size,
+#                 stride=self.pool_size,
+#                 padding=[0, 0, 0],
+#             )
+#
+#     def forward(self, x):
+#         x_identity = x
+#         N, C, T, H, W = x.size()
+#
+#         theta = self.conv_theta(x)
+#
+#         # Perform temporal-spatial pooling to reduce the computation.
+#         if self.use_pool:
+#             x = self.pool(x)
+#
+#         phi = self.conv_phi(x)
+#         g = self.conv_g(x)
+#
+#         theta = theta.view(N, self.dim_inner, -1)
+#         phi = phi.view(N, self.dim_inner, -1)
+#         g = g.view(N, self.dim_inner, -1)
+#
+#         # (N, C, TxHxW) * (N, C, TxHxW) => (N, TxHxW, TxHxW).
+#         theta_phi = torch.einsum("nct,ncp->ntp", (theta, phi))
+#         # For original Non-local paper, there are two main ways to normalize
+#         # the affinity tensor:
+#         #   1) Softmax normalization (norm on exp).
+#         #   2) dot_product normalization.
+#         if self.instantiation == "softmax":
+#             # Normalizing the affinity tensor theta_phi before softmax.
+#             theta_phi = theta_phi * (self.dim_inner ** -0.5)
+#             theta_phi = nn.functional.softmax(theta_phi, dim=2)
+#         elif self.instantiation == "dot_product":
+#             spatial_temporal_dim = theta_phi.shape[2]
+#             theta_phi = theta_phi / spatial_temporal_dim
+#         else:
+#             raise NotImplementedError(
+#                 "Unknown norm type {}".format(self.instantiation)
+#             )
+#
+#         # (N, TxHxW, TxHxW) * (N, C, TxHxW) => (N, C, TxHxW).
+#         theta_phi_g = torch.einsum("ntg,ncg->nct", (theta_phi, g))
+#
+#         # (N, C, TxHxW) => (N, C, T, H, W).
+#         theta_phi_g = theta_phi_g.view(N, self.dim_inner, T, H, W)
+#
+#         p = self.conv_out(theta_phi_g)
+#         if self.norm_type == "batchnorm":
+#             p = self.bn(p)
+#         elif self.norm_type == "layernorm":
+#             p = self.ln(p)
+#         return x_identity + p
+#
+#
+# def get_trans_func(name):
+#     """
+#     Retrieves the transformation module by name.
+#     """
+#     trans_funcs = {
+#         "bottleneck_transform": BottleneckTransform,
+#         "basic_transform": BasicTransform,
+#     }
+#     assert (
+#         name in trans_funcs.keys()
+#     ), "Transformation function '{}' not supported".format(name)
+#     return trans_funcs[name]
+#
+#
+# class BasicTransform(nn.Module):
+#     """
+#     Basic transformation: Tx3x3, 1x3x3, where T is the size of temporal kernel.
+#     """
+#
+#     def __init__(
+#         self,
+#         dim_in,
+#         dim_out,
+#         temp_kernel_size,
+#         stride,
+#         dim_inner=None,
+#         num_groups=1,
+#         stride_1x1=None,
+#         inplace_relu=True,
+#         eps=1e-5,
+#         bn_mmt=0.1,
+#     ):
+#         """
+#         Args:
+#             dim_in (int): the channel dimensions of the input.
+#             dim_out (int): the channel dimension of the output.
+#             temp_kernel_size (int): the temporal kernel sizes of the middle
+#                 convolution in the bottleneck.
+#             stride (int): the stride of the bottleneck.
+#             dim_inner (None): the inner dimension would not be used in
+#                 BasicTransform.
+#             num_groups (int): number of groups for the convolution. Number of
+#                 group is always 1 for BasicTransform.
+#             stride_1x1 (None): stride_1x1 will not be used in BasicTransform.
+#             inplace_relu (bool): if True, calculate the relu on the original
+#                 input without allocating new memory.
+#             eps (float): epsilon for batch norm.
+#             bn_mmt (float): momentum for batch norm. Noted that BN momentum in
+#                 PyTorch = 1 - BN momentum in Caffe2.
+#         """
+#         super(BasicTransform, self).__init__()
+#         self.temp_kernel_size = temp_kernel_size
+#         self._inplace_relu = inplace_relu
+#         self._eps = eps
+#         self._bn_mmt = bn_mmt
+#         self._construct(dim_in, dim_out, stride)
+#
+#     def _construct(self, dim_in, dim_out, stride):
+#         # Tx3x3, BN, ReLU.
+#         self.a = nn.Conv3d(
+#             dim_in,
+#             dim_out,
+#             kernel_size=[self.temp_kernel_size, 3, 3],
+#             stride=[1, stride, stride],
+#             padding=[int(self.temp_kernel_size // 2), 1, 1],
+#             bias=False,
+#         )
+#         self.a_bn = nn.BatchNorm3d(
+#             dim_out, eps=self._eps, momentum=self._bn_mmt
+#         )
+#         self.a_relu = nn.ReLU(inplace=self._inplace_relu)
+#         # 1x3x3, BN.
+#         self.b = nn.Conv3d(
+#             dim_out,
+#             dim_out,
+#             kernel_size=[1, 3, 3],
+#             stride=[1, 1, 1],
+#             padding=[0, 1, 1],
+#             bias=False,
+#         )
+#         self.b_bn = nn.BatchNorm3d(
+#             dim_out, eps=self._eps, momentum=self._bn_mmt
+#         )
+#         self.b_bn.transform_final_bn = True
+#
+#     def forward(self, x):
+#         x = self.a(x)
+#         x = self.a_bn(x)
+#         x = self.a_relu(x)
+#
+#         x = self.b(x)
+#         x = self.b_bn(x)
+#         return x
+#
+#
+# class BottleneckTransform(nn.Module):
+#     """
+#     Bottleneck transformation: Tx1x1, 1x3x3, 1x1x1, where T is the size of
+#         temporal kernel.
+#     """
+#
+#     def __init__(
+#         self,
+#         dim_in,
+#         dim_out,
+#         temp_kernel_size,
+#         stride,
+#         dim_inner,
+#         num_groups,
+#         stride_1x1=False,
+#         inplace_relu=True,
+#         eps=1e-5,
+#         bn_mmt=0.1,
+#     ):
+#         """
+#         Args:
+#             dim_in (int): the channel dimensions of the input.
+#             dim_out (int): the channel dimension of the output.
+#             temp_kernel_size (int): the temporal kernel sizes of the middle
+#                 convolution in the bottleneck.
+#             stride (int): the stride of the bottleneck.
+#             dim_inner (int): the inner dimension of the block.
+#             num_groups (int): number of groups for the convolution. num_groups=1
+#                 is for standard ResNet like networks, and num_groups>1 is for
+#                 ResNeXt like networks.
+#             stride_1x1 (bool): if True, apply stride to 1x1 conv, otherwise
+#                 apply stride to the 3x3 conv.
+#             inplace_relu (bool): if True, calculate the relu on the original
+#                 input without allocating new memory.
+#             eps (float): epsilon for batch norm.
+#             bn_mmt (float): momentum for batch norm. Noted that BN momentum in
+#                 PyTorch = 1 - BN momentum in Caffe2.
+#         """
+#         super(BottleneckTransform, self).__init__()
+#         self.temp_kernel_size = temp_kernel_size
+#         self._inplace_relu = inplace_relu
+#         self._eps = eps
+#         self._bn_mmt = bn_mmt
+#         self._stride_1x1 = stride_1x1
+#         self._construct(dim_in, dim_out, stride, dim_inner, num_groups)
+#
+#     def _construct(self, dim_in, dim_out, stride, dim_inner, num_groups):
+#         (str1x1, str3x3) = (stride, 1) if self._stride_1x1 else (1, stride)
+#
+#         # Tx1x1, BN, ReLU.
+#         self.a = nn.Conv3d(
+#             dim_in,
+#             dim_inner,
+#             kernel_size=[self.temp_kernel_size, 1, 1],
+#             stride=[1, str1x1, str1x1],
+#             padding=[int(self.temp_kernel_size // 2), 0, 0],
+#             bias=False,
+#         )
+#         self.a_bn = nn.BatchNorm3d(
+#             dim_inner, eps=self._eps, momentum=self._bn_mmt
+#         )
+#         self.a_relu = nn.ReLU(inplace=self._inplace_relu)
+#
+#         # 1x3x3, BN, ReLU.
+#         self.b = nn.Conv3d(
+#             dim_inner,
+#             dim_inner,
+#             [1, 3, 3],
+#             stride=[1, str3x3, str3x3],
+#             padding=[0, 1, 1],
+#             groups=num_groups,
+#             bias=False,
+#         )
+#         self.b_bn = nn.BatchNorm3d(
+#             dim_inner, eps=self._eps, momentum=self._bn_mmt
+#         )
+#         self.b_relu = nn.ReLU(inplace=self._inplace_relu)
+#
+#         # 1x1x1, BN.
+#         self.c = nn.Conv3d(
+#             dim_inner,
+#             dim_out,
+#             kernel_size=[1, 1, 1],
+#             stride=[1, 1, 1],
+#             padding=[0, 0, 0],
+#             bias=False,
+#         )
+#         self.c_bn = nn.BatchNorm3d(
+#             dim_out, eps=self._eps, momentum=self._bn_mmt
+#         )
+#         self.c_bn.transform_final_bn = True
+#
+#     def forward(self, x):
+#         # Explicitly forward every layer.
+#         # Branch2a.
+#         x = self.a(x)
+#         x = self.a_bn(x)
+#         x = self.a_relu(x)
+#
+#         # Branch2b.
+#         x = self.b(x)
+#         x = self.b_bn(x)
+#         x = self.b_relu(x)
+#
+#         # Branch2c
+#         x = self.c(x)
+#         x = self.c_bn(x)
+#         return x
+#
+#
+# class ResBlock(nn.Module):
+#     """
+#     Residual block.
+#     """
+#
+#     def __init__(
+#         self,
+#         dim_in,
+#         dim_out,
+#         temp_kernel_size,
+#         stride,
+#         trans_func,
+#         dim_inner,
+#         num_groups=1,
+#         stride_1x1=False,
+#         inplace_relu=True,
+#         eps=1e-5,
+#         bn_mmt=0.1,
+#     ):
+#         """
+#         ResBlock class constructs redisual blocks. More details can be found in:
+#             Kaiming He, Xiangyu Zhang, Shaoqing Ren, and Jian Sun.
+#             "Deep residual learning for image recognition."
+#             https://arxiv.org/abs/1512.03385
+#         Args:
+#             dim_in (int): the channel dimensions of the input.
+#             dim_out (int): the channel dimension of the output.
+#             temp_kernel_size (int): the temporal kernel sizes of the middle
+#                 convolution in the bottleneck.
+#             stride (int): the stride of the bottleneck.
+#             trans_func (string): transform function to be used to construct the
+#                 bottleneck.
+#             dim_inner (int): the inner dimension of the block.
+#             num_groups (int): number of groups for the convolution. num_groups=1
+#                 is for standard ResNet like networks, and num_groups>1 is for
+#                 ResNeXt like networks.
+#             stride_1x1 (bool): if True, apply stride to 1x1 conv, otherwise
+#                 apply stride to the 3x3 conv.
+#             inplace_relu (bool): calculate the relu on the original input
+#                 without allocating new memory.
+#             eps (float): epsilon for batch norm.
+#             bn_mmt (float): momentum for batch norm. Noted that BN momentum in
+#                 PyTorch = 1 - BN momentum in Caffe2.
+#         """
+#         super(ResBlock, self).__init__()
+#         self._inplace_relu = inplace_relu
+#         self._eps = eps
+#         self._bn_mmt = bn_mmt
+#         self._construct(
+#             dim_in,
+#             dim_out,
+#             temp_kernel_size,
+#             stride,
+#             trans_func,
+#             dim_inner,
+#             num_groups,
+#             stride_1x1,
+#             inplace_relu,
+#         )
+#
+#     def _construct(
+#         self,
+#         dim_in,
+#         dim_out,
+#         temp_kernel_size,
+#         stride,
+#         trans_func,
+#         dim_inner,
+#         num_groups,
+#         stride_1x1,
+#         inplace_relu,
+#     ):
+#         # Use skip connection with projection if dim or res change.
+#         if (dim_in != dim_out) or (stride != 1):
+#             self.branch1 = nn.Conv3d(
+#                 dim_in,
+#                 dim_out,
+#                 kernel_size=1,
+#                 stride=[1, stride, stride],
+#                 padding=0,
+#                 bias=False,
+#             )
+#             self.branch1_bn = nn.BatchNorm3d(
+#                 dim_out, eps=self._eps, momentum=self._bn_mmt
+#             )
+#         self.branch2 = trans_func(
+#             dim_in,
+#             dim_out,
+#             temp_kernel_size,
+#             stride,
+#             dim_inner,
+#             num_groups,
+#             stride_1x1=stride_1x1,
+#             inplace_relu=inplace_relu,
+#         )
+#         self.relu = nn.ReLU(self._inplace_relu)
+#
+#     def forward(self, x):
+#         if hasattr(self, "branch1"):
+#             x = self.branch1_bn(self.branch1(x)) + self.branch2(x)
+#         else:
+#             x = x + self.branch2(x)
+#         x = self.relu(x)
+#         return x
+#
+#
+# class ResStage(nn.Module):
+#     """
+#     Stage of 3D ResNet. It expects to have one or more tensors as input for
+#         single pathway (C2D, I3D, SlowOnly), and multi-pathway (SlowFast) cases.
+#         More details can be found here:
+#         Christoph Feichtenhofer, Haoqi Fan, Jitendra Malik, and Kaiming He.
+#         "Slowfast networks for video recognition."
+#         https://arxiv.org/pdf/1812.03982.pdf
+#     """
+#
+#     def __init__(
+#         self,
+#         dim_in,
+#         dim_out,
+#         stride,
+#         temp_kernel_sizes,
+#         num_blocks,
+#         dim_inner,
+#         num_groups,
+#         num_block_temp_kernel,
+#         nonlocal_inds,
+#         nonlocal_group,
+#         instantiation="softmax",
+#         trans_func_name="bottleneck_transform",
+#         stride_1x1=False,
+#         inplace_relu=True,
+#     ):
+#         """
+#         The `__init__` method of any subclass should also contain these arguments.
+#         ResStage builds p streams, where p can be greater or equal to one.
+#         Args:
+#             dim_in (list): list of p the channel dimensions of the input.
+#                 Different channel dimensions control the input dimension of
+#                 different pathways.
+#             dim_out (list): list of p the channel dimensions of the output.
+#                 Different channel dimensions control the input dimension of
+#                 different pathways.
+#             temp_kernel_sizes (list): list of the p temporal kernel sizes of the
+#                 convolution in the bottleneck. Different temp_kernel_sizes
+#                 control different pathway.
+#             stride (list): list of the p strides of the bottleneck. Different
+#                 stride control different pathway.
+#             num_blocks (list): list of p numbers of blocks for each of the
+#                 pathway.
+#             dim_inner (list): list of the p inner channel dimensions of the
+#                 input. Different channel dimensions control the input dimension
+#                 of different pathways.
+#             num_groups (list): list of number of p groups for the convolution.
+#                 num_groups=1 is for standard ResNet like networks, and
+#                 num_groups>1 is for ResNeXt like networks.
+#             num_block_temp_kernel (list): extent the temp_kernel_sizes to
+#                 num_block_temp_kernel blocks, then fill temporal kernel size
+#                 of 1 for the rest of the layers.
+#             nonlocal_inds (list): If the tuple is empty, no nonlocal layer will
+#                 be added. If the tuple is not empty, add nonlocal layers after
+#                 the index-th block.
+#             nonlocal_group (list): list of number of p nonlocal groups. Each
+#                 number controls how to fold temporal dimension to batch
+#                 dimension before applying nonlocal transformation.
+#                 https://github.com/facebookresearch/video-nonlocal-net.
+#             instantiation (string): different instantiation for nonlocal layer.
+#                 Supports two different instantiation method:
+#                     "dot_product": normalizing correlation matrix with L2.
+#                     "softmax": normalizing correlation matrix with Softmax.
+#             trans_func_name (string): name of the the transformation function apply
+#                 on the network.
+#         """
+#         super(ResStage, self).__init__()
+#         assert all(
+#             (
+#                 num_block_temp_kernel[i] <= num_blocks[i]
+#                 for i in range(len(temp_kernel_sizes))
+#             )
+#         )
+#         self.num_blocks = num_blocks
+#         self.nonlocal_group = nonlocal_group
+#         self.temp_kernel_sizes = [
+#             (temp_kernel_sizes[i] * num_blocks[i])[: num_block_temp_kernel[i]]
+#             + [1] * (num_blocks[i] - num_block_temp_kernel[i])
+#             for i in range(len(temp_kernel_sizes))
+#         ]
+#         assert (
+#             len(
+#                 {
+#                     len(dim_in),
+#                     len(dim_out),
+#                     len(temp_kernel_sizes),
+#                     len(stride),
+#                     len(num_blocks),
+#                     len(dim_inner),
+#                     len(num_groups),
+#                     len(num_block_temp_kernel),
+#                     len(nonlocal_inds),
+#                     len(nonlocal_group),
+#                 }
+#             )
+#             == 1
+#         )
+#         self.num_pathways = len(self.num_blocks)
+#         self._construct(
+#             dim_in,
+#             dim_out,
+#             stride,
+#             dim_inner,
+#             num_groups,
+#             trans_func_name,
+#             stride_1x1,
+#             inplace_relu,
+#             nonlocal_inds,
+#             instantiation,
+#         )
+#
+#     def _construct(
+#         self,
+#         dim_in,
+#         dim_out,
+#         stride,
+#         dim_inner,
+#         num_groups,
+#         trans_func_name,
+#         stride_1x1,
+#         inplace_relu,
+#         nonlocal_inds,
+#         instantiation,
+#     ):
+#         for pathway in range(self.num_pathways):
+#             for i in range(self.num_blocks[pathway]):
+#                 # Retrieve the transformation function.
+#                 trans_func = get_trans_func(trans_func_name)
+#                 # Construct the block.
+#                 res_block = ResBlock(
+#                     dim_in[pathway] if i == 0 else dim_out[pathway],
+#                     dim_out[pathway],
+#                     self.temp_kernel_sizes[pathway][i],
+#                     stride[pathway] if i == 0 else 1,
+#                     trans_func,
+#                     dim_inner[pathway],
+#                     num_groups[pathway],
+#                     stride_1x1=stride_1x1,
+#                     inplace_relu=inplace_relu,
+#                 )
+#                 self.add_module("pathway{}_res{}".format(pathway, i), res_block)
+#                 if i in nonlocal_inds[pathway]:
+#                     nln = Nonlocal(
+#                         dim_out[pathway],
+#                         dim_out[pathway] // 2,
+#                         [1, 2, 2],
+#                         instantiation=instantiation,
+#                     )
+#                     self.add_module(
+#                         "pathway{}_nonlocal{}".format(pathway, i), nln
+#                     )
+#
+#     def forward(self, inputs):
+#         output = []
+#         for pathway in range(self.num_pathways):
+#             x = inputs[pathway]
+#             for i in range(self.num_blocks[pathway]):
+#                 m = getattr(self, "pathway{}_res{}".format(pathway, i))
+#                 x = m(x)
+#                 if hasattr(self, "pathway{}_nonlocal{}".format(pathway, i)):
+#                     nln = getattr(
+#                         self, "pathway{}_nonlocal{}".format(pathway, i)
+#                     )
+#                     b, c, t, h, w = x.shape
+#                     if self.nonlocal_group[pathway] > 1:
+#                         # Fold temporal dimension into batch dimension.
+#                         x = x.permute(0, 2, 1, 3, 4)
+#                         x = x.reshape(
+#                             b * self.nonlocal_group[pathway],
+#                             t // self.nonlocal_group[pathway],
+#                             c,
+#                             h,
+#                             w,
+#                         )
+#                         x = x.permute(0, 2, 1, 3, 4)
+#                     x = nln(x)
+#                     if self.nonlocal_group[pathway] > 1:
+#                         # Fold back to temporal dimension.
+#                         x = x.permute(0, 2, 1, 3, 4)
+#                         x = x.reshape(b, t, c, h, w)
+#                         x = x.permute(0, 2, 1, 3, 4)
+#             output.append(x)
+#
+#         return output
+#
+#
+# # from model.head_helper import ResNetBasicHead
+#
+# import torch
+# import torch.nn as nn
+#
+#
+# class ResNetBasicHead(nn.Module):
+#     """
+#     ResNe(X)t 3D head.
+#     This layer performs a fully-connected projection during training, when the
+#     input size is 1x1x1. It performs a convolutional projection during testing
+#     when the input size is larger than 1x1x1. If the inputs are from multiple
+#     different pathways, the inputs will be concatenated after pooling.
+#     """
+#
+#     def __init__(
+#         self,
+#         dim_in,
+#         num_classes,
+#         pool_size,
+#         dropout_rate=0.0,
+#         act_func="softmax",
+#     ):
+#         """
+#         The `__init__` method of any subclass should also contain these
+#             arguments.
+#         ResNetBasicHead takes p pathways as input where p in [1, infty].
+#         Args:
+#             dim_in (list): the list of channel dimensions of the p inputs to the
+#                 ResNetHead.
+#             num_classes (int): the channel dimensions of the p outputs to the
+#                 ResNetHead.
+#             pool_size (list): the list of kernel sizes of p spatial temporal
+#                 poolings, temporal pool kernel size, spatial pool kernel size,
+#                 spatial pool kernel size in order.
+#             dropout_rate (float): dropout rate. If equal to 0.0, perform no
+#                 dropout.
+#             act_func (string): activation function to use. 'softmax': applies
+#                 softmax on the output. 'sigmoid': applies sigmoid on the output.
+#         """
+#         super(ResNetBasicHead, self).__init__()
+#         assert (
+#             len({len(pool_size), len(dim_in)}) == 1
+#         ), "pathway dimensions are not consistent."
+#         self.num_pathways = len(pool_size)
+#
+#         for pathway in range(self.num_pathways):
+#             avg_pool = nn.AvgPool3d(pool_size[pathway], stride=1)
+#             self.add_module("pathway{}_avgpool".format(pathway), avg_pool)
+#
+#         if dropout_rate > 0.0:
+#             self.dropout = nn.Dropout(dropout_rate)
+#         # Perform FC in a fully convolutional manner. The FC layer will be
+#         # initialized with a different std comparing to convolutional layers.
+#         self.projection = nn.Linear(sum(dim_in), num_classes, bias=True)
+#
+#         # Softmax for evaluation and testing.
+#         if act_func == "softmax":
+#             self.act = nn.Softmax(dim=4)
+#         elif act_func == "sigmoid":
+#             self.act = nn.Sigmoid()
+#         else:
+#             raise NotImplementedError(
+#                 "{} is not supported as an activation"
+#                 "function.".format(act_func)
+#             )
+#
+#     def forward(self, inputs):
+#         assert (
+#             len(inputs) == self.num_pathways
+#         ), "Input tensor does not contain {} pathway".format(self.num_pathways)
+#         pool_out = []
+#         for pathway in range(self.num_pathways):
+#             m = getattr(self, "pathway{}_avgpool".format(pathway))
+#             pool_out.append(m(inputs[pathway]))
+#         x = torch.cat(pool_out, 1)
+#         # (N, C, T, H, W) -> (N, T, H, W, C).
+#         x = x.permute((0, 2, 3, 4, 1))
+#         # Perform dropout.
+#         if hasattr(self, "dropout"):
+#             x = self.dropout(x)
+#         x = self.projection(x)
+#
+#         # Performs fully convlutional inference.
+#         if not self.training:
+#             x = self.act(x)
+#             x = x.mean([1, 2, 3])
+#
+#         x = x.view(x.shape[0], -1)
+#         return x
+#
+# # import ops.weight_init_helper as init_helper
+# """Utility function for weight initialization"""
+#
+# import torch.nn as nn
+# from fvcore.nn.weight_init import c2_msra_fill
+#
+#
+# def init_weights(model, fc_init_std=0.01, zero_init_final_bn=True):
+#     """
+#     Performs ResNet style weight initialization.
+#     Args:
+#         fc_init_std (float): the expected standard deviation for fc layer.
+#         zero_init_final_bn (bool): if True, zero initialize the final bn for
+#             every bottleneck.
+#     """
+#     for m in model.modules():
+#         if isinstance(m, nn.Conv3d):
+#             """
+#             Follow the initialization method proposed in:
+#             {He, Kaiming, et al.
+#             "Delving deep into rectifiers: Surpassing human-level
+#             performance on imagenet classification."
+#             arXiv preprint arXiv:1502.01852 (2015)}
+#             """
+#             c2_msra_fill(m)
+#         elif isinstance(m, nn.BatchNorm3d):
+#             if (
+#                 hasattr(m, "transform_final_bn")
+#                 and m.transform_final_bn
+#                 and zero_init_final_bn
+#             ):
+#                 batchnorm_weight = 0.0
+#             else:
+#                 batchnorm_weight = 1.0
+#             m.weight.data.fill_(batchnorm_weight)
+#             m.bias.data.zero_()
+#         if isinstance(m, nn.Linear):
+#             m.weight.data.normal_(mean=0.0, std=fc_init_std)
+#             m.bias.data.zero_()
+#
+# #_MODEL_STAGE_DEPTH = {50: (3, 4, 6, 3), 101: (3, 4, 23, 3)}
+# _MODEL_STAGE_DEPTH = {50: (1, 1, 1, 1), 101: (3, 4, 23, 3)}
+#
+# _POOL1 = {
+#     "c2d": [[2, 1, 1]],
+#     "c2d_nopool": [[1, 1, 1]],
+#     "i3d": [[2, 1, 1]],
+#     "i3d_nopool": [[1, 1, 1]],
+#     "slowonly": [[1, 1, 1]],
+#     "slowfast": [[1, 1, 1], [1, 1, 1]],
+# }
+#
+# # Basis of temporal kernel sizes for each of the stage.
+# _TEMPORAL_KERNEL_BASIS = {
+#     "c2d": [
+#         [[1]],  # conv1 temporal kernel.
+#         [[1]],  # res2 temporal kernel.
+#         [[1]],  # res3 temporal kernel.
+#         [[1]],  # res4 temporal kernel.
+#         [[1]],  # res5 temporal kernel.
+#     ],
+#     "c2d_nopool": [
+#         [[1]],  # conv1 temporal kernel.
+#         [[1]],  # res2 temporal kernel.
+#         [[1]],  # res3 temporal kernel.
+#         [[1]],  # res4 temporal kernel.
+#         [[1]],  # res5 temporal kernel.
+#     ],
+#     "i3d": [
+#         [[5]],  # conv1 temporal kernel.
+#         [[3]],  # res2 temporal kernel.
+#         [[3, 1]],  # res3 temporal kernel.
+#         [[3, 1]],  # res4 temporal kernel.
+#         [[1, 3]],  # res5 temporal kernel.
+#     ],
+#     "i3d_nopool": [
+#         [[5]],  # conv1 temporal kernel.
+#         [[3]],  # res2 temporal kernel.
+#         [[3, 1]],  # res3 temporal kernel.
+#         [[3, 1]],  # res4 temporal kernel.
+#         [[1, 3]],  # res5 temporal kernel.
+#     ],
+#     "slowonly": [
+#         [[1]],  # conv1 temporal kernel.
+#         [[1]],  # res2 temporal kernel.
+#         [[1]],  # res3 temporal kernel.
+#         [[3]],  # res4 temporal kernel.
+#         [[3]],  # res5 temporal kernel.
+#     ],
+#     "slowfast": [
+#         [[1], [5]],  # conv1 temporal kernel for slow and fast pathway.
+#         [[1], [3]],  # res2 temporal kernel for slow and fast pathway.
+#         [[1], [3]],  # res3 temporal kernel for slow and fast pathway.
+#         [[3], [3]],  # res4 temporal kernel for slow and fast pathway.
+#         [[3], [3]],  # res5 temporal kernel for slow and fast pathway.
+#     ],
+# }
+#
+# _POOL1 = {
+#     "c2d": [[2, 1, 1]],
+#     "c2d_nopool": [[1, 1, 1]],
+#     "i3d": [[2, 1, 1]],
+#     "i3d_nopool": [[1, 1, 1]],
+#     "slowonly": [[1, 1, 1]],
+#     "slowfast": [[1, 1, 1], [1, 1, 1]],
+# }
+#
+#
+# class ENModel(nn.Module):
+#     """
+#     It builds a ResNet like network backbone without lateral connection.
+#     Copied from https://github.com/facebookresearch/SlowFast/blob/master/slowfast/models/model_builder.py
+#     """
+#     def __init__(self, arch="i3d",
+#                        resnet_depth=50,     # 50/101
+#                        input_channel=1,
+#                        num_frames=-1,
+#                        crop_h=-1,
+#                        crop_w=-1,
+#                        num_classes=2,
+#                        ):
+#         super(ENModel, self).__init__()
+#
+#         self.num_pathways = 1        # Because it is only slow, so it is 1
+#         assert arch in _POOL1.keys()
+#         pool_size = _POOL1[arch]
+#         assert len({len(pool_size), self.num_pathways}) == 1
+#         assert resnet_depth in _MODEL_STAGE_DEPTH.keys()
+#         (d2, d3, d4, d5) = _MODEL_STAGE_DEPTH[resnet_depth]
+#
+#         # vanilla params
+#         num_groups = 1
+#         width_per_group = 16        # origin: 64
+#         dim_inner = num_groups * width_per_group
+#
+#         temp_kernel = _TEMPORAL_KERNEL_BASIS[arch]
+#
+#         self.s1 = VideoModelStem(
+#                 dim_in=[input_channel],
+#                 dim_out=[width_per_group],
+#                 kernel=[temp_kernel[0][0] + [7, 7]],
+#                 stride=[[1, 2, 2]],
+#                 padding=[[temp_kernel[0][0][0] // 2, 3, 3]],
+#         )
+#
+#         self.s2 = ResStage(
+#                 dim_in=[width_per_group],
+#                 dim_out=[width_per_group * 4],
+#                 dim_inner=[dim_inner],
+#                 temp_kernel_sizes=temp_kernel[1],
+#                 stride=[1],
+#                 num_blocks=[d2],
+#                 num_groups=[num_groups],
+#                 num_block_temp_kernel=[d2],
+#                 nonlocal_inds=[[]],
+#                 nonlocal_group=[1],
+#                 instantiation='softmax',
+#                 trans_func_name='bottleneck_transform',
+#                 stride_1x1=False,
+#                 inplace_relu=True,
+#         )
+#
+#         for pathway in range(self.num_pathways):
+#             pool = nn.MaxPool3d(
+#                     kernel_size=pool_size[pathway],
+#                     stride=pool_size[pathway],
+#                     padding=[0, 0, 0]
+#             )
+#             self.add_module("pathway{}_pool".format(pathway), pool)
+#
+#         self.s3 = ResStage(
+#                 dim_in=[width_per_group * 4],
+#                 dim_out=[width_per_group * 8],
+#                 dim_inner=[dim_inner * 2],
+#                 temp_kernel_sizes=temp_kernel[2],
+#                 stride=[2],
+#                 num_blocks=[d3],
+#                 num_groups=[num_groups],
+#                 num_block_temp_kernel=[d3],
+#                 nonlocal_inds=[[]],
+#                 nonlocal_group=[1],
+#                 instantiation='softmax',
+#                 trans_func_name='bottleneck_transform',
+#                 stride_1x1=False,
+#                 inplace_relu=True,
+#         )
+#
+#         self.s4 = ResStage(
+#                 dim_in=[width_per_group * 8],
+#                 dim_out=[width_per_group * 16],
+#                 dim_inner=[dim_inner * 4],
+#                 temp_kernel_sizes=temp_kernel[3],
+#                 stride=[2],
+#                 num_blocks=[d4],
+#                 num_groups=[num_groups],
+#                 num_block_temp_kernel=[d4],
+#                 nonlocal_inds=[[]],
+#                 nonlocal_group=[1],
+#                 instantiation='softmax',
+#                 trans_func_name='bottleneck_transform',
+#                 stride_1x1=False,
+#                 inplace_relu=True,
+#         )
+#
+#         self.s5 = ResStage(
+#                 dim_in=[width_per_group * 16],
+#                 dim_out=[width_per_group * 32],
+#                 dim_inner=[dim_inner * 8],
+#                 temp_kernel_sizes=temp_kernel[4],
+#                 stride=[2],
+#                 num_blocks=[d5],
+#                 num_groups=[num_groups],
+#                 num_block_temp_kernel=[d5],
+#                 nonlocal_inds=[[]],
+#                 nonlocal_group=[1],
+#                 instantiation='softmax',
+#                 trans_func_name='bottleneck_transform',
+#                 stride_1x1=False,
+#                 inplace_relu=True,
+#         )
+#
+#         # Classifier
+#         #self.head = ResNetBasicHead(
+#         #        dim_in=[width_per_group * 32],
+#         #        num_classes=num_classes,
+#         #        pool_size=[
+#         #            [
+#         #                num_frames // pool_size[0][0],
+#         #                crop_h // 32 // pool_size[0][1],
+#         #                crop_w // 32 // pool_size[0][2],
+#         #            ]
+#         #        ],
+#         #        dropout_rate=0.5,
+#         #)
+#
+#
+#         self.head = nn.Sequential(
+#                             nn.AdaptiveMaxPool3d((16, 24, 36)),
+#                             nn.Conv3d(128, 64, kernel_size = 3, padding = 1),
+#                             nn.ReLU(inplace=True),
+#                             nn.AdaptiveMaxPool3d((4, 12, 18)),
+#                             nn.Conv3d(64, 32, kernel_size=3, padding=1),
+#                             nn.ReLU(inplace=True),
+#                             nn.AdaptiveMaxPool3d((1, 6, 9)),
+#                             nn.Dropout3d(p = 0),
+#                             nn.Conv3d(32, 32, kernel_size=3, padding=1),
+#                             nn.ReLU(inplace=True),
+#                             nn.AdaptiveMaxPool3d((1, 1, 1)),
+#                         )
+#         self.classifier = nn.Sequential(
+#                             nn.Linear(32, 32),
+#                             nn.Linear(32, 2)
+#                         )
+#
+#         # init weights
+#         init_weights(
+#             self, fc_init_std=0.01, zero_init_final_bn=True
+#         )
+#
+#
+#     def forward(self, x):
+#         # for pathway in range(self.num_pathways):
+#         #    x[pathway] = x[pathway] - self.mean
+#         x = self.s1(x)
+#         x = self.s2(x)
+#         for pathway in range(self.num_pathways):
+#             pool = getattr(self, "pathway{}_pool".format(pathway))
+#             x[pathway] = pool(x[pathway])
+#         x = self.s3(x)
+#         x = self.head(x[0])
+#         n, c = x.size(0), x.size(1)
+#         x = self.classifier(x.view(n, c))
+#         #x = self.s4(x)
+#         #x = self.s5(x)
+#         #x = self.head(x)
+#         return x
+#
+#
+# if __name__ == "__main__":
+#     model = ENModel()
+#     aa = torch.ones((1, 1, 10, 128, 128))
+#     model([aa])
+#     model_param = sum(x.numel() for x in model.parameters())
+#     print (model_param)
+#
+#
+# # model = import_module(f"model.{MODEL_UID}")
+# # ENModel = getattr(model, "ENModel")
+#
+# criterion = torch.nn.CrossEntropyLoss(reduction="mean")
+#
+# model = ENModel(arch=ARCH, resnet_depth=DEPTH,
+#                 input_channel=2, num_classes=NUM_CLASSES)
+# model = torch.nn.DataParallel(model).cuda()
+#
+# # print('MODEL')
+# # print(model)
+#
+# # print('PRE-TRAINED')
+# # print(torch.load(PRETRAINED_MODEL_PATH))
+#
+# model.load_state_dict(torch.load('ncov-Epoch_00140-auc95p9.pth'))
+#
+# ValidLoader = torch.utils.data.DataLoader(Validset,
+#                                     batch_size=1,
+#                                     num_workers=NUM_WORKERS,
+#                                     collate_fn=Train_Collatefn,
+#                                     shuffle=False,)
+#
+# Val_CE, Val_Acc = [ScalarContainer() for _ in range(2)]
+#
+# gts, pcovs = [], []
+#
+# # copied from metrics
+# def sensitivity_specificity(y_true, y_score):
+#     desc_score_indices = np.argsort(y_score, kind="mergesort")[::-1]
+#     y_score = y_score[desc_score_indices]
+#     y_true = y_true[desc_score_indices]
+#
+#     N = len(y_score)
+#     tp, fp = 0, 0
+#     condition_positive, condition_negative = np.sum(y_true), N-np.sum(y_true)
+#
+#     sensitivity, specificity = np.zeros(N), np.zeros(N)
+#
+#     for i in range(N):
+#         predicted_positive = i+1
+#         predicted_negative = N - predicted_positive
+#         if y_true[i] == 1:
+#             tp += 1
+#         else:
+#             fp += 1
+#
+#         tn = condition_negative - fp
+#
+#         sensitivity[i] = tp / float(condition_positive)
+#         specificity[i] = tn / float(condition_negative + 1e-6)
+#
+#         # print( "tp: {}, fp: {}, tn: {}, sens: {}, spec: {}".format( tp,fp,tn,sensitivity[i], specificity[i]  )  )
+#
+#     sensitivity, specificity = np.r_[0, sensitivity, 1], np.r_[1, specificity, 0]
+#     auc = 0
+#     for i in range(len(sensitivity)-1):
+#         # auc += (sensitivity[i+1]-sensitivity[i]) * specificity[i]
+#         auc += (sensitivity[i+1]-sensitivity[i]) * specificity[i]
+#
+#     return sensitivity, specificity, auc
+#
+#
+# with torch.no_grad():
+#     for i, (all_F, all_L, all_info) in enumerate(ValidLoader):
+#         labels = all_L.cuda()
+#         preds = model([all_F.cuda()])
+#
+#         # val_loss = criterion(preds, labels)
+#         val_acc = topk_accuracies(preds, labels, [1])[0]
+#
+#         name = all_info[0]["name"]
+#         pid = name.split('/')[-1][:-4]
+#
+#         prob_preds = F.softmax(preds, dim=1)
+#         prob_normal = prob_preds[0, 0].item()
+#         prob_ncov = prob_preds[0, 1].item()
+#         gt = labels.item()
+#
+#         gts.append(gt)
+#         pcovs.append(prob_ncov)
+#
+#         print ("{} {} {} {} {}".format(all_info[0]["name"], pid, prob_normal, prob_ncov, labels.item()))
+#
+#         # Val_CE.write(val_loss); Val_Acc.write(val_acc)
+#
+# # from metrics import sensitivity_specificity
+# Ece, Eacc = Val_CE.read(), Val_Acc.read()
+# gts, pcovs = np.asarray(gts), np.asarray(pcovs)
+# _, _, Eauc = sensitivity_specificity(gts, pcovs)
+# e = 0
+# print("VALIDATION | E [{}] | CE: {:1.5f} | ValAcc: {:1.3f} | ValAUC: {:1.3f}".format(e, Ece, Eacc, Eauc))
+#
+# """# Getting Training to work"""
+#
+# # import warnings
+# #
+# # def fxn():
+# #     warnings.warn("deprecated", UserWarning)
+# #
+# # with warnings.catch_warnings():
+# #     warnings.simplefilter("once")
+# #     fxn()
+# #
+# # import warnings
+# # warnings.filterwarnings("ignore", category=UserWarning)
+#
+# ############### Set up Variables ###############
+# TRAIN_CROP_SIZE = tuple([224, 336])
+# CLIP_RANGE = [float(x) for x in [0.3, 0.7]]
+# DATA_ROOT = 'dataset3/NCOV-BF'
+# BATCH_SIZE_PER_GPU = 1
+# LEARNING_RATE = 1e-5
+# WEIGHT_DECAY = 0
+# LR_DECAY = 1
+# INIT_MODEL_PATH = 'ncov-Epoch_00140-auc95p9.pth'
+# INIT_MODEL_STRICT = "True"
+# SNAPSHOT_FREQ = 5
+# TRAIN_EPOCH = 300
+# SNAPSHOT_HOME = "experiments"
+# SNAPSHOT_MODEL_TPL = "ncov-Epoch_{:05d}.pth"
+#
+#
+#
+# random.seed(0); torch.manual_seed(0); np.random.seed(0)
+# local_rank = 0
+#
+#
+# ############### Set up Dataloaders ###############
+# Trainset = CTDataset(data_home=DATA_ROOT,
+#                      split='train',
+#                      #fold_id=FOLD_ID,
+#                      crop_size=TRAIN_CROP_SIZE,
+#                      clip_range=CLIP_RANGE)
+#
+# Validset = CTDataset(data_home=DATA_ROOT,
+#                      split='valid',
+#                      #fold_id=FOLD_ID,
+#                      crop_size=TRAIN_CROP_SIZE,
+#                      clip_range=CLIP_RANGE)
+#
+#
+#
+# model = ENModel(arch=ARCH, resnet_depth=DEPTH,
+#                     input_channel=2,
+#                     crop_h=TRAIN_CROP_SIZE[0],
+#                     crop_w=TRAIN_CROP_SIZE[1], num_classes=NUM_CLASSES)
+# model = torch.nn.DataParallel(model).cuda()
+# TrainLoader = torch.utils.data.DataLoader(Trainset,
+#                                     batch_size=BATCH_SIZE_PER_GPU,
+#                                         num_workers=NUM_WORKERS,
+#                                         collate_fn=Train_Collatefn,
+#                                         shuffle=True,
+#                                         pin_memory=True)
+#
+#
+# model.eval()
+#
+#
+#
+# ############### Set up Optimization ###############
+# optimizer = torch.optim.Adam(model.parameters(), lr=LEARNING_RATE, weight_decay=WEIGHT_DECAY)
+# lr_scher = torch.optim.lr_scheduler.ExponentialLR(optimizer, gamma=LR_DECAY, last_epoch=-1)
+# criterion = torch.nn.CrossEntropyLoss(reduction="mean")
+#
+#
+# model.load_state_dict(torch.load(INIT_MODEL_PATH, \
+#                  map_location=f'cuda:{local_rank}'), strict=INIT_MODEL_STRICT)
+#
+#
+# dset_len, loader_len = len(Trainset), len(TrainLoader)
+#
+# Epoch_CE, Epoch_Acc = [ScalarContainer() for _ in range(2)]
+#
+# ############### Sending Model data to Neptune ###############
+# run["config/model"] = type(model).__name__
+# run["config/criterion"] = type(criterion).__name__
+# run["config/optimizer"] = type(optimizer).__name__
+#
+#
+# dataset_size = {"train": len(Trainset), "val": len(Validset), 'test': len(Validset)}
+# # currently Validset & Testset are the same size
+#
+# data_tfms = {'function': 'cta_images, cta_masks = Rand_Transforms(cta_images, cta_masks, ANGLE_R=10, TRANS_R=0.1, SCALE_R=0.2, SHEAR_R=10, BRIGHT_R=0.5, CONTRAST_R=0.3)',
+# 'ANGLE_R': 10,
+# 'TRANS_R': 0.1,
+# 'SCALE_R': 0.2,
+# 'SHEAR_R': 10,
+# 'BRIGHT_R': 0.5,
+# 'CONTRAST_R': 0.3,
+# }
+#
+# run["config/dataset/path"] = 'dataset3/NCOV-BF'
+# run["config/dataset/transforms"] =  data_tfms
+# run["config/dataset/size"] = dataset_size
+#
+#
+# parameters = {
+#     "lr": LEARNING_RATE,
+#     "bs": BATCH_SIZE_PER_GPU,
+#     "input_sz": 224 * 336 ,
+#     "n_classes": NUM_CLASSES,
+#     "model_filename": "decovnet_v0_10ep",
+#     "device": torch.device("cuda:0" if torch.cuda.is_available() else "cpu"),
+#     'weight_decay': WEIGHT_DECAY,
+#     'lr_decay': LR_DECAY,
+#     'train_crop_size': TRAIN_CROP_SIZE,
+#     'clip_range': CLIP_RANGE,
+#     'SNAPSHOT_FREQ': SNAPSHOT_FREQ,
+#     'train_epoch': TRAIN_EPOCH,
+#     'pre-trained-DeCoVNet': 'ncov-Epoch_00140-auc95p9.pth',
+# }
+#
+# run["config/hyperparameters"] = parameters
+#
+#
+# ############### Training ###############
+# for e in range(TRAIN_EPOCH):
+#     run["training/batch/epoch"].log(e)
+#     for i, (all_F, all_L, all_info) in enumerate(TrainLoader):
+#         optimizer.zero_grad()
+#
+#         # tik = time.time()
+#         preds = model([all_F.cuda(non_blocking=True)])   # I3D
+#         labels = all_L.cuda(non_blocking=True)
+#         loss = criterion(preds, labels)
+#
+#
+#         acc = topk_accuracies(preds, labels, [1])[0]
+#         # rT += time.time()-tik
+#         Epoch_CE.write(loss); Epoch_Acc.write(acc);
+#
+#         run["training/batch/loss"].log(loss)
+#         run["training/batch/acc"].log(acc)
+#
+#         loss.backward()
+#         optimizer.step()
+#
+#         # Epoch_CE = loss
+#         # Epoch_Acc = acc
+#         #break
+#
+#     Ece, Eacc = Epoch_CE.read(), Epoch_Acc.read()
+#
+#     # Ece, Eacc = Epoch_CE, Epoch_Acc
+#     print("EN | E-R [{}-{}] | I [{}] | CE: {:1.5f} | TrainAcc: {:1.3f}".format(e, local_rank, loader_len, Ece, Eacc))
+#
+#     if local_rank == 0:
+#         if e % SNAPSHOT_FREQ == 0 or e >= TRAIN_EPOCH-1:
+#             #model.eval()
+#             model_save_path = os.path.join(SNAPSHOT_HOME, SNAPSHOT_MODEL_TPL.format(e))
+#             print(f"Dump weights {model_save_path} to disk...")
+#             torch.save(model.state_dict(), model_save_path)
+#
+#             ValidLoader = torch.utils.data.DataLoader(Validset,
+#                                                 batch_size=1,
+#                                                 num_workers=NUM_WORKERS,
+#                                                 collate_fn=Train_Collatefn,
+#                                                 shuffle=True,)
+#
+#             Val_CE, Val_Acc = [ScalarContainer() for _ in range(2)]
+#
+#             print("Do evaluation...")
+#             with torch.no_grad():
+#                 gts = []
+#                 pcovs = []
+#                 for i, (all_F, all_L, all_info) in enumerate(ValidLoader):
+#                     labels = all_L.cuda(non_blocking=True)
+#                     preds = model([all_F.cuda(non_blocking=True)])
+#                     val_loss = criterion(preds, labels)
+#                     val_acc = topk_accuracies(preds, labels, [1])[0]
+#
+#                     run["validation/batch/loss"].log(val_loss)
+#                     run["validation/batch/acc"].log(val_acc)
+#
+#                     prob_preds = F.softmax(preds, dim=1)
+#                     prob_normal = prob_preds[0, 0].item()
+#                     prob_ncov = prob_preds[0, 1].item()
+#                     gt = labels.item()
+#
+#                     gts.append(gt)
+#                     pcovs.append(prob_ncov)
+#
+#                     Val_CE.write(val_loss); Val_Acc.write(val_acc)
+#
+#                     # Val_CE = val_loss
+#                     # Val_Acc = val_acc
+#
+#                 #Eap = average_precision_score(gts, pcovs)
+#                 gts, pcovs = np.asarray(gts), np.asarray(pcovs)
+#                 _, _, Eauc = sensitivity_specificity(gts, pcovs)
+#
+#                 # Ece = Val_CE
+#                 # Eacc = Val_Acc
+#                 Ece, Eacc = Val_CE.read(), Val_Acc.read()
+#
+#                 print("VALIDATION | E [{}] | CE: {:1.5f} | ValAcc: {:1.3f} | ValAUC: {:1.3f}".format(e, Ece, Eacc, Eauc))
+#
+#     if LR_DECAY != 1:
+#         lr_scher.step()
+#         if local_rank == 0:
+#             print("Setting LR: {}".format(optimizer.param_groups[0]["lr"]))
+#
+# # get testing to work
+#
+# # define Testset
+# SAMPLE_NUMBER = -1
+#
+# Testset = CTDataset(data_home=DATA_ROOT,
+#                                split='test')#,
+#                               #  sample_number=SAMPLE_NUMBER)
+#
+# criterion = torch.nn.CrossEntropyLoss(reduction="mean")
+#
+# TestLoader = torch.utils.data.DataLoader(Testset,
+#                                     batch_size=1,
+#                                     num_workers=NUM_WORKERS,
+#                                     collate_fn=Train_Collatefn,
+#                                     shuffle=False,)
+#
+# Tes_CE, Tes_Acc = [ScalarContainer() for _ in range(2)]
+#
+# gts, pcovs = [], []
+#
+# # copied from metrics
+# def sensitivity_specificity(y_true, y_score):
+#     desc_score_indices = np.argsort(y_score, kind="mergesort")[::-1]
+#     y_score = y_score[desc_score_indices]
+#     y_true = y_true[desc_score_indices]
+#
+#     N = len(y_score)
+#     tp, fp = 0, 0
+#     condition_positive, condition_negative = np.sum(y_true), N-np.sum(y_true)
+#
+#     sensitivity, specificity = np.zeros(N), np.zeros(N)
+#
+#     for i in range(N):
+#         predicted_positive = i+1
+#         predicted_negative = N - predicted_positive
+#         if y_true[i] == 1:
+#             tp += 1
+#         else:
+#             fp += 1
+#
+#         tn = condition_negative - fp
+#
+#         sensitivity[i] = tp / float(condition_positive)
+#         specificity[i] = tn / float(condition_negative + 1e-6)
+#
+#         # print( "tp: {}, fp: {}, tn: {}, sens: {}, spec: {}".format( tp,fp,tn,sensitivity[i], specificity[i]  )  )
+#
+#     sensitivity, specificity = np.r_[0, sensitivity, 1], np.r_[1, specificity, 0]
+#     auc = 0
+#     for i in range(len(sensitivity)-1):
+#         # auc += (sensitivity[i+1]-sensitivity[i]) * specificity[i]
+#         auc += (sensitivity[i+1]-sensitivity[i]) * specificity[i]
+#
+#     return sensitivity, specificity, auc
+#
+#
+# with torch.no_grad():
+#     for i, (all_F, all_L, all_info) in enumerate(TestLoader):
+#         labels = all_L.cuda()
+#         preds = model([all_F.cuda(non_blocking=True)])
+#
+#         # preds = model([all_F.cuda(non_blocking=True)])   # I3D
+#
+#         val_loss = criterion(preds, labels)
+#         val_acc = topk_accuracies(preds, labels, [1])[0]
+#
+#         run["test/batch/loss"].log(val_loss)
+#         run["test/batch/acc"].log(val_acc)
+#
+#
+#         name = all_info[0]["name"]
+#         pid = name.split('/')[-1][:-4]
+#
+#         prob_preds = F.softmax(preds, dim=1)
+#         prob_normal = prob_preds[0, 0].item()
+#         prob_ncov = prob_preds[0, 1].item()
+#         gt = labels.item()
+#
+#         gts.append(gt)
+#         pcovs.append(prob_ncov)
+#
+#         print ("{} {} {} {} {}".format(all_info[0]["name"], pid, prob_normal, prob_ncov, labels.item()))
+#
+#         Tes_CE.write(val_loss); Tes_Acc.write(val_acc)
+#
+# # from metrics import sensitivity_specificity
+# Ece, Eacc = Tes_CE.read(), Tes_Acc.read()
+# gts, pcovs = np.asarray(gts), np.asarray(pcovs)
+# _, _, Eauc = sensitivity_specificity(gts, pcovs)
+# e = 0
+# print("VALIDATION | E [{}] | CE: {:1.5f} | ValAcc: {:1.3f} | ValAUC: {:1.3f}".format(e, Ece, Eacc, Eauc))
+#
+# run["test/batch/E"].log(e)
+# run["test/batch/CE"].log(Ece)
+# run["test/batch/ValAcc"].log(Eacc)
+# run["test/batch/ValAUC"].log(Eauc)
