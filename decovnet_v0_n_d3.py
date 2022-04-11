@@ -60,6 +60,8 @@ input_image = sitk.ReadImage(pth5)
 
 model = mask.get_model('unet','R231CovidWeb')
 result = mask.apply(input_image, model)#, noHU=True)
+print(type(result))
+print(result)
 print('WORKS!')
 
 #
