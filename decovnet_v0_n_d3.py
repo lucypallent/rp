@@ -548,7 +548,7 @@ def apply(image, model=None, force_cpu=False, batch_size=20, volume_postprocessi
         tvolslices = np.divide((tvolslices + 1024), 1624)
     else:
         # support for non HU images. This is just a hack. The models were not trained with this in mind
-        tvolslices = skimage.color.rgb2gray(inimg_raw)
+        # tvolslices = skimage.color.rgb2gray(inimg_raw) COMMENTED OUT
         tvolslices = skimage.transform.resize(tvolslices, [256, 256])
         tvolslices = np.asarray([tvolslices*x for x in np.linspace(0.3,2,20)])
         tvolslices[tvolslices>1] = 1
@@ -623,6 +623,9 @@ def apply_fused(image, basemodel = 'LTRCLobes', fillmodel = 'R231', force_cpu=Fa
 pth = 'dataset3/1NonCOVID/N314_16.png'
 model = get_model('unet', 'R231')
 img = sitk.ReadImage(pth)
+print(type(img))
+img1 = io.imread(pth)
+print(type(img))
 seg = apply(img, model, batch_size=1, noHU=True)
 
 run.log_image('test_img', img)
