@@ -68,7 +68,9 @@ img1 = (img1/(img1.max())*255).astype(np.uint8)
 
 io.imsave(pth3, img1)
 
-input_image = sitk.ReadImage(pth3)
+# input_image = sitk.ReadImage(pth3)
+input_image = sitk.ReadImage(pth)
+
 # print(input_image.max())
 # print(input_image.min())
 # print(len(input_image))
