@@ -61,6 +61,8 @@ input_image = sitk.ReadImage(pth5)
 
 model = mask.get_model('unet','R231CovidWeb')
 result = mask.apply(input_image, model)#, noHU=True)
+result = (result/(result.max())*255).astype(np.uint8)
+
 print(type(result))
 print(result.shape)
 print(result.max())
