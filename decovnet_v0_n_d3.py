@@ -65,9 +65,9 @@ img1 = np.concatenate((img0, img, img, img), axis=2)[:,:,1:] / 255
 print(img1.shape)
 io.imsave(pth3, img1)
 
-input_image = sitk.ReadImage(pth3)
-print(input_image.max())
-print(input_image.min())
+input_image = sitk.ReadImage(pth3) * 255
+# print(input_image.max())
+# print(input_image.min())
 # print(len(input_image))
 # print(type(input_image))
 
@@ -83,8 +83,8 @@ print(input_image.min())
 model = mask.get_model('unet','LTRCLobes')
 result = mask.apply(input_image, model, noHU=True)
 
-print(result.max())
-print(result.min())
+# print(result.max())
+# print(result.min())
 
 result = (result/(result.max())*255).astype(np.uint8)
 result = result[0]
