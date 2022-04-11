@@ -49,12 +49,20 @@ import SimpleITK as sitk
 import skimage
 
 pth = 'dataset2/dataset2/1NonCOVID/N493_9.png' # path is correct
+pth2 = 'dataset3/1NonCOVID/N493_9.png' # path is incorrect
 
 
 input_image = sitk.ReadImage(pth)
 print(input_image)
 print(len(input_image))
 print(type(input_image))
+
+print('2nd IMAGE')
+input_image2 = sitk.ReadImage(pth2)
+print(input_image2)
+print(len(input_image2))
+print(type(input_image2))
+
 
 # print(input_image.shape)
 # input_image = skimage.color.gray2rgb(input_image)
