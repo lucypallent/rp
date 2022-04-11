@@ -55,10 +55,10 @@ pth2 = 'dataset3/1NonCOVID/N493_9.png' # path is incorrect
 pth3 = 'dataset3/1NonCOVID/N493_9T.png'
 # read in image concat save as png read in the png with sitk
 # this should then work
-img = io.imread(pth2)
+img = io.imread(pth2).reshape((512, 512, 1))
 # print(img.shape)
 
-img0 = np.empty((512, 512))
+img0 = np.empty((512, 512, 1))
 img1 = np.concatenate((img0, img, img, img), axis=2)[:,:,1:] / 255
 print(img1.shape)
 io.imsave(pth3)
