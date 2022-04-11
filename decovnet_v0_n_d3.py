@@ -83,13 +83,13 @@ input_image = sitk.ReadImage(pth3)
 
 # print(input_image.shape)
 # input_image = skimage.color.gray2rgb(input_image)
-model = mask.get_model('unet','LTRCLobes')
+model = mask.get_model('unet','R231CovidWeb')
 result = mask.apply(input_image, model, noHU=True)
 
 # print(result.max())
 # print(result.min())
 
-result = (result/(result.max())*255).astype(np.uint8)
+# result = (result/(result.max())*255).astype(np.uint8)
 result = result[0]
 
 io.imsave(pth4, result)
