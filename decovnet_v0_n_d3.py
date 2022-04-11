@@ -67,7 +67,7 @@ print(result.max())
 print(result.min())
 print('WORKS!')
 
-io.imsave(pth6, result)
+io.imsave(pth6, result[0])
 #
 # # read in image concat save as png read in the png with sitk
 # # this should then work
