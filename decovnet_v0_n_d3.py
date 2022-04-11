@@ -50,9 +50,14 @@ import SimpleITK as sitk
 pth = 'dataset3/1NonCOVID/N314_16.png'
 input_image = sitk.ReadImage(pth)
 model = mask.get_model('unet','LTRCLobes')
+segmentation = mask.apply(input_image, model, noHU=True)
+
 print('done')
 
-
+        # result = mask.apply(input_image, model, force_cpu=args.cpu, batch_size=batchsize, volume_postprocessing=not(args.nopostprocess), noHU=args.noHU)
+        #
+        #     result = (result/(result.max())*255).astype(np.uint8)
+        # result = result[0]
 
 # # run = neptune.init(
 # #     project="lucypallent/research-project",
