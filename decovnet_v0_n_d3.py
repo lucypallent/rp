@@ -80,13 +80,16 @@ print(type(input_image))
 # print(input_image.shape)
 # input_image = skimage.color.gray2rgb(input_image)
 model = mask.get_model('unet','LTRCLobes')
-segmentation = mask.apply(input_image, model, noHU=True)
+result = mask.apply(input_image, model, noHU=True)
 
-io.imsave(pth4, segmentation)
+result = (result/(result.max())*255).astype(np.uint8)
+result = result[0]
 
-print(type(segmentation))
-print(segmentation)
-print(len(segmentation))
+io.imsave(pth4, result)
+
+print(type(result))
+print(result)
+print(len(result))
 
 
 print('done')
