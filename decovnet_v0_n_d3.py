@@ -551,7 +551,9 @@ def apply(image, model=None, force_cpu=False, batch_size=20, volume_postprocessi
         # tvolslices = skimage.color.rgb2gray(inimg_raw) COMMENTED OUT
         tvolslices = inimg_raw
         print(tvolslices)
-        pritn(tvolslices)
+        print(len(tvolslices))
+        print(len(tvolslices[0]))
+        # print(tvolslices.shape)
         tvolslices = skimage.transform.resize(tvolslices, [256, 256])
         tvolslices = np.asarray([tvolslices*x for x in np.linspace(0.3,2,20)])
         tvolslices[tvolslices>1] = 1
