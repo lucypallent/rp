@@ -550,15 +550,16 @@ def apply(image, model=None, force_cpu=False, batch_size=20, volume_postprocessi
         # support for non HU images. This is just a hack. The models were not trained with this in mind
         # tvolslices = skimage.color.rgb2gray(inimg_raw) COMMENTED OUT
         tvolslices = inimg_raw
-        print(tvolslices)
-        print(len(tvolslices))
-        print(len(tvolslices[0]))
         # print(tvolslices.shape)
         tvolslices = skimage.transform.resize(tvolslices, [256, 256])
         tvolslices = np.asarray([tvolslices*x for x in np.linspace(0.3,2,20)])
         tvolslices[tvolslices>1] = 1
         sanity = [(tvolslices[x]>0.6).sum()>25000 for x in range(len(tvolslices))]
         tvolslices = tvolslices[sanity]
+        # tvolslices
+        print(tvolslices)
+        print(len(tvolslices))
+        print(len(tvolslices[0]))
     torch_ds_val = utils.LungLabelsDS_inf(tvolslices)
     dataloader_val = torch.utils.data.DataLoader(torch_ds_val, batch_size=batch_size, shuffle=False, pin_memory=False)
 
