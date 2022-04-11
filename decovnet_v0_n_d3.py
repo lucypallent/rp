@@ -47,21 +47,32 @@ device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cp
 from lungmask import mask
 import SimpleITK as sitk
 import skimage
+from skimage import io
+import numpy as np
 
 pth = 'dataset2/dataset2/1NonCOVID/N493_9.png' # path is correct
 pth2 = 'dataset3/1NonCOVID/N493_9.png' # path is incorrect
+pth3 = 'dataset3/1NonCOVID/N493_9T.png'
+# read in image concat save as png read in the png with sitk
+# this should then work
+img = io.imread(pth2)
+# print(img.shape)
 
+img0 = np.empty((512, 512, 1))
+img1 = np.concatenate((img0, img, img, img), axis=2)[:,:,1:] / 255
 
-input_image = sitk.ReadImage(pth)
+io.imsave(pth3)
+
+input_image = sitk.ReadImage(pth3, img1)
 print(input_image)
 print(len(input_image))
 print(type(input_image))
 
-print('2nd IMAGE')
-input_image2 = sitk.ReadImage(pth2)
-print(input_image2)
-print(len(input_image2))
-print(type(input_image2))
+# print('2nd IMAGE')
+# input_image2 = sitk.ReadImage(pth2)
+# print(input_image2)
+# print(len(input_image2))
+# print(type(input_image2))
 
 
 # print(input_image.shape)
