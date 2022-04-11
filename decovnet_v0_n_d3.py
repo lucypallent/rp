@@ -54,62 +54,70 @@ pth = 'dataset2/dataset2/1NonCOVID/N493_9.png' # path is correct
 pth2 = 'dataset3/1NonCOVID/N493_9.png' # path is incorrect
 pth3 = 'dataset3/1NonCOVID/N493_9T.png'
 pth4 = 'dataset3/1NonCOVID/N493_9S.png'
+pth5 = '62448201'
 
-# read in image concat save as png read in the png with sitk
-# this should then work
-img = io.imread(pth2).reshape((512, 512, 1))
-# print(img.shape)
+input_image = sitk.ReadImage(pth5)
 
-img0 = np.empty((512, 512, 1))
-img1 = np.concatenate((img0, img, img, img), axis=2)[:,:,1:] / 255
-print(img1.shape)
-
-img1 = (img1/(img1.max())*255).astype(np.uint8)
-
-io.imsave(pth3, img1)
-
-# input_image = sitk.ReadImage(pth3)
-input_image = sitk.ReadImage(pth)
-
-# print(input_image.max())
-# print(input_image.min())
-# print(len(input_image))
-# print(type(input_image))
-
-# print('2nd IMAGE')
-# input_image2 = sitk.ReadImage(pth2)
-# print(input_image2)
-# print(len(input_image2))
-# print(type(input_image2))
-
-
-# print(input_image.shape)
-# input_image = skimage.color.gray2rgb(input_image)
 model = mask.get_model('unet','R231CovidWeb')
-result = mask.apply(input_image, model, noHU=True)
+result = mask.apply(input_image, model)#, noHU=True)
+print('WORKS!')
 
-print(result.max())
-print(result.min())
-
-result = result * 255
-
-print(result.max())
-print(result.min())
-
-# result = (result/(result.max())*255).astype(np.uint8)
-result = result[0]
-
-io.imsave(pth4, result)
-
-
-
-print(type(result))
-print(result)
-print(len(result))
-print(result.shape)
-
-
-print('done')
+#
+# # read in image concat save as png read in the png with sitk
+# # this should then work
+# img = io.imread(pth2).reshape((512, 512, 1))
+# # print(img.shape)
+#
+# img0 = np.empty((512, 512, 1))
+# img1 = np.concatenate((img0, img, img, img), axis=2)[:,:,1:] / 255
+# print(img1.shape)
+#
+# img1 = (img1/(img1.max())*255).astype(np.uint8)
+#
+# io.imsave(pth3, img1)
+#
+# # input_image = sitk.ReadImage(pth3)
+# input_image = sitk.ReadImage(pth)
+#
+# # print(input_image.max())
+# # print(input_image.min())
+# # print(len(input_image))
+# # print(type(input_image))
+#
+# # print('2nd IMAGE')
+# # input_image2 = sitk.ReadImage(pth2)
+# # print(input_image2)
+# # print(len(input_image2))
+# # print(type(input_image2))
+#
+#
+# # print(input_image.shape)
+# # input_image = skimage.color.gray2rgb(input_image)
+# model = mask.get_model('unet','R231CovidWeb')
+# result = mask.apply(input_image, model, noHU=True)
+#
+# print(result.max())
+# print(result.min())
+#
+# result = result * 255
+#
+# print(result.max())
+# print(result.min())
+#
+# # result = (result/(result.max())*255).astype(np.uint8)
+# result = result[0]
+#
+# io.imsave(pth4, result)
+#
+#
+#
+# print(type(result))
+# print(result)
+# print(len(result))
+# print(result.shape)
+#
+#
+# print('done')
 
         # result = mask.apply(input_image, model, force_cpu=args.cpu, batch_size=batchsize, volume_postprocessing=not(args.nopostprocess), noHU=args.noHU)
         #
