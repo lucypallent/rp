@@ -47,7 +47,7 @@ device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cp
 from lungmask import mask
 import SimpleITK as sitk
 
-pth = 'dataset3/1NonCOVID/N314_16.png'
+pth = 'dataset2/1NonCOVID/N314_16.png'
 input_image = sitk.ReadImage(pth)
 model = mask.get_model('unet','LTRCLobes')
 segmentation = mask.apply(input_image, model, noHU=True)
