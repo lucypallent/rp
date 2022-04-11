@@ -550,6 +550,8 @@ def apply(image, model=None, force_cpu=False, batch_size=20, volume_postprocessi
         # support for non HU images. This is just a hack. The models were not trained with this in mind
         # tvolslices = skimage.color.rgb2gray(inimg_raw) COMMENTED OUT
         tvolslices = inimg_raw
+        print(tvolslices)
+        pritn(tvolslices)
         tvolslices = skimage.transform.resize(tvolslices, [256, 256])
         tvolslices = np.asarray([tvolslices*x for x in np.linspace(0.3,2,20)])
         tvolslices[tvolslices>1] = 1
