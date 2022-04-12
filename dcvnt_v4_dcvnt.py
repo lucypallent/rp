@@ -50,8 +50,7 @@ import torch
 import random
 from scipy.ndimage import zoom
 import neptune.new as neptune
-import elasticdeform.torch as etorch
-
+import elasticdeform
 
 
 random.seed(0); torch.manual_seed(0); np.random.seed(0)
@@ -240,7 +239,7 @@ def Rand_Transforms(imgs, masks,
         # print(type(img))
         # print(type(deformation))
         _img = np.asarray(_img, dtype=np.uint8)
-        _img = etorch.deform_grid(_img, deformation)
+        _img = elasticdeform.deform_grid(_img, deformation)
         _img = Image.fromarray((_img * 255).astype(np.uint8))
 
         return _img
