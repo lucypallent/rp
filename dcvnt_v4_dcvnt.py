@@ -37,6 +37,10 @@ import numpy as np
 import torch
 import torchvision.transforms.functional as TF
 
+import torch.nn as nn
+import torch.nn.functional as F
+
+
 from torch.utils import data
 from PIL import Image
 import os
