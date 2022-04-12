@@ -218,8 +218,8 @@ def Rand_Transforms(imgs, masks,
                     SCALE_R=0.2, SHEAR_R=10,
                     BRIGHT_R=0.5, CONTRAST_R=0.3):
     # To Image.Image instances
-    pil_imgs = [Image.fromarray(x) for x in imgs]
-    pil_masks = [Image.fromarray(x) for x in masks]
+    pil_imgs = [Image.fromarray((x * 255).astype(np.uint8)) for x in imgs]
+    pil_masks = [Image.fromarray((x * 255).astype(np.uint8)) for x in masks]
     w, h = pil_imgs[0].size
 
     # Affine Transforms
@@ -234,12 +234,14 @@ def Rand_Transforms(imgs, masks,
         if vflp:
             _img  = TF.vflip(_img)
         # print(_img.shape)
-        print(deformation.shape)
-        print(deformation)
-        print(_img)
-        print(type(img))
-        print(type(deformation))
-        # _img = etorch.deform_grid(_img, deformation)
+        # print(deformation.shape)
+        # print(deformation)
+        # print(_img)
+        # print(type(img))
+        # print(type(deformation))
+        _img = np.asarray(_img, dtype=np.uint8)
+        _img = etorch.deform_grid(_img, deformation)
+        _img = Image.fromarray((_img * 255).astype(np.uint8))
 
         return _img
     angle = random.randint(-ANGLE_R, ANGLE_R)
@@ -270,8 +272,11 @@ def Rand_Transforms(imgs, masks,
 
     # noise Transforms
     def noisop(img, gaus):
+        img = np.asarray(img, dtype=np.uint8)
         nois = torch.randn_like(img) * gaus
         _img = img + nois
+        _img = Image.fromarray((_img * 255).astype(np.uint8))
+
     gaus_noise = random.randint(0, 5) / 20
     pil_imgs = [noisop(x, gaus_noise) for x in pil_imgs]
 
