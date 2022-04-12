@@ -279,6 +279,8 @@ def Rand_Transforms(imgs, masks,
         _img = img + nois
         to_pils = transforms.ToPILImage()
         _img = to_pils(_img)
+        return _img
+
         # _img = Image.fromarray((_img * 255).astype(np.uint8))
 
     gaus_noise = random.randint(0, 10) / 100
