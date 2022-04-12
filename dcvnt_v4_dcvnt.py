@@ -1583,6 +1583,7 @@ if __name__ == "__main__":
 
 ############################ start of running decovnet
 NUM_CLASSES = 3
+NUM_WORKERS = 2
 # model = import_module(f"model.{MODEL_UID}")
 # ENModel = getattr(model, "ENModel")
 
