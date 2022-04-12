@@ -44,7 +44,7 @@ print(type(input_image))
 model = mask.get_model('unet','R231CovidWeb')
 result = mask.apply(input_image, model)
 
-result = mask.apply(np.load(pth3), model)
+result = mask.apply(np.load(pth3)*255, model)
 
 
 print(type(result))
