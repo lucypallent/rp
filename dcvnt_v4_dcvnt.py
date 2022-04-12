@@ -239,7 +239,7 @@ def Rand_Transforms(imgs, masks,
         print(_img)
         print(type(img))
         print(type(deformation))
-        _img = etorch.deform_grid(_img, deformation)
+        # _img = etorch.deform_grid(_img, deformation)
 
         return _img
     angle = random.randint(-ANGLE_R, ANGLE_R)
