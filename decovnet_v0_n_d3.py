@@ -99,6 +99,7 @@ im_output.save(pth3)
 input_image = sitk.ReadImage(pth3)
 
 print('.png image')
+print(type(input_image))
 print(input_image.pixel_array)
 print(input_image.pixel_array.max())
 print(input_image.pixel_array.min())
