@@ -56,6 +56,7 @@ pth3 = 'dataset3/1NonCOVID/N493_9T.png'
 pth4 = 'dataset3/1NonCOVID/N493_9S.png'
 pth5 = '62448201'
 pth6 = '62448201_S.png'
+pth7 = 'test-img.png'
 
 ####### start of dicom run
 # input_image = sitk.ReadImage(pth5)
@@ -96,7 +97,7 @@ im_output = enhancer.enhance(factor)
 plt.imshow(im_output)
 im_output.save(pth3)
 
-input_image = sitk.ReadImage(pth3)
+input_image = sitk.ReadImage(pth7)
 
 print('.png image')
 print(type(input_image))
