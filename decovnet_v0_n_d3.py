@@ -53,7 +53,7 @@ import numpy as np
 pth = 'dataset2/dataset2/1NonCOVID/N493_9.png' # path is correct
 pth2 = 'dataset3/1NonCOVID/N493_9.png' # path is incorrect
 pth3 = 'dataset3/1NonCOVID/N493_9T.png'
-pth4 = 'dataset3/1NonCOVID/N493_9S.png'
+pth4 = 'test-img2-S.png'
 pth5 = '62448201'
 pth6 = '62448201_S.png'
 pth7 = 'test-img2.png'
