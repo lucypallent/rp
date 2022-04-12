@@ -425,20 +425,20 @@ def resize_cta_images(x):        # dtype is "PE"/"NORMAL"
     # raw_imgs = clip_imgs
     # raw_masks = clip_masks
     ###
-
-    zz, yy, xx = np.where(raw_masks)
-    cropbox = np.array([[np.min(zz), np.max(zz)], [np.min(yy), np.max(yy)], [np.min(xx), np.max(xx)]])
-    crop_imgs = raw_imgs[cropbox[0, 0]:cropbox[0, 1],
-                         cropbox[1, 0]:cropbox[1, 1],
-                         cropbox[2, 0]:cropbox[2, 1]]
-
-    crop_masks = raw_masks[cropbox[0, 0]:cropbox[0, 1],
-                          cropbox[1, 0]:cropbox[1, 1],
-                          cropbox[2, 0]:cropbox[2, 1]]
-
-    raw_imgs = crop_imgs
-    raw_masks = crop_masks
-
+#####
+    # zz, yy, xx = np.where(raw_masks)
+    # cropbox = np.array([[np.min(zz), np.max(zz)], [np.min(yy), np.max(yy)], [np.min(xx), np.max(xx)]])
+    # crop_imgs = raw_imgs[cropbox[0, 0]:cropbox[0, 1],
+    #                      cropbox[1, 0]:cropbox[1, 1],
+    #                      cropbox[2, 0]:cropbox[2, 1]]
+    #
+    # crop_masks = raw_masks[cropbox[0, 0]:cropbox[0, 1],
+    #                       cropbox[1, 0]:cropbox[1, 1],
+    #                       cropbox[2, 0]:cropbox[2, 1]]
+    #
+    # raw_imgs = crop_imgs
+    # raw_masks = crop_masks
+#####
     height, width = raw_imgs.shape[1:3]
     zoomed_imgs = zoom(raw_imgs, (slice_resolution, new_height/height, new_width/width))
     np.save(os.path.join(des_home, x+".npy"), zoomed_imgs)
