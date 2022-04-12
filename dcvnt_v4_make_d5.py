@@ -34,6 +34,7 @@ from skimage import io
 import numpy as np
 
 pth = 'COVID19_0001/COVID19-0101.dcm' # path is correct
+pth = '62448201'
 input_image = sitk.ReadImage(pth)
 model = mask.get_model('unet','R231CovidWeb')
 result = mask.apply(input_image, model)
