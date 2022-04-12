@@ -224,7 +224,9 @@ def Rand_Transforms(imgs, masks,
 
     # Affine Transforms
     def affop(img, angle, translate, scale, shear, hflp, vflp, deformation):
+        print('here0')
         _img = TF.affine(img, angle, translate, scale, shear, resample=Image.BILINEAR)
+        print('here1')
         # _img = TF.affine(img, angle, translate, scale, shear, interpolation=InterpolationMode.BILINEAR) - interpolation got
         # NameError: name 'InterpolationMode' is not defined
         if hflp:
@@ -247,9 +249,13 @@ def Rand_Transforms(imgs, masks,
     shear = random.randint(-SHEAR_R, SHEAR_R)
     hflp = random.randint(0, 1)
     vflp = random.randint(0, 1)
+    print('here-2')
     deformation = np.random.randn(2, 3, 3) * 25
+    print('here-1')
     pil_imgs = [affop(x, angle, translate, scale, shear, hflp, vflp, deformation) for x in pil_imgs]
+    print('here-10')
     pil_masks = [affop(x, angle, translate, scale, shear, hflp, vflp, deformation) for x in pil_masks]
+    print('here-20')
 
     # Color Transforms
     def colorop(img, bright, contrast, gamma):
