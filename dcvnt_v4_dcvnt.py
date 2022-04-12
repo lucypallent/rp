@@ -50,7 +50,7 @@ import torch
 import random
 from scipy.ndimage import zoom
 import neptune.new as neptune
-import elasticdeform
+import elasticdeform.torch as etorch
 
 
 
@@ -231,7 +231,7 @@ def Rand_Transforms(imgs, masks,
             _img  = TF.hflip(_img)
         if vflp:
             _img  = TF.vflip(_img)
-        _img = elasticdeform.torch.deform_grid(img, deformation)
+        _img = etorch.deform_grid(img, deformation)
 
         return _img
     angle = random.randint(-ANGLE_R, ANGLE_R)
