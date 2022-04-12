@@ -414,7 +414,7 @@ def resize_cta_images(x):        # dtype is "PE"/"NORMAL"
     if os.path.isfile(os.path.join(des_home, x+".npy")) is True:
         return
     ### raw_imgs = np.uint8(np.load(os.path.join(src_home, x+".npy")))
-    raw_imgs = np.load(os.path.join(src_home, x+".npy"))
+    raw_imgs = np.load(os.path.join(src_home, x+"-2.npy")) # -2 is the img which appears like normal orig is blck sqr
     raw_masks = np.load(os.path.join(src_home, x+"-dlmask.npy"))
     length = len(raw_imgs)
 
