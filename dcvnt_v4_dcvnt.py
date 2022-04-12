@@ -167,7 +167,6 @@ def Train_Collatefn(data):
     all_L = torch.cat(all_L, dim=0)
     return all_F, all_L, all_info
 
-
 # Rand_Affine
 def Rand_Affine(img, ANGLE_R=10, TRANS_R=0.2, SCALE_R=0.3, SHEAR_R=15, FLIP_B=False):
     assert isinstance(img, Image.Image) or isinstance(img[0], Image.Image)
