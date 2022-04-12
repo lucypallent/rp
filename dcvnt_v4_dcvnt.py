@@ -270,7 +270,7 @@ def Rand_Transforms(imgs, masks,
 
     # noise Transforms
     def noisop(img, gaus):
-        nois = torch.randn_like(inputs) * gaus
+        nois = torch.randn_like(img) * gaus
         _img = img + nois
     gaus_noise = random.randint(0, 5) / 20
     pil_imgs = [noisop(x, gaus_noise) for x in pil_imgs]
