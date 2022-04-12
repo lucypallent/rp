@@ -50,6 +50,8 @@ import torch
 import random
 from scipy.ndimage import zoom
 import neptune.new as neptune
+import elasticdeform
+
 
 
 random.seed(0); torch.manual_seed(0); np.random.seed(0)
@@ -221,25 +223,44 @@ def Rand_Transforms(imgs, masks,
     w, h = pil_imgs[0].size
 
     # Affine Transforms
-    def affop(img, angle, translate, scale, shear):
-        _img = TF.affine(img, angle, translate, scale, shear, resample=Image.BILINEAR)
+    def affop(img, angle, translate, scale, shear, hflp, vflp, deformation):
+        # _img = TF.affine(img, angle, translate, scale, shear, resample=Image.BILINEAR)
+         _img = TF.affine(img, angle, translate, scale, shear, interpolation=InterpolationMode.BILINEAR)
+         if hflp:
+             _img  = TF.hflip(_img)
+         if vflp:
+             _img  = TF.vflip(_img)
+        _img = elasticdeform.torch.deform_grid(img, deformation)
+
         return _img
     angle = random.randint(-ANGLE_R, ANGLE_R)
     translate = (random.randint(int(-w*TRANS_R), int(w*TRANS_R)),
                  random.randint(int(-h*TRANS_R), int(h*TRANS_R)))  # x, y axis
     scale = 1 + round(random.uniform(-SCALE_R, SCALE_R), 1)
     shear = random.randint(-SHEAR_R, SHEAR_R)
-    pil_imgs = [affop(x, angle, translate, scale, shear) for x in pil_imgs]
-    pil_masks = [affop(x, angle, translate, scale, shear) for x in pil_masks]
+    hflp = random.randint(0, 1)
+    vflp = random.randint(0, 1)
+    deformation = np.random.randn(2, 3, 3) * 25
+    pil_imgs = [affop(x, angle, translate, scale, shear, hflp, vflp, deformation) for x in pil_imgs]
+    pil_masks = [affop(x, angle, translate, scale, shear, hflp, vflp, deformation) for x in pil_masks]
 
     # Color Transforms
-    def colorop(img, bright, contrast):
+    def colorop(img, bright, contrast, gamma):
         _img = TF.adjust_brightness(img, bright)
         _img = TF.adjust_contrast(_img, contrast)
+        _img = TF.adjust_gamma(_img, gamma)
         return _img
     bright = 1 + round(random.uniform(-BRIGHT_R, BRIGHT_R), 1)
     contrast = 1 + round(random.uniform(-CONTRAST_R, CONTRAST_R), 1)
-    pil_imgs = [colorop(x, bright, contrast) for x in pil_imgs]
+    gamma = random.randint(0, 1) + 0.7
+    pil_imgs = [colorop(x, bright, contrast, gamma) for x in pil_imgs]
+
+    # noise Transforms
+    def noisop(img, gaus):
+        nois = torch.randn_like(inputs) * gaus
+        _img = img + nois
+    gaus_noise = random.randint(0, 5) / 20
+    pil_imgs = [noisop(x, gaus_noise) for x in pil_imgs]
 
     imgs = np.asarray([np.asarray(x, dtype=np.uint8) for x in pil_imgs], dtype=np.uint8)
     masks = np.asarray([np.asarray(x, dtype=np.uint8) for x in pil_masks], dtype=np.uint8)
@@ -308,7 +329,7 @@ class CTDataset(data.Dataset):
 
         # Data augmentation
         if self.split == "train":
-            cta_images, cta_masks = Rand_Transforms(cta_images, cta_masks, ANGLE_R=10, TRANS_R=0.1, SCALE_R=0.2, SHEAR_R=10,
+            cta_images, cta_masks = Rand_Transforms(cta_images, cta_masks, ANGLE_R=30, TRANS_R=0.1, SCALE_R=0.2, SHEAR_R=10,
                                              BRIGHT_R=0.5, CONTRAST_R=0.3)
 
         # To Tensor and Resize
@@ -1716,8 +1737,8 @@ LR_DECAY = 1
 INIT_MODEL_PATH = 'ncov-Epoch_00140-auc95p9.pth'
 INIT_MODEL_STRICT = "True"
 SNAPSHOT_FREQ = 5
-TRAIN_EPOCH = 200 #, will likely stop it early
-SNAPSHOT_HOME = "experiments_v4_dcvnt"
+TRAIN_EPOCH = 1 #, will likely stop it early
+SNAPSHOT_HOME = "experiments_v4_aug"
 SNAPSHOT_MODEL_TPL = "ncov-Epoch_{:05d}.pth"
 
 
