@@ -35,12 +35,17 @@ import numpy as np
 
 pth = 'COVID19_0001/COVID19-0101.dcm' # path is correct
 pth2 = '62448201'
+pth3 = 'unet-results/patient-P7-2.npy'
+
 input_image = sitk.ReadImage(pth)
 print(type(input_image))
 input_image = sitk.ReadImage(pth2)
 print(type(input_image))
 model = mask.get_model('unet','R231CovidWeb')
 result = mask.apply(input_image, model)
+
+result = mask.apply(np.load(pth3), model)
+
 
 print(type(result))
 print(result.shape)
