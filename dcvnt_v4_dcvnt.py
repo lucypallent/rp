@@ -51,10 +51,10 @@ import neptune.new as neptune
 random.seed(0); torch.manual_seed(0); np.random.seed(0)
 device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
 
-run = neptune.init(
-    project="lhp/res-proj",
-    api_token="eyJhcGlfYWRkcmVzcyI6Imh0dHBzOi8vYXBwLm5lcHR1bmUuYWkiLCJhcGlfdXJsIjoiaHR0cHM6Ly9hcHAubmVwdHVuZS5haSIsImFwaV9rZXkiOiI2MDQxZWMwYS1hMDg5LTQzNDQtYWFkMy1iZGZiNjk4MjM4YTMifQ==",
-)  # your credentials
+# # run = neptune.init(
+# #     project="lhp/res-proj",
+# #     api_token="eyJhcGlfYWRkcmVzcyI6Imh0dHBzOi8vYXBwLm5lcHR1bmUuYWkiLCJhcGlfdXJsIjoiaHR0cHM6Ly9hcHAubmVwdHVuZS5haSIsImFwaV9rZXkiOiI2MDQxZWMwYS1hMDg5LTQzNDQtYWFkMy1iZGZiNjk4MjM4YTMifQ==",
+# )  # your credentials
 
 
 DATA_ROOT = 'dataset4/NCOV-BF'
@@ -1770,9 +1770,9 @@ dset_len, loader_len = len(Trainset), len(TrainLoader)
 Epoch_CE, Epoch_Acc = [ScalarContainer() for _ in range(2)]
 
 ############### Sending Model data to Neptune ###############
-run["config/model"] = type(model).__name__
-run["config/criterion"] = type(criterion).__name__
-run["config/optimizer"] = type(optimizer).__name__
+# run["config/model"] = type(model).__name__
+# run["config/criterion"] = type(criterion).__name__
+# run["config/optimizer"] = type(optimizer).__name__
 
 
 dataset_size = {"train": len(Trainset), "val": len(Validset), 'test': len(Validset)}
@@ -1787,9 +1787,9 @@ data_tfms = {'function': 'cta_images, cta_masks = Rand_Transforms(cta_images, ct
 'CONTRAST_R': 0.3,
 }
 
-run["config/dataset/path"] = DATA_ROOT
-run["config/dataset/transforms"] =  data_tfms
-run["config/dataset/size"] = dataset_size
+# run["config/dataset/path"] = DATA_ROOT
+# run["config/dataset/transforms"] =  data_tfms
+# run["config/dataset/size"] = dataset_size
 
 
 parameters = {
@@ -1808,7 +1808,7 @@ parameters = {
     'pre-trained-DeCoVNet': 'ncov-Epoch_00140-auc95p9.pth',
 }
 
-run["config/hyperparameters"] = parameters
+# run["config/hyperparameters"] = parameters
 
 
 ############### Training ###############
@@ -1816,7 +1816,7 @@ print('2nd model training')
 best_acc = 0.0
 
 for e in range(TRAIN_EPOCH):
-    run["training/batch/epoch"].log(e)
+    # run["training/batch/epoch"].log(e)
     for i, (all_F, all_L, all_info) in enumerate(TrainLoader):
         optimizer.zero_grad()
 
@@ -1830,8 +1830,8 @@ for e in range(TRAIN_EPOCH):
         # rT += time.time()-tik
         Epoch_CE.write(loss); Epoch_Acc.write(acc);
 
-        run["training/batch/loss"].log(loss)
-        run["training/batch/acc"].log(acc)
+        # run["training/batch/loss"].log(loss)
+        # run["training/batch/acc"].log(acc)
 
         loss.backward()
         optimizer.step()
@@ -1869,8 +1869,8 @@ for e in range(TRAIN_EPOCH):
                     val_loss = criterion(preds, labels)
                     val_acc = topk_accuracies(preds, labels, [1])[0]
 
-                    run["validation/batch/loss"].log(val_loss)
-                    run["validation/batch/acc"].log(val_acc)
+                    # run["validation/batch/loss"].log(val_loss)
+                    # run["validation/batch/acc"].log(val_acc)
 
                     if val_acc > best_acc:
                         best_acc = val_acc
@@ -1879,7 +1879,7 @@ for e in range(TRAIN_EPOCH):
                         # SNAPSHOT_MODEL_TPL = "ncov-Epoch_{:05d}.pth"
                         print(f"Dump weights {best_model_save_path} to disk...")
                         torch.save(model.state_dict(), best_model_save_path)
-                        run["val/best_model_epoch"].log(e)
+                        # run["val/best_model_epoch"].log(e)
 
 
 
@@ -1979,8 +1979,8 @@ with torch.no_grad():
         val_loss = criterion(preds, labels)
         val_acc = topk_accuracies(preds, labels, [1])[0]
 
-        run["test/batch/loss"].log(val_loss)
-        run["test/batch/acc"].log(val_acc)
+        # run["test/batch/loss"].log(val_loss)
+        # run["test/batch/acc"].log(val_acc)
 
 
         name = all_info[0]["name"]
@@ -2005,10 +2005,10 @@ _, _, Eauc = sensitivity_specificity(gts, pcovs)
 e = 0
 print("VALIDATION | E [{}] | CE: {:1.5f} | ValAcc: {:1.3f} | ValAUC: {:1.3f}".format(e, Ece, Eacc, Eauc))
 
-run["test/batch/E"].log(e)
-run["test/batch/CE"].log(Ece)
-run["test/batch/ValAcc"].log(Eacc)
-run["test/batch/ValAUC"].log(Eauc)
+# run["test/batch/E"].log(e)
+# run["test/batch/CE"].log(Ece)
+# run["test/batch/ValAcc"].log(Eacc)
+# run["test/batch/ValAUC"].log(Eauc)
 
 final_model_save_path = os.path.join(SNAPSHOT_HOME, 'ncov-final.pth')
 print(f"Dump weights {final_model_save_path} to disk...")
