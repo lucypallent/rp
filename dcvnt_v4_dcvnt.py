@@ -2020,10 +2020,6 @@ with torch.no_grad():
         val_loss = criterion(preds, labels)
         val_acc = topk_accuracies(preds, labels, [1])[0]
 
-        # run["test/batch/loss"].log(val_loss)
-        # run["test/batch/acc"].log(val_acc)
-
-
         name = all_info[0]["name"]
         pid = name.split('/')[-1][:-4]
 
@@ -2055,7 +2051,6 @@ _, _, Eauc = sensitivity_specificity(gts, pcovs)
 e = 0
 print("TEST | E [{}] | CE: {:1.5f} | ValAcc: {:1.3f} | ValAUC: {:1.3f}".format(e, Ece, Eacc, Eauc))
 
-# run["test/batch/E"].log(e)
 run["test/all/TestLoss"].log(Ece)
 run["test/all/TestAcc"].log(Eacc)
 
@@ -2070,8 +2065,6 @@ run["test/2COVID/TestAcc"].log(Cov_Eacc)
 CAP_Ece, CAP_Eacc = CAP_Tes_CE.read(), CAP_Tes_Acc.read()
 run["test/3CAP/TestLoss"].log(CAP_Ece)
 run["test/3CAP/TestAcc"].log(CAP_Eacc)
-
-# run["test/batch/ValAUC"].log(Eauc)
 
 final_model_save_path = os.path.join(SNAPSHOT_HOME, 'ncov-final.pth')
 print(f"Dump weights {final_model_save_path} to disk...")
