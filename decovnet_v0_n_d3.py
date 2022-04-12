@@ -56,7 +56,8 @@ pth3 = 'dataset3/1NonCOVID/N493_9T.png'
 pth4 = 'dataset3/1NonCOVID/N493_9S.png'
 pth5 = '62448201'
 pth6 = '62448201_S.png'
-pth7 = 'test-img.png'
+pth7 = 'test-img2.png'
+pth8 = 'test-img2.jpg'
 
 ####### start of dicom run
 # input_image = sitk.ReadImage(pth5)
@@ -102,12 +103,13 @@ input_image = sitk.ReadImage(pth7)
 print('.png image')
 print(type(input_image))
 img_arr = sitk.GetArrayFromImage(input_image)
+print(img_arr.shape)
 print(img_arr)
 print(img_arr.max())
 print(img_arr.min())
 
 print('.dicom image')
-input_image2 = sitk.ReadImage(pth5)
+input_image2 = sitk.ReadImage(pth8)
 print(type(input_image2))
 img_arr2 = sitk.GetArrayFromImage(input_image2)
 print(img_arr2)
