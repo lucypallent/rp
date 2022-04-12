@@ -98,7 +98,7 @@ im_output = enhancer.enhance(factor)
 plt.imshow(im_output)
 im_output.save(pth3)
 
-input_image = sitk.ReadImage(pth7)
+input_image = sitk.ReadImage(pth8)
 
 print('.png image')
 print(type(input_image))
@@ -109,7 +109,7 @@ print(img_arr.max())
 print(img_arr.min())
 
 print('.dicom image')
-input_image2 = sitk.ReadImage(pth8)
+input_image2 = sitk.ReadImage(pth7)
 print(type(input_image2))
 img_arr2 = sitk.GetArrayFromImage(input_image2)
 print(img_arr2)
