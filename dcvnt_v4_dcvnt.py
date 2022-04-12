@@ -271,10 +271,10 @@ def Rand_Transforms(imgs, masks,
 
     # noise Transforms
     def noisop(img, gaus):
-        img = np.asarray(img, dtype=np.uint8)
+        # img = np.asarray(img, dtype=np.uint8)
         nois = torch.randn_like(img) * gaus
         _img = img + nois
-        _img = Image.fromarray((_img * 255).astype(np.uint8))
+        # _img = Image.fromarray((_img * 255).astype(np.uint8))
 
     gaus_noise = random.randint(0, 5) / 20
     pil_imgs = [noisop(x, gaus_noise) for x in pil_imgs]
