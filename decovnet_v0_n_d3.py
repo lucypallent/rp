@@ -99,15 +99,17 @@ im_output.save(pth3)
 input_image = sitk.ReadImage(pth3)
 
 print('.png image')
-print(input_image.pixel_array)
-print(input_image.pixel_array.max())
-print(input_image.pixel_array.min())
+print(type(input_image))
+# print(input_image.pixel_array)
+# print(input_image.pixel_array.max())
+# print(input_image.pixel_array.min())
 
 print('.dicom image')
 input_image2 = sitk.ReadImage(pth5)
-print(input_image2.pixel_array)
-print(input_image2.pixel_array.max())
-print(input_image2.pixel_array.min())
+print(type(input_image2))
+# print(input_image2.pixel_array)
+# print(input_image2.pixel_array.max())
+# print(input_image2.pixel_array.min())
 
 # input_image = sitk.ReadImage(pth)
 
