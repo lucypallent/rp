@@ -51,6 +51,7 @@ import random
 from scipy.ndimage import zoom
 import neptune.new as neptune
 import elasticdeform
+import torchvision.transforms as transforms
 
 
 random.seed(0); torch.manual_seed(0); np.random.seed(0)
@@ -272,11 +273,15 @@ def Rand_Transforms(imgs, masks,
     # noise Transforms
     def noisop(img, gaus):
         # img = np.asarray(img, dtype=np.uint8)
+        to_tens = transforms.ToTensor()
+        img = to_tens(img)
         nois = torch.randn_like(img) * gaus
         _img = img + nois
+        to_pils = transforms.ToPILImage()
+        _img = to_pils(_img)
         # _img = Image.fromarray((_img * 255).astype(np.uint8))
 
-    gaus_noise = random.randint(0, 5) / 20
+    gaus_noise = random.randint(0, 10) / 100
     pil_imgs = [noisop(x, gaus_noise) for x in pil_imgs]
 
     imgs = np.asarray([np.asarray(x, dtype=np.uint8) for x in pil_imgs], dtype=np.uint8)
