@@ -233,13 +233,13 @@ def Rand_Transforms(imgs, masks,
             _img  = TF.hflip(_img)
         if vflp:
             _img  = TF.vflip(_img)
-        print(_img.shape)
+        # print(_img.shape)
         print(deformation.shape)
         print(deformation)
         print(_img)
         print(type(img))
         print(type(deformation))
-        _img = etorch.deform_grid(img, deformation)
+        _img = etorch.deform_grid(_img, deformation)
 
         return _img
     angle = random.randint(-ANGLE_R, ANGLE_R)
