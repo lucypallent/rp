@@ -225,11 +225,11 @@ def Rand_Transforms(imgs, masks,
     # Affine Transforms
     def affop(img, angle, translate, scale, shear, hflp, vflp, deformation):
         # _img = TF.affine(img, angle, translate, scale, shear, resample=Image.BILINEAR)
-         _img = TF.affine(img, angle, translate, scale, shear, interpolation=InterpolationMode.BILINEAR)
-         if hflp:
-             _img  = TF.hflip(_img)
-         if vflp:
-             _img  = TF.vflip(_img)
+        _img = TF.affine(img, angle, translate, scale, shear, interpolation=InterpolationMode.BILINEAR)
+        if hflp:
+            _img  = TF.hflip(_img)
+        if vflp:
+            _img  = TF.vflip(_img)
         _img = elasticdeform.torch.deform_grid(img, deformation)
 
         return _img
