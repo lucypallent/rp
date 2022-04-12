@@ -33,7 +33,7 @@ import skimage
 from skimage import io
 import numpy as np
 
-pth = 'COVID19_0001/COVID19-0001.dcm' # path is correct
+pth = 'COVID19_0001/COVID19-0101.dcm' # path is correct
 input_image = sitk.ReadImage(pth)
 model = mask.get_model('unet','R231CovidWeb')
 result = mask.apply(input_image, model)
@@ -49,91 +49,91 @@ print('WORKS!')
 # plt.show()
 
 
-####### start of dicom run
-# input_image = sitk.ReadImage(pth5)
+# ####### start of dicom run
+# # input_image = sitk.ReadImage(pth5)
+# #
+# # model = mask.get_model('unet','R231CovidWeb')
+# # result = mask.apply(input_image, model)#, noHU=True)
+# # result = (result/(result.max())*255).astype(np.uint8)
+# #
+# # print(type(result))
+# # print(result.shape)
+# # print(result.max())
+# # print(result.min())
+# # print('WORKS!')
+# #
+# # io.imsave(pth6, result[0])
+# ####### end of dicom run
+# #
+# # read in image concat save as png read in the png with sitk
+# # this should then work
+# # make rgb
+# img = io.imread(pth2).reshape((512, 512, 1))
+# # print(img.shape)
 #
+# img0 = np.empty((512, 512, 1))
+# img1 = np.concatenate((img0, img, img, img), axis=2)[:,:,1:] / 255
+# print(img1.shape)
+#
+# img1 = (img1/(img1.max())*255).astype(np.uint8)
+# io.imsave(pth3, img1)
+#
+# # up brightness
+# from PIL import Image, ImageEnhance
+# im = Image.open(pth3)
+# enhancer = ImageEnhance.Brightness(im)
+#
+# factor = 2 #increase contrast
+# im_output = enhancer.enhance(factor)
+# plt.imshow(im_output)
+# im_output.save(pth3)
+#
+# input_image = sitk.ReadImage(pth8)
+#
+# print('.png image')
+# print(type(input_image))
+# img_arr = sitk.GetArrayFromImage(input_image)
+# print(img_arr.shape)
+# print(img_arr)
+# print(img_arr.max())
+# print(img_arr.min())
+#
+# print('.dicom image')
+# input_image2 = sitk.ReadImage(pth7)
+# print(type(input_image2))
+# img_arr2 = sitk.GetArrayFromImage(input_image2)
+# print(img_arr2)
+# print(img_arr2.max())
+# print(img_arr2.min())
+#
+# # input_image = sitk.ReadImage(pth)
+#
+# # print(input_image.max())
+# # print(input_image.min())
+# # print(len(input_image))
+# # print(type(input_image))
+#
+# # print('2nd IMAGE')
+# # input_image2 = sitk.ReadImage(pth2)
+# # print(input_image2)
+# # print(len(input_image2))
+# # print(type(input_image2))
+#
+#
+# # print(input_image.shape)
+# # input_image = skimage.color.gray2rgb(input_image)
 # model = mask.get_model('unet','R231CovidWeb')
-# result = mask.apply(input_image, model)#, noHU=True)
-# result = (result/(result.max())*255).astype(np.uint8)
+# result = mask.apply(input_image, model, noHU=True)
 #
-# print(type(result))
-# print(result.shape)
 # print(result.max())
 # print(result.min())
-# print('WORKS!')
 #
-# io.imsave(pth6, result[0])
-####### end of dicom run
+# result = result * 255
 #
-# read in image concat save as png read in the png with sitk
-# this should then work
-# make rgb
-img = io.imread(pth2).reshape((512, 512, 1))
-# print(img.shape)
-
-img0 = np.empty((512, 512, 1))
-img1 = np.concatenate((img0, img, img, img), axis=2)[:,:,1:] / 255
-print(img1.shape)
-
-img1 = (img1/(img1.max())*255).astype(np.uint8)
-io.imsave(pth3, img1)
-
-# up brightness
-from PIL import Image, ImageEnhance
-im = Image.open(pth3)
-enhancer = ImageEnhance.Brightness(im)
-
-factor = 2 #increase contrast
-im_output = enhancer.enhance(factor)
-plt.imshow(im_output)
-im_output.save(pth3)
-
-input_image = sitk.ReadImage(pth8)
-
-print('.png image')
-print(type(input_image))
-img_arr = sitk.GetArrayFromImage(input_image)
-print(img_arr.shape)
-print(img_arr)
-print(img_arr.max())
-print(img_arr.min())
-
-print('.dicom image')
-input_image2 = sitk.ReadImage(pth7)
-print(type(input_image2))
-img_arr2 = sitk.GetArrayFromImage(input_image2)
-print(img_arr2)
-print(img_arr2.max())
-print(img_arr2.min())
-
-# input_image = sitk.ReadImage(pth)
-
-# print(input_image.max())
-# print(input_image.min())
-# print(len(input_image))
-# print(type(input_image))
-
-# print('2nd IMAGE')
-# input_image2 = sitk.ReadImage(pth2)
-# print(input_image2)
-# print(len(input_image2))
-# print(type(input_image2))
-
-
-# print(input_image.shape)
-# input_image = skimage.color.gray2rgb(input_image)
-model = mask.get_model('unet','R231CovidWeb')
-result = mask.apply(input_image, model, noHU=True)
-
-print(result.max())
-print(result.min())
-
-result = result * 255
-
-print(result.max())
-print(result.min())
-
-# result = (result/(result.max())*255).astype(np.uint8)
-result = result[0]
-
-io.imsave(pth4, result)
+# print(result.max())
+# print(result.min())
+#
+# # result = (result/(result.max())*255).astype(np.uint8)
+# result = result[0]
+#
+# io.imsave(pth4, result)
