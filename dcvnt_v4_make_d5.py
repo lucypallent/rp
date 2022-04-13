@@ -45,10 +45,19 @@ cpth = 'COVID19_0001'
 pth2 = '62448201'
 pth3 = 'unet-results/patient-P7-2.npy'
 
-ds = pydicom.dcmread(pth2)#[0x7fe0, 0x0010].value
+ds = pydicom.dcmread(pth)#[0x7fe0, 0x0010].value
 arr = ds.pixel_array
-arr = arr.reshape(1, 512, 512)
-input_image = sitk.ReadImage(pth)
+arr = np.clip(arr, 0, 1250)
+ds.PixelData = arr.tobytes()
+ds.LargestImagePixelValue = 1250
+from pydicom.uid import ExplicitVRLittleEndian
+ds.file_meta.TransferSyntaxUID = ExplicitVRLittleEndian
+ds.save_as('trial.dcm')
+
+# ds = pydicom.dcmread('trial.dcm')
+# arr = ds.pixel_
+# arr = arr.reshape(1, 512, 512)
+input_image = sitk.ReadImage('trial.dcm')
 model = mask.get_model('unet','R231CovidWeb')
 result = mask.apply(arr, model)#, noHU=True)
 print('model runs')
