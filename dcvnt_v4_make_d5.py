@@ -59,7 +59,7 @@ ds.save_as('trial.dcm')
 # arr = arr.reshape(1, 512, 512)
 input_image = sitk.ReadImage('trial.dcm')
 model = mask.get_model('unet','R231CovidWeb')
-result = mask.apply(arr, model)#, noHU=True)
+result = mask.apply(input_image, model)#, noHU=True)
 print('model runs')
 
 print(result.max())
