@@ -58,6 +58,7 @@ print(arr.min())
 print(arr.max())
 print('decompressed')
 
+arr = arr.reshape(1, 512, 512)
 model = mask.get_model('unet','R231CovidWeb')
 result = mask.apply(arr, model)#, noHU=True)
 print('model runs')
