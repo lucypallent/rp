@@ -58,6 +58,14 @@ print(arr.min())
 print(arr.max())
 print('decompressed')
 
+model = mask.get_model('unet','R231CovidWeb')
+result = mask.apply(arr, model)#, noHU=True)
+print('model runs')
+
+print(result.max())
+print(result.min())
+print('results?')
+
 citems = get_dicom_files(cpth)
 patient2 = dcmread(citems[0])
 
