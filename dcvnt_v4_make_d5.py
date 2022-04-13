@@ -50,10 +50,11 @@ ds = pydicom.dcmread(pth2)#[0x7fe0, 0x0010].value
 print(ds.pixel_array.min())
 print(ds.pixel_array.max())
 # ds = np.clip(ds.pixel_array,-1024,600) # may actually start at 0 ngl
-arr = np.clip(ds.pixel_array,0,1624) # may actually start at 0 ngl
-amin = 0
-amax = 1624
-arr = (arr - amin) / (amax + amin)
+arr = ds.pixel_array
+# arr = np.clip(arr,0,1624) # may actually start at 0 ngl
+# amin = 0
+# amax = 1624
+# arr = (arr - amin) / (amax + amin)
 print(arr.min())
 print(arr.max())
 print('decompressed')
