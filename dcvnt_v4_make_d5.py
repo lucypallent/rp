@@ -45,7 +45,7 @@ cpth = 'COVID19_0001'
 pth2 = '62448201'
 pth3 = 'unet-results/patient-P7-2.npy'
 
-ds = pydicom.dcmread(pth)#[0x7fe0, 0x0010].value
+ds = pydicom.dcmread(pth2)#[0x7fe0, 0x0010].value
 # ds.decompress()
 print(ds.pixel_array.min())
 print(ds.pixel_array.max())
