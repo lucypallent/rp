@@ -34,10 +34,19 @@ from skimage import io
 import numpy as np
 import pydicom
 
+from fastai.basics import *
+from fastai.vision.all import *
+from fastai.data.transforms import *
+from fastai.medical.imaging import *
+
 
 pth = 'COVID19_0001/COVID19-0101.dcm' # path is correct
+cpth = 'COVID19_0001'
 pth2 = '62448201'
 pth3 = 'unet-results/patient-P7-2.npy'
+
+citems = pydicom.get_dicom_files(cpth)
+patient2 = dcmread(citems[0])
 
 ds = pydicom.dcmread(pth)
 print(ds)
