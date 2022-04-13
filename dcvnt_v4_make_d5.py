@@ -46,23 +46,11 @@ pth2 = '62448201'
 pth3 = 'unet-results/patient-P7-2.npy'
 
 ds = pydicom.dcmread(pth2)#[0x7fe0, 0x0010].value
-# ds.decompress()
-print(ds.pixel_array.min())
-print(ds.pixel_array.max())
-# ds = np.clip(ds.pixel_array,-1024,600) # may actually start at 0 ngl
 arr = ds.pixel_array
-# arr = np.clip(arr,0,1624) # may actually start at 0 ngl
-# amin = 0
-# amax = 1624
-# arr = (arr - amin) / (amax + amin)
-print(arr.min())
-print(arr.max())
-print('decompressed')
-
 arr = arr.reshape(1, 512, 512)
 input_image = sitk.ReadImage(pth)
 model = mask.get_model('unet','R231CovidWeb')
-result = mask.apply(input_image, model)#, noHU=True)
+result = mask.apply(arr, model)#, noHU=True)
 print('model runs')
 
 print(result.max())
