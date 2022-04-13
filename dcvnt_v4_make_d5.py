@@ -45,6 +45,10 @@ cpth = 'COVID19_0001'
 pth2 = '62448201'
 pth3 = 'unet-results/patient-P7-2.npy'
 
+ds = pydicom.dcmread(pth)#[0x7fe0, 0x0010].value
+ds.decompress()
+print('decompressed')
+
 citems = get_dicom_files(cpth)
 patient2 = dcmread(citems[0])
 
