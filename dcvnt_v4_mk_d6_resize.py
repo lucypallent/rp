@@ -16,6 +16,9 @@ new_height, new_width = new_size
 clip_range = (0.15, 1)
 slice_resolution = 1
 
+readvdnames = lambda x: open(x).read().rstrip().split('\n')
+pe_list = readvdnames(f"d6/image_sets/all_patients.txt")[::-1]
+
 def resize_images(x):        # dtype is "PE"/"NORMAL"
     print(x)
     raw_npy = np.load(os.path.join(unt_home, x+".npy")) # original ct scan
