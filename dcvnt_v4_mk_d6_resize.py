@@ -9,7 +9,7 @@ inf_home = 'd6/infnet'
 unt_home = 'd6/unet'
 des_home = 'd6/resized224x336' #'dataset4/NCOV-BF/NpyData-size224x336'
 
-os.makedirs(des_home, exist_ok=True)
+# os.makedirs(des_home, exist_ok=True)
 
 new_size = (224, 336)   # 224x336       # average isotropic shape: 193x281
 new_height, new_width = new_size
@@ -20,7 +20,7 @@ readvdnames = lambda x: open(x).read().rstrip().split('\n')
 pe_list = readvdnames(f"d6/image_sets/all_patients.txt")[::-1]
 
 def resize_images(x):        # dtype is "PE"/"NORMAL"
-    print(x)
+    # print(x)
     raw_npy = np.load(os.path.join(unt_home, x+".npy")) # original ct scan
     raw_dlm = np.load(os.path.join(unt_home, x+"-dlmask10.npy")) # lungs bin mask
     raw_msk = np.load(os.path.join(unt_home, x+"-masked.npy")) # masked lungs
