@@ -7,7 +7,7 @@ import cv2
 # src_home = '/content' #'unet-results'
 inf_home = 'd6/infnet'
 unt_home = 'd6/unet'
-des_home = 'df/resized224x336' #'dataset4/NCOV-BF/NpyData-size224x336'
+des_home = 'd6/resized224x336' #'dataset4/NCOV-BF/NpyData-size224x336'
 
 os.makedirs(des_home, exist_ok=True)
 
