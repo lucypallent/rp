@@ -556,6 +556,7 @@ import os
 import argparse
 # from scipy import misc
 import imageio
+import cv2
 
 image_root = 'dataset3/NCOV-BF/NpyData/'
 testsize = 352
