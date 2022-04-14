@@ -27,6 +27,7 @@ def resize_images(x):        # dtype is "PE"/"NORMAL"
     raw_inf = np.load(os.path.join(inf_home, x+"-infmask.npy")) # infnet bin mask
     raw_infmsk = np.load(os.path.join(unt_home, x+"-inf10masked10.npy")) # masked infnet bin mask
 
+    print('raw')
     length = len(raw_masked)
 
     clip_npy = raw_npy[int(length*clip_range[0]):int(length*clip_range[1])]
@@ -34,7 +35,7 @@ def resize_images(x):        # dtype is "PE"/"NORMAL"
     clip_msk = raw_msk[int(length*clip_range[0]):int(length*clip_range[1])]
     clip_inf = raw_inf[int(length*clip_range[0]):int(length*clip_range[1])]
     clip_infmsk = raw_infmsk[int(length*clip_range[0]):int(length*clip_range[1])]
-
+    print('clipped')
     raw_npy = clip_npy
     raw_dlm = clip_dlm
     raw_msk= clip_msk
@@ -58,6 +59,7 @@ def resize_images(x):        # dtype is "PE"/"NORMAL"
     crop_infmsk = raw_infmsk[cropbox[0, 0]:cropbox[0, 1],
                          cropbox[1, 0]:cropbox[1, 1],
                          cropbox[2, 0]:cropbox[2, 1]]
+    print('cropped')
 
     raw_npy = crop_npy
     raw_dlm = crop_dlm
@@ -65,6 +67,7 @@ def resize_images(x):        # dtype is "PE"/"NORMAL"
     raw_inf = crop_inf
     raw_infmsk = crop_infmsk
 
+    print('save')
     height, width = crop_infmsk.shape[1:3]
     zoomed_npy = zoom(raw_npy, (slice_resolution, new_height/height, new_width/width))
     print(zoomed_npy.shape)
