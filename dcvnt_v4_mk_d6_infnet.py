@@ -576,13 +576,18 @@ for i in range(test_loader.size):
     images, name = test_loader.load_data()
     images = images.cuda()
     res2 = np.zeros((len(images), 352, 352))
-
+    print('images shape')
+    print(images.shape)
     for i, img in enumerate(images): # ([64, 1, 3, 352, 352])
         # print(img.shape) # ([3, 352, 352]) # 512 64 512
+        print('images enumerated shape')
+        print(img.shape)
         lateral_map_5, lateral_map_4, lateral_map_3, lateral_map_2, lateral_edge = model(img)
         imgT = img[0].cpu()
 
         res = lateral_map_2
+        print('res shape')
+        print(res.shape)
         # res = F.upsample(res, size=(ori_size[1],ori_size[0]), mode='bilinear', align_corners=False)
         res = res.sigmoid().data.cpu().numpy().squeeze()
         res = (res - res.min()) / (res.max() - res.min() + 1e-8)
@@ -592,7 +597,8 @@ for i in range(test_loader.size):
         dilated_res = cv2.dilate(res, kernel, iterations=1)
 
         res2[i] = dilated_res
-
+    print('res2 shape')
+    print(res2.shape)
     name = name.split('.')[0]
     name = name + '-infmask.npy'
     np.save(os.path.join(save_path + name), res2)
