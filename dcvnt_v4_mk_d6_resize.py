@@ -89,7 +89,7 @@ from concurrent import futures
 num_threads=10
 
 with futures.ProcessPoolExecutor(max_workers=num_threads) as executor:
-    fs = [executor.submit(resize_cta_images, x, ) for x in pe_list[::-1]]
+    fs = [executor.submit(resize_images, x, ) for x in pe_list[::-1]]
     for i, f in enumerate(futures.as_completed(fs)):
         print ("{}/{} done...".format(i, len(fs)))
 ############################ end of preprocessing .npys (creating d4)
