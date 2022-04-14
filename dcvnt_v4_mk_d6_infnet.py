@@ -587,7 +587,7 @@ for i in range(test_loader.size):
         res2[i] = res
 
     name = name.split('.')[0]
-    name = name + '-dlmask.npy'
+    name = name + '-infmask.npy'
     np.save(os.path.join(save_path + name), res2)
     # roundign up everything with an above than 0.1 chance of being an infection
 print('Test Done!')
