@@ -627,7 +627,7 @@ def create_masked_lungs(x):
     length = len(raw_imgs)
 
     raw_infmasked10 = np.zeros((length, 512, 512))
-    # raw_masked10 = np.zeros((length, 512, 512))
+    raw_masked10 = np.zeros((length, 512, 512))
 
     kernel = np.ones((10,10), np.uint8)
 
@@ -650,10 +650,10 @@ def create_masked_lungs(x):
 
         # mask the images
         raw_infmasked10[i] = cv2.bitwise_and(dilated_img, dilated_img, mask=dilated_slice)
-        # raw_masked10[i] = dilated_slice
+        raw_masked10[i] = dilated_slice
 
     np.save(os.path.join(des_home, x+"-inf10masked10.npy"), raw_infmasked10)
-    # np.save(os.path.join(des_home, x+"-masked10.npy"), raw_masked10)
+    np.save(os.path.join('d6/unet', x+"-dlmask10.npy"), raw_masked10)
     # np.save(os.path.join(des_home, x+".npy"), raw_imgs)
 
 ############################ start of preprocessing .npys (creating d4)
