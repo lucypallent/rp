@@ -570,10 +570,12 @@ model.eval()
 # transforms.functional.adjust_brightness
 # transforms.functional.adjust_contrast
 
+kernel = np.ones((10,10), np.uint8)
 for i in range(test_loader.size):
     images, name = test_loader.load_data()
     images = images.cuda()
     res2 = np.zeros((len(images), 352, 352))
+
     for i, img in enumerate(images): # ([64, 1, 3, 352, 352])
         # print(img.shape) # ([3, 352, 352]) # 512 64 512
         lateral_map_5, lateral_map_4, lateral_map_3, lateral_map_2, lateral_edge = model(img)
@@ -584,7 +586,11 @@ for i in range(test_loader.size):
         res = res.sigmoid().data.cpu().numpy().squeeze()
         res = (res - res.min()) / (res.max() - res.min() + 1e-8)
         res = (np.ceil(res-0.1)*255).astype(np.uint8)
-        res2[i] = res
+
+        # dilate the mask by 10 pixels
+        dilated_res = cv2.dilate(res, kernel, iterations=1)
+
+        res2[i] = dilated_res
 
     name = name.split('.')[0]
     name = name + '-infmask.npy'
