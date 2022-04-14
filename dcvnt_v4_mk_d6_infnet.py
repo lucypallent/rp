@@ -26,7 +26,12 @@ def get_loader(image_root, gt_root, edge_root, batchsize, trainsize, shuffle=Tru
 class test_dataset2:
     def __init__(self, image_root, testsize):
         self.testsize = testsize
-        self.images = [image_root + f for f in os.listdir(image_root) if f.endswith('.npy')]
+        # self.images = [image_root + f for f in os.listdir(image_root) if f.endswith('.npy')]
+        readvdnames = lambda x: open(x).read().rstrip().split('\n')
+        pe_list = readvdnames(f"contentd6/image_sets/all_patients.txt")[::-1]
+        self.images = ['d6/unet/' + x + '.npy' for x in pe_list]
+
+        self.images =
         # self.gts = [gt_root + f for f in os.listdir(gt_root) if f.endswith('.jpg') or f.endswith('.png')]
         self.images = sorted(self.images)
         # self.gts = sorted(self.gts)
