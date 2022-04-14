@@ -7,7 +7,7 @@ import cv2
 # src_home = '/content' #'unet-results'
 inf_home = 'd6/infnet'
 unt_home = 'd6/unet'
-des_home = 'd6/resized224x336' #'dataset4/NCOV-BF/NpyData-size224x336'
+des_home = 'resized224x336' #'dataset4/NCOV-BF/NpyData-size224x336'
 
 # os.makedirs(des_home, exist_ok=True)
 
@@ -20,11 +20,16 @@ readvdnames = lambda x: open(x).read().rstrip().split('\n')
 pe_list = readvdnames(f"d6/image_sets/all_patients.txt")[::-1]
 
 def resize_images(x):        # dtype is "PE"/"NORMAL"
-    # print(x)
+    print(x)
+    print('AAAAAAAAAAAA')
     raw_npy = np.load(os.path.join(unt_home, x+".npy")) # original ct scan
+    print('BbBBBBBBB')
     raw_dlm = np.load(os.path.join(unt_home, x+"-dlmask10.npy")) # lungs bin mask
+    print('CCCCCCCCCC')
     raw_msk = np.load(os.path.join(unt_home, x+"-masked.npy")) # masked lungs
+    print('DDDDDDDDDD')
     raw_inf = np.load(os.path.join(inf_home, x+"-infmask.npy")) # infnet bin mask
+    print('EEEEEE')
     raw_infmsk = np.load(os.path.join(unt_home, x+"-inf10masked10.npy")) # masked infnet bin mask
 
     print('raw')
