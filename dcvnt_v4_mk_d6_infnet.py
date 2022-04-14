@@ -28,10 +28,8 @@ class test_dataset2:
         self.testsize = testsize
         # self.images = [image_root + f for f in os.listdir(image_root) if f.endswith('.npy')]
         readvdnames = lambda x: open(x).read().rstrip().split('\n')
-        pe_list = readvdnames(f"contentd6/image_sets/all_patients.txt")[::-1]
-        self.images = ['d6/unet/' + x + '.npy' for x in pe_list]
-
-        self.images =
+        self.pe_list = readvdnames(f"contentd6/image_sets/all_patients.txt")[::-1]
+        self.images = ['d6/unet/' + x + '.npy' for x in self.pe_list]
         # self.gts = [gt_root + f for f in os.listdir(gt_root) if f.endswith('.jpg') or f.endswith('.png')]
         self.images = sorted(self.images)
         # self.gts = sorted(self.gts)
@@ -79,7 +77,9 @@ class test_dataset2:
             n = t2(n)
             n = transforms.functional.adjust_brightness(n , brightness_factor=1.5)
             n = transforms.functional.adjust_contrast(n , contrast_factor=1.25)
+            n = transforms.functional.rotate(n, 270)
             n = t3(n)
+            n = torch.flip(n, (2,))
 
             # n = t4(n)
             n = t5(n)
@@ -111,6 +111,7 @@ import math
 import torch.utils.model_zoo as model_zoo
 import torch
 import torch.nn.functional as F
+import cv2
 
 __all__ = ['Res2Net', 'res2net50_v1b', 'res2net101_v1b', 'res2net50_v1b_26w_4s']
 
@@ -580,32 +581,24 @@ kernel = np.ones((10,10), np.uint8)
 for i in range(test_loader.size):
     images, name = test_loader.load_data()
     images = images.cuda()
-    res2 = np.zeros((len(images), 352, 352))
-    print('images shape')
-    print(images.shape)
+    res2 = np.zeros((len(images), 512, 512))
     for i, img in enumerate(images): # ([64, 1, 3, 352, 352])
-        # print(img.shape) # ([3, 352, 352]) # 512 64 512
-        print('images enumerated shape')
-        print(img.shape)
         lateral_map_5, lateral_map_4, lateral_map_3, lateral_map_2, lateral_edge = model(img)
         imgT = img[0].cpu()
 
         res = lateral_map_2
-        print('res shape')
-        print(res.shape)
-        # res = F.upsample(res, size=(ori_size[1],ori_size[0]), mode='bilinear', align_corners=False)
         res = res.sigmoid().data.cpu().numpy().squeeze()
         res = (res - res.min()) / (res.max() - res.min() + 1e-8)
         res = (np.ceil(res-0.1)*255).astype(np.uint8)
+        res = cv2.resize(res, dsize=(512, 512), interpolation=cv2.INTER_CUBIC)
 
         # dilate the mask by 10 pixels
         dilated_res = cv2.dilate(res, kernel, iterations=1)
 
         res2[i] = dilated_res
-    print('res2 shape')
     print(res2.shape)
     name = name.split('.')[0]
-    name = name + '-infmask.npy'
+    name = name + '-infmask10.npy'
     np.save(os.path.join(save_path + name), res2)
     # roundign up everything with an above than 0.1 chance of being an infection
 print('Test Done!')
