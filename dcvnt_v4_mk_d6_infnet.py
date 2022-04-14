@@ -67,7 +67,7 @@ class test_dataset2:
         t4 = transforms.Normalize([0.45],[0.25])
         t5 = transforms.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225]) # ones used orig
 
-        npy2 = torch.zeros(64, 3, self.testsize, self.testsize)
+        npy2 = torch.zeros(slc_num, 3, self.testsize, self.testsize)
         # torch.Size([3, 512, 64, 512])
         for i, n in enumerate(npy):
             n = t(n)
