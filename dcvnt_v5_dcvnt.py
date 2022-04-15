@@ -301,7 +301,7 @@ class CTDataset(data.Dataset):
         meta_pos   = [[os.path.join(data_home, "resized224x336", "{}-masked.npy".format(x)), 1]
                                 for x in readvdnames(_embo_f)]
 
-        meta_neg   = [[os.path.join(data_home, "resized224x336", "{}.-masked.npy".format(x)), 0]
+        meta_neg   = [[os.path.join(data_home, "resized224x336", "{}-masked.npy".format(x)), 0]
                                 for x in readvdnames(_norm_f)]
 
         meta_cap   = [[os.path.join(data_home, "resized224x336", "{}-masked.npy".format(x)), 2]
