@@ -1,5 +1,5 @@
-##### THIS IS THE [lungs, infmask model]
-##### on slurm as lngINF
+##### THIS IS THE [lungs, infmask model, new dataset]
+##### on slurm as NDlngINF
 
 
 """#DeCOVNet"""
@@ -293,10 +293,10 @@ class CTDataset(data.Dataset):
                        crop_size=(196, 288),
                        clip_range=(0.2, 0.7),   # useless
                        logger=None):
-        # currently using the original datasets
-        _embo_f = os.path.join(data_home, "image_sets", "ncov_{}.txt".format(split))
-        _norm_f = os.path.join(data_home, "image_sets", "normal_{}.txt".format(split))
-        _cap_f = os.path.join(data_home, "image_sets", "cap_{}.txt".format(split))
+        # currently using the new datasets
+        _embo_f = os.path.join(data_home, "image_sets", "n_ncov_{}.txt".format(split))
+        _norm_f = os.path.join(data_home, "image_sets", "n_normal_{}.txt".format(split))
+        _cap_f = os.path.join(data_home, "image_sets", "n_cap_{}.txt".format(split))
         # Build a dictionary to record {path - label} pair
         # currently using the masked lungs vs the origal images
         meta_pos   = [[os.path.join(data_home, "resized224x336", "{}.npy".format(x)), 1]
