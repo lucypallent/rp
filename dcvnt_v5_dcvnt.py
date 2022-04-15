@@ -59,8 +59,8 @@ random.seed(0); torch.manual_seed(0); np.random.seed(0)
 device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
 
 run = neptune.init(
-    project="lhp/res-proj",
-    api_token="eyJhcGlfYWRkcmVzcyI6Imh0dHBzOi8vYXBwLm5lcHR1bmUuYWkiLCJhcGlfdXJsIjoiaHR0cHM6Ly9hcHAubmVwdHVuZS5haSIsImFwaV9rZXkiOiI2MDQxZWMwYS1hMDg5LTQzNDQtYWFkMy1iZGZiNjk4MjM4YTMifQ==",
+    project="lucyhpallent/res-proj",
+    api_token="eyJhcGlfYWRkcmVzcyI6Imh0dHBzOi8vYXBwLm5lcHR1bmUuYWkiLCJhcGlfdXJsIjoiaHR0cHM6Ly9hcHAubmVwdHVuZS5haSIsImFwaV9rZXkiOiIxNDc1YjA4OC1lODA4LTQ0OTAtYTY2ZC1iOTZhODhlMTRmZDcifQ==",
 )  # your credentials
 
 DATA_ROOT = 'd6'
