@@ -298,7 +298,7 @@ class CTDataset(data.Dataset):
         _norm_f = os.path.join(data_home, "image_sets", "n_normal_{}.txt".format(split))
         _cap_f = os.path.join(data_home, "image_sets", "n_cap_{}.txt".format(split))
         # Build a dictionary to record {path - label} pair
-        # currently using the masked lungs vs the origal images
+        # currently using the original lung images
         meta_pos   = [[os.path.join(data_home, "resized224x336", "{}.npy".format(x)), 1]
                                 for x in readvdnames(_embo_f)]
 
