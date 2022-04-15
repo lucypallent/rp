@@ -1,5 +1,5 @@
-##### THIS IS THE [lungs, infmask model, new dataset]
-##### on slurm as NDlngINF
+##### THIS IS THE [masked lungs, infmask model, new dataset]
+##### on slurm as NDmklINF
 
 
 """#DeCOVNet"""
@@ -298,14 +298,14 @@ class CTDataset(data.Dataset):
         _norm_f = os.path.join(data_home, "image_sets", "n_normal_{}.txt".format(split))
         _cap_f = os.path.join(data_home, "image_sets", "n_cap_{}.txt".format(split))
         # Build a dictionary to record {path - label} pair
-        # currently using the original lung images
-        meta_pos   = [[os.path.join(data_home, "resized224x336", "{}.npy".format(x)), 1]
+        # currently using the masked lung images
+        meta_pos   = [[os.path.join(data_home, "resized224x336", "{}-masked.npy".format(x)), 1]
                                 for x in readvdnames(_embo_f)]
 
-        meta_neg   = [[os.path.join(data_home, "resized224x336", "{}.npy".format(x)), 0]
+        meta_neg   = [[os.path.join(data_home, "resized224x336", "{}-masked.npy".format(x)), 0]
                                 for x in readvdnames(_norm_f)]
 
-        meta_cap   = [[os.path.join(data_home, "resized224x336", "{}.npy".format(x)), 2]
+        meta_cap   = [[os.path.join(data_home, "resized224x336", "{}-masked.npy".format(x)), 2]
                                 for x in readvdnames(_cap_f)]
 
         if split == "train":
@@ -337,7 +337,7 @@ class CTDataset(data.Dataset):
     def __getitem__(self, index):
         data_path, label = self.meta[index]
         # currently using the inf10masked10 images
-        mask_path = data_path.replace('.npy', '-inf10masked10k.npy')
+        mask_path = data_path.replace('-masked.npy', '-inf10masked10k.npy')
 
         cta_images = np.load(data_path)
         cta_masks = np.load(mask_path)
