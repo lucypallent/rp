@@ -21,19 +21,14 @@ pe_list = readvdnames(f"d6/image_sets/all_patients.txt")[::-1]
 
 def resize_images(x):        # dtype is "PE"/"NORMAL"
     print(x)
-    print('AAAAAAAAAAAA')
     raw_npy = np.load(os.path.join(unt_home, x+".npy")) # original ct scan
-    print('BbBBBBBBB')
     raw_dlm = np.load(os.path.join(unt_home, x+"-dlmask10.npy")) # lungs bin mask
-    print('CCCCCCCCCC')
     raw_msk = np.load(os.path.join(unt_home, x+"-masked.npy")) # masked lungs
-    print('DDDDDDDDDD')
     raw_inf = np.load(os.path.join(inf_home, x+"-infmask.npy")) # infnet bin mask
-    print('EEEEEE')
     raw_infmsk = np.load(os.path.join(inf_home, x+"-inf10masked10.npy")) # masked infnet bin mask
 
     print('raw')
-    length = len(raw_masked)
+    length = len(raw_npy)
 
     clip_npy = raw_npy[int(length*clip_range[0]):int(length*clip_range[1])]
     clip_dlm = raw_dlm[int(length*clip_range[0]):int(length*clip_range[1])]
