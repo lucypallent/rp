@@ -1,3 +1,6 @@
+##### THIS IS THE [masked lungs, infmask model]
+##### on slurm as mkLINF
+
 
 """#DeCOVNet"""
 
