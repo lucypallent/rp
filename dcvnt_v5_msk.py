@@ -1651,14 +1651,14 @@ NUM_WORKERS = 2
 criterion = torch.nn.CrossEntropyLoss(reduction="mean")
 
 model = ENModel(arch=ARCH, resnet_depth=DEPTH,
-                input_channel=1, num_classes=NUM_CLASSES) # - input channel changed to 1
+                input_channel=2, num_classes=NUM_CLASSES) # - input channel changed to 1 later can't here cause loading dict
 model = torch.nn.DataParallel(model).cuda()
 
-model.load_state_dict(torch.load('ncov-Epoch_00140-auc95p9.pth'))
+model.load_state_dict(torch.load('/content/ncov-Epoch_00140-auc95p9.pth'))
 model.eval()
 
 # change the first layer
-model.module.s1[0] = Conv3d(1, 16, kernel_size=(5, 7, 7), stride=(1, 2, 2), padding=(2, 3, 3), bias=False).cuda()
+model.module.s1.pathway0_stem.conv = nn.Conv3d(1, 16, kernel_size=(5, 7, 7), stride=(1, 2, 2), padding=(2, 3, 3), bias=False).cuda()
 
 # change the final layer
 model.module.classifier[1] = nn.Linear(model.module.classifier[1].in_features, NUM_CLASSES, bias=True).cuda()
@@ -1794,19 +1794,14 @@ Validset = CTDataset(data_home=DATA_ROOT,
 
 
 model = ENModel(arch=ARCH, resnet_depth=DEPTH,
-                    input_channel=1, # input_channel changed to 1
-                    crop_h=TRAIN_CROP_SIZE[0],
-                    crop_w=TRAIN_CROP_SIZE[1], num_classes=NUM_CLASSES)
-
+                input_channel=2, num_classes=NUM_CLASSES) # - input channel changed to 1 later can't here cause loading dict
 model = torch.nn.DataParallel(model).cuda()
 
-# model.load_state_dict(torch.load('ncov-Epoch_00140-auc95p9.pth'))
-
-model.load_state_dict(torch.load(INIT_MODEL_PATH, \
-                 map_location=f'cuda:{local_rank}'), strict=INIT_MODEL_STRICT)
+model.load_state_dict(torch.load('/content/ncov-Epoch_00140-auc95p9.pth'))
 model.eval()
+
 # change the first layer
-model.module.s1[0] = Conv3d(1, 16, kernel_size=(5, 7, 7), stride=(1, 2, 2), padding=(2, 3, 3), bias=False).cuda()
+model.module.s1.pathway0_stem.conv = nn.Conv3d(1, 16, kernel_size=(5, 7, 7), stride=(1, 2, 2), padding=(2, 3, 3), bias=False).cuda()
 
 # change the final layer
 model.module.classifier[1] = nn.Linear(model.module.classifier[1].in_features, NUM_CLASSES, bias=True).cuda()
