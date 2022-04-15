@@ -1654,7 +1654,7 @@ model = ENModel(arch=ARCH, resnet_depth=DEPTH,
                 input_channel=2, num_classes=NUM_CLASSES) # - input channel changed to 1 later can't here cause loading dict
 model = torch.nn.DataParallel(model).cuda()
 
-model.load_state_dict(torch.load('/content/ncov-Epoch_00140-auc95p9.pth'))
+model.load_state_dict(torch.load('ncov-Epoch_00140-auc95p9.pth'))
 model.eval()
 
 # change the first layer
@@ -1797,7 +1797,7 @@ model = ENModel(arch=ARCH, resnet_depth=DEPTH,
                 input_channel=2, num_classes=NUM_CLASSES) # - input channel changed to 1 later can't here cause loading dict
 model = torch.nn.DataParallel(model).cuda()
 
-model.load_state_dict(torch.load('/content/ncov-Epoch_00140-auc95p9.pth'))
+model.load_state_dict(torch.load('ncov-Epoch_00140-auc95p9.pth'))
 model.eval()
 
 # change the first layer
