@@ -1656,7 +1656,12 @@ model = torch.nn.DataParallel(model).cuda()
 
 model.load_state_dict(torch.load('ncov-Epoch_00140-auc95p9.pth'))
 model.eval()
-model.module.classifier[1] = nn.Linear(model.module.classifier[1].in_features, NUM_CLASSES).cuda()
+
+# change the first layer
+model.module.s1[0] = Conv3d(1, 16, kernel_size=(5, 7, 7), stride=(1, 2, 2), padding=(2, 3, 3), bias=False).cuda()
+
+# change the final layer
+model.module.classifier[1] = nn.Linear(model.module.classifier[1].in_features, NUM_CLASSES, bias=True).cuda()
 
 ValidLoader = torch.utils.data.DataLoader(Validset,
                                     batch_size=1,
@@ -1800,8 +1805,11 @@ model = torch.nn.DataParallel(model).cuda()
 model.load_state_dict(torch.load(INIT_MODEL_PATH, \
                  map_location=f'cuda:{local_rank}'), strict=INIT_MODEL_STRICT)
 model.eval()
-model.module.classifier[1] = nn.Linear(model.module.classifier[1].in_features, NUM_CLASSES).cuda()
+# change the first layer
+model.module.s1[0] = Conv3d(1, 16, kernel_size=(5, 7, 7), stride=(1, 2, 2), padding=(2, 3, 3), bias=False).cuda()
 
+# change the final layer
+model.module.classifier[1] = nn.Linear(model.module.classifier[1].in_features, NUM_CLASSES, bias=True).cuda()
 
 print(model)
 
