@@ -334,7 +334,7 @@ class CTDataset(data.Dataset):
     def __getitem__(self, index):
         data_path, label = self.meta[index]
         # currently using the inf10masked10 images
-        mask_path = data_path.replace('-masked.npy', '-inf10masked10.npy')
+        mask_path = data_path.replace('-masked.npy', '-inf10masked10k.npy')
 
         cta_images = np.load(data_path)
         cta_masks = np.load(mask_path)
