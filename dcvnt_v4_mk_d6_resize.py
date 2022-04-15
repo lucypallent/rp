@@ -7,9 +7,9 @@ import cv2
 # src_home = '/content' #'unet-results'
 inf_home = 'd6/infnet'
 unt_home = 'd6/unet'
-des_home = 'resized224x336' #'dataset4/NCOV-BF/NpyData-size224x336'
+des_home = 'd6/resized224x336' #'dataset4/NCOV-BF/NpyData-size224x336'
 
-# os.makedirs(des_home, exist_ok=True)
+os.makedirs(des_home, exist_ok=True)
 
 new_size = (224, 336)   # 224x336       # average isotropic shape: 193x281
 new_height, new_width = new_size
@@ -30,7 +30,7 @@ def resize_images(x):        # dtype is "PE"/"NORMAL"
     print('DDDDDDDDDD')
     raw_inf = np.load(os.path.join(inf_home, x+"-infmask.npy")) # infnet bin mask
     print('EEEEEE')
-    raw_infmsk = np.load(os.path.join(unt_home, x+"-inf10masked10.npy")) # masked infnet bin mask
+    raw_infmsk = np.load(os.path.join(inf_home, x+"-inf10masked10.npy")) # masked infnet bin mask
 
     print('raw')
     length = len(raw_masked)
