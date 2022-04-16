@@ -1837,6 +1837,7 @@ for e in range(TRAIN_EPOCH):
         # tik = time.time()
 
         # display image
+        print(all_F.shape)
         run['training/batch/img'].log(File.as_image(all_F))
 
         preds = model([all_F.cuda(non_blocking=True)])   # I3D
