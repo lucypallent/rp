@@ -64,8 +64,14 @@ def resize_cta_images(x):        # dtype is "PE"/"NORMAL"
     #     return
     ### raw_imgs = np.uint8(np.load(os.path.join(src_home, x+".npy")))
     raw_imgs = np.load(os.path.join(src_home, x+"-masked.npy"))
+    print('img loaded')
+    print(raw_imgs)
     orig_imgs = np.load(os.path.join(src_home, x+"-dlmask.npy"))
+    print('orig loaded')
+    print(orig_imgs)
     raw_masks = np.load(os.path.join(src_home, x+"-infmask.npy"))
+    print('masks loaded')
+    print(raw_masks)
     length = len(raw_imgs)
 
 #     clip_imgs = raw_imgs[int(length*clip_range[0]):int(length*clip_range[1])]
@@ -84,6 +90,7 @@ def resize_cta_images(x):        # dtype is "PE"/"NORMAL"
 
     crop_box = np.array([[np.min(crop_boxes[:, 0, 0]), np.max(crop_boxes[:, 0, 1])],
                          [np.min(crop_boxes[:, 1, 0]), np.max(crop_boxes[:, 1, 1])]])
+    print(crop_box)
 
     crop_imgs = raw_imgs[:, cropbox[0, 0]:cropbox[0, 1], cropbox[1, 0]:cropbox[1, 1]]
 
