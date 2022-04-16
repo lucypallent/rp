@@ -1821,7 +1821,7 @@ print('2nd model training')
 best_acc = 0.0
 
 for e in range(TRAIN_EPOCH):
-    e + 89
+    e = e + 89 +24
     run["training/batch/epoch"].log(e)
     for i, (all_F, all_L, all_info) in enumerate(TrainLoader):
         optimizer.zero_grad()
