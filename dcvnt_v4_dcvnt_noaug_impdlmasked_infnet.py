@@ -300,6 +300,10 @@ class CTDataset(data.Dataset):
         cta_images = np.load(data_path)
         cta_masks = np.load(mask_path)
 
+        # try to get brightnes to work
+        cta_images = 255 * cta_images # Now scale by 255
+        cta_images = cta_images.astype(np.uint8)
+
         num_frames = len(cta_images)
         shape = cta_images.shape
 
