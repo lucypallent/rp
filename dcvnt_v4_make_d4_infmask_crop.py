@@ -110,6 +110,7 @@ def resize_cta_images(x):        # dtype is "PE"/"NORMAL"
     zoomed_imgs = zoom(raw_imgs, (slice_resolution, new_height/height, new_width/width))
     np.save(os.path.join(des_home, x+".npy"), zoomed_imgs)
     zoomed_masks = zoom(raw_masks, (slice_resolution, new_height/height, new_width/width))
+    print(os.path.join(des_home, x+"-dlmask.npy"))
     np.save(os.path.join(des_home, x+"-dlmask.npy"), zoomed_masks)
 
     #imgs2vid(immasks, "debug/{}.avi".format(x))
