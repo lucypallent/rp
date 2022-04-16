@@ -1868,6 +1868,10 @@ for e in range(TRAIN_EPOCH):
         # Epoch_CE = loss
         # Epoch_Acc = acc
         #break
+    # trying to see where the issue is - ie why is this stopping
+    run["training/batch/end_epoch"].log(e)
+    run["training/batch/LR_DECAY"].log(LR_DECAY)
+    run["training/batch/lr"].log(optimizer.param_groups[0]["lr"])
 
     Ece, Eacc = Epoch_CE.read(), Epoch_Acc.read()
 
