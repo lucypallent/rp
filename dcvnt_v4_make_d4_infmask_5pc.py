@@ -756,8 +756,8 @@ from scipy.ndimage import zoom
 
 readvdnames = lambda x: open(x).read().rstrip().split('\n')
 
-src_home = 'dataset4/NCOV-BF/NpyData-infmask-pc5'
-des_home = 'dataset4/NCOV-BF/NpyData-size224x336-infmask1010-pc5'
+src_home = 'dataset4/NCOV-BF/NpyData-infmask-5pc'
+des_home = 'dataset4/NCOV-BF/NpyData-size224x336-infmask1010-5pc'
 
 os.makedirs(des_home, exist_ok=True)
 
