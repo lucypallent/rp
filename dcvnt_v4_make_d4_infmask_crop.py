@@ -59,7 +59,10 @@ from zqlib import imgs2vid
 import cv2
 
 def resize_cta_images(x):        # dtype is "PE"/"NORMAL"
-    print (x)
+    print(x)
+
+    print('cannot find')
+    print(os.path.join(src_home, x+"-masked.npy"))
     # if os.path.isfile(os.path.join(des_home, x+".npy")) is True:
     #     return
     ### raw_imgs = np.uint8(np.load(os.path.join(src_home, x+".npy")))
