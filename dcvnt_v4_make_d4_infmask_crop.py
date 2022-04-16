@@ -98,6 +98,10 @@ def resize_cta_images(x):        # dtype is "PE"/"NORMAL"
 
     print(raw_imgs.shape)
     print(raw_imgs[:, :, 0])
+    print(cropbox[0, 0])
+    print(cropbox[0, 1])
+    print(cropbox[1, 0])
+    print(cropbox[1, 1])
     crop_imgs = raw_imgs[:, cropbox[0, 0]:cropbox[0, 1], cropbox[1, 0]:cropbox[1, 1]]
 
     print(raw_masks.shape)
