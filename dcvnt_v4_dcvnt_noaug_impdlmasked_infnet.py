@@ -47,6 +47,8 @@ import torch
 import random
 from scipy.ndimage import zoom
 import neptune.new as neptune
+from neptune.new.types import File
+
 
 
 random.seed(0); torch.manual_seed(0); np.random.seed(0)
@@ -1766,10 +1768,6 @@ TrainLoader = torch.utils.data.DataLoader(Trainset,
                                         shuffle=True,
                                         pin_memory=True)
 
-
-
-
-
 ############### Set up Optimization ###############
 optimizer = torch.optim.Adam(model.parameters(), lr=LEARNING_RATE, weight_decay=WEIGHT_DECAY)
 lr_scher = torch.optim.lr_scheduler.ExponentialLR(optimizer, gamma=LR_DECAY, last_epoch=-1)
@@ -1837,10 +1835,13 @@ for e in range(TRAIN_EPOCH):
         optimizer.zero_grad()
 
         # tik = time.time()
+
+        # display image
+        run['training/batch/img'].log(File.as_image(all_F))
+
         preds = model([all_F.cuda(non_blocking=True)])   # I3D
         labels = all_L.cuda(non_blocking=True)
         loss = criterion(preds, labels)
-
 
         acc = topk_accuracies(preds, labels, [1])[0]
         # rT += time.time()-tik
