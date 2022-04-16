@@ -85,7 +85,7 @@ def resize_cta_images(x):        # dtype is "PE"/"NORMAL"
 #     raw_masks = clip_masks
 #     ##
 # ##c
-    crop_boxes = np.zerox(shape=(length, 2, 2))
+    crop_boxes = np.zeros(shape=(length, 2, 2))
     print('crop boxes')
     for i, ri in enumerate(orig_imgs):
         yy, xx = np.where(ri)
