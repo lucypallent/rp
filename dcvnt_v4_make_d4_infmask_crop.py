@@ -86,18 +86,22 @@ def resize_cta_images(x):        # dtype is "PE"/"NORMAL"
 #     ##
 # ##c
     crop_boxes = np.zerox(shape=(length, 2, 2))
+    print('crop boxes')
     for i, ri in enumerate(orig_imgs):
         yy, xx = np.where(ri)
     # zz, yy, xx = np.where(raw_imgs)
         crop_boxes[i] = np.array([[np.min(yy), np.max(yy)], [np.min(xx), np.max(xx)]])
-
-    crop_box = np.array([[np.min(crop_boxes[:, 0, 0]), np.max(crop_boxes[:, 0, 1])],
-                         [np.min(crop_boxes[:, 1, 0]), np.max(crop_boxes[:, 1, 1])]])
+    print('crop boxes complete')
+    crop_box = np.array([[np.min(crop_boxes[:, 0, 0]), np.max(crop_boxes[:, 0, 1])], [np.min(crop_boxes[:, 1, 0]), np.max(crop_boxes[:, 1, 1])]])
+    print('cropped boxes later here')
     print(crop_box)
 
     crop_imgs = raw_imgs[:, cropbox[0, 0]:cropbox[0, 1], cropbox[1, 0]:cropbox[1, 1]]
 
     crop_imgs = raw_masks[:, cropbox[0, 0]:cropbox[0, 1], cropbox[1, 0]:cropbox[1, 1]]
+
+    print('cropped images complete')
+
 
     raw_imgs = crop_imgs
     raw_masks = crop_masks
