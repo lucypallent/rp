@@ -127,6 +127,9 @@ def resize_cta_images(x):        # dtype is "PE"/"NORMAL"
 ############################ end of functions for preprocessing .npys (creating d4)
 
 ############################ start of preprocessing .npys (creating d4)
+
+resize_cta_images('patient-N303')
+
 from concurrent import futures
 
 num_threads=10
