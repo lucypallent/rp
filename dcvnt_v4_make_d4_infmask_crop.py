@@ -39,7 +39,7 @@ from scipy.ndimage import zoom
 readvdnames = lambda x: open(x).read().rstrip().split('\n')
 
 src_home = 'dataset4/NCOV-BF/NpyData-infmask'
-des_home = 'dataset4/NCOV-BF/NpyData-size224x336-infmask1010-clip'
+des_home = 'dataset4/NCOV-BF/NpyData-size224x336-infmask1010-crop'
 
 os.makedirs(des_home, exist_ok=True)
 
@@ -67,15 +67,15 @@ def resize_cta_images(x):        # dtype is "PE"/"NORMAL"
     raw_masks = np.load(os.path.join(src_home, x+"-infmask.npy"))
     length = len(raw_imgs)
 
-    clip_imgs = raw_imgs[int(length*clip_range[0]):int(length*clip_range[1])]
-    ##
-    clip_masks = raw_masks[int(length*clip_range[0]):int(length*clip_range[1])]
-
-    raw_imgs = clip_imgs
-    raw_masks = clip_masks
-    ##
-####
-    zz, yy, xx = np.where(raw_masks)
+#     clip_imgs = raw_imgs[int(length*clip_range[0]):int(length*clip_range[1])]
+#     ##
+#     clip_masks = raw_masks[int(length*clip_range[0]):int(length*clip_range[1])]
+#
+#     raw_imgs = clip_imgs
+#     raw_masks = clip_masks
+#     ##
+# ####
+    zz, yy, xx = np.where(raw_imgs)
     cropbox = np.array([[np.min(zz), np.max(zz)], [np.min(yy), np.max(yy)], [np.min(xx), np.max(xx)]])
     crop_imgs = raw_imgs[cropbox[0, 0]:cropbox[0, 1],
                          cropbox[1, 0]:cropbox[1, 1],
