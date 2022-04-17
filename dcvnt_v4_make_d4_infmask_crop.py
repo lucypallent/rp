@@ -59,22 +59,9 @@ from zqlib import imgs2vid
 import cv2
 
 def resize_cta_images(x):        # dtype is "PE"/"NORMAL"
-    print(x)
-
-    print('cannot find')
-    print(os.path.join(src_home, x+"-masked.npy"))
-    # if os.path.isfile(os.path.join(des_home, x+".npy")) is True:
-    #     return
-    ### raw_imgs = np.uint8(np.load(os.path.join(src_home, x+".npy")))
     raw_imgs = np.load(os.path.join(src_home, x+"-masked.npy"))
-    print('img loaded')
-    print(raw_imgs)
     orig_imgs = np.load(os.path.join(src_home, x+"-dlmask.npy"))
-    print('orig loaded')
-    print(orig_imgs)
     raw_masks = np.load(os.path.join(src_home, x+"-infmask.npy"))
-    print('masks loaded')
-    print(raw_masks)
     length = len(raw_imgs)
 
 #     clip_imgs = raw_imgs[int(length*clip_range[0]):int(length*clip_range[1])]
@@ -86,31 +73,15 @@ def resize_cta_images(x):        # dtype is "PE"/"NORMAL"
 #     ##
 # ##c
     crop_boxes = np.zeros(shape=(length, 2, 2))
-    print('crop boxes')
     for i, ri in enumerate(orig_imgs):
         yy, xx = np.where(ri)
     # zz, yy, xx = np.where(raw_imgs)
         crop_boxes[i] = np.array([[np.min(yy), np.max(yy)], [np.min(xx), np.max(xx)]])
-    print('crop boxes complete')
     crop_box = np.array([[np.min(crop_boxes[:, 0, 0]), np.max(crop_boxes[:, 0, 1])], [np.min(crop_boxes[:, 1, 0]), np.max(crop_boxes[:, 1, 1])]])
-    print('cropped boxes later here')
-    print(crop_box)
 
-    print(raw_imgs.shape)
-    print(raw_imgs[:, :, 0])
-    print(crop_box.shape)
-    print(int(crop_box[0, 0]))
-    print(crop_box[0, 0])
-    print(int(crop_box[1, 0]))
-    print(int(crop_box[1, 1]))
-    print(raw_imgs[:, 94:386, 87:440])
     crop_imgs = raw_imgs[:, int(crop_box[0, 0]):int(crop_box[0, 1]), int(crop_box[1, 0]):int(crop_box[1, 1])]
-    print('after crop_imgs')
 
-    print(raw_masks.shape)
     crop_masks = raw_masks[:, int(crop_box[0, 0]):int(crop_box[0, 1]), int(crop_box[1, 0]):int(crop_box[1, 1])]
-
-    print('cropped images complete')
 
 
     raw_imgs = crop_imgs
@@ -120,7 +91,6 @@ def resize_cta_images(x):        # dtype is "PE"/"NORMAL"
     zoomed_imgs = zoom(raw_imgs, (slice_resolution, new_height/height, new_width/width))
     np.save(os.path.join(des_home, x+".npy"), zoomed_imgs)
     zoomed_masks = zoom(raw_masks, (slice_resolution, new_height/height, new_width/width))
-    print(os.path.join(des_home, x+"-dlmask.npy"))
     np.save(os.path.join(des_home, x+"-dlmask.npy"), zoomed_masks)
 
     #imgs2vid(immasks, "debug/{}.avi".format(x))
@@ -128,16 +98,12 @@ def resize_cta_images(x):        # dtype is "PE"/"NORMAL"
 
 ############################ start of preprocessing .npys (creating d4)
 
-resize_cta_images('patient-N303')
+from concurrent import futures
 
-print('WORKS!!!!!!')
-#
-# from concurrent import futures
-#
-# num_threads=10
-#
-# with futures.ProcessPoolExecutor(max_workers=num_threads) as executor:
-#     fs = [executor.submit(resize_cta_images, x, ) for x in pe_list[::-1]]
-#     for i, f in enumerate(futures.as_completed(fs)):
-#         print ("{}/{} done...".format(i, len(fs)))
-# ############################ end of preprocessing .npys (creating d4)
+num_threads=10
+
+with futures.ProcessPoolExecutor(max_workers=num_threads) as executor:
+    fs = [executor.submit(resize_cta_images, x, ) for x in pe_list[::-1]]
+    for i, f in enumerate(futures.as_completed(fs)):
+        print ("{}/{} done...".format(i, len(fs)))
+############################ end of preprocessing .npys (creating d4)
