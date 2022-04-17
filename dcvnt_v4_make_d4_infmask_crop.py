@@ -130,12 +130,14 @@ def resize_cta_images(x):        # dtype is "PE"/"NORMAL"
 
 resize_cta_images('patient-N303')
 
-from concurrent import futures
-
-num_threads=10
-
-with futures.ProcessPoolExecutor(max_workers=num_threads) as executor:
-    fs = [executor.submit(resize_cta_images, x, ) for x in pe_list[::-1]]
-    for i, f in enumerate(futures.as_completed(fs)):
-        print ("{}/{} done...".format(i, len(fs)))
-############################ end of preprocessing .npys (creating d4)
+print('WORKS!!!!!!')
+#
+# from concurrent import futures
+#
+# num_threads=10
+#
+# with futures.ProcessPoolExecutor(max_workers=num_threads) as executor:
+#     fs = [executor.submit(resize_cta_images, x, ) for x in pe_list[::-1]]
+#     for i, f in enumerate(futures.as_completed(fs)):
+#         print ("{}/{} done...".format(i, len(fs)))
+# ############################ end of preprocessing .npys (creating d4)
