@@ -391,7 +391,7 @@ from scipy.ndimage import zoom
 readvdnames = lambda x: open(x).read().rstrip().split('\n')
 
 src_home = 'unet-results'
-des_home = 'dataset4/NCOV-BF/NpyData-size224x336'
+des_home = 'dataset4/NCOV-BF/NpyData-size224x336-test'
 
 os.makedirs(des_home, exist_ok=True)
 
