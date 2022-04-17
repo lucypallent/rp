@@ -635,7 +635,7 @@ for i in range(test_loader.size):
     print(res2.shape)
     name = name.split('.')[0]
     name0 = name + '.npy'
-    np.save(os.path.join(save_path + name0), img)
+    np.save(os.path.join(save_path + name0), img.cpu())
     name2 = name + '-infmask-orig.npy'
     np.save(os.path.join(save_path + name2), res2)
     name3 = name + '-infmask-orig-noround.npy'
