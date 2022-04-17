@@ -1,3 +1,4 @@
+# run this code here
 """#DeCOVNet"""
 
 # now trying to implement DeCoVNet
@@ -47,6 +48,7 @@ import torch
 import random
 from scipy.ndimage import zoom
 import neptune.new as neptune
+from neptune.new.types import File
 
 
 random.seed(0); torch.manual_seed(0); np.random.seed(0)
@@ -1714,7 +1716,7 @@ INIT_MODEL_PATH = 'ncov-Epoch_00140-auc95p9.pth'
 INIT_MODEL_STRICT = "True"
 SNAPSHOT_FREQ = 5
 TRAIN_EPOCH = 200 #, will likely stop it early
-SNAPSHOT_HOME = "experiments_v4_dcvnt_noaug_impdlmask"
+SNAPSHOT_HOME = "experiments_v4_dcvnt_noaug_impdlmask_run2"
 SNAPSHOT_MODEL_TPL = "ncov-Epoch_{:05d}.pth"
 
 
@@ -1832,7 +1834,11 @@ for e in range(TRAIN_EPOCH):
     for i, (all_F, all_L, all_info) in enumerate(TrainLoader):
         optimizer.zero_grad()
 
-        # tik = time.time()
+        # display image
+        run['training/batch/img'].log(File.as_image(all_F[0,0,0]))
+        run['training/batch/msk'].log(File.as_image(all_F[0,1,0]))
+
+
         preds = model([all_F.cuda(non_blocking=True)])   # I3D
         labels = all_L.cuda(non_blocking=True)
         loss = criterion(preds, labels)

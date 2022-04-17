@@ -1837,7 +1837,6 @@ for e in range(TRAIN_EPOCH):
         # tik = time.time()
 
         # display image
-        # print(all_F.shape)
         run['training/batch/img'].log(File.as_image(all_F[0,0,0]))
         run['training/batch/msk'].log(File.as_image(all_F[0,1,0]))
 
