@@ -625,9 +625,9 @@ for i in range(test_loader.size):
         res = (res - res.min()) / (res.max() - res.min() + 1e-8)
         res = cv2.resize(res, dsize=(512, 512), interpolation=cv2.INTER_CUBIC)
         print(res)
-        res1 = (np.ceil(res-0.1)*255).astype(np.uint8) # currently swapped the two lines
+        res1 = (np.ceil(res-0.1)).astype(np.float32) # currently swapped the two lines
 
-        res = ((res - np.min(res)) / (np.max(res) - np.min(res))*255).astype(np.uint8)
+        res = ((res - np.min(res)) / (np.max(res) - np.min(res))).astype(np.float32)
 
 
         # # dilate the mask by 10 pixels
@@ -740,7 +740,7 @@ def create_masked_lungs(x):
         # mask the images
         raw_masked[i] = cv2.bitwise_and(raw_imgs[i], raw_imgs[i], mask=dilated_slice)
 
-    raw_masked = ((raw_masked - np.min(raw_masked)) / (np.max(raw_masked) - np.min(raw_masked))*255).astype(np.uint8)
+    raw_masked = ((raw_masked - np.min(raw_masked)) / (np.max(raw_masked) - np.min(raw_masked))).astype(np.float32)
 
     np.save(os.path.join(des_home, x+"-masked.npy"), raw_masked)
     # np.save(os.path.join(des_home, x+"-dlmask.npy"), raw_masks)
