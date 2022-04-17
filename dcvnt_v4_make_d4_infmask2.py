@@ -740,6 +740,8 @@ def create_masked_lungs(x):
         # mask the images
         raw_masked[i] = cv2.bitwise_and(raw_imgs[i], raw_imgs[i], mask=dilated_slice)
 
+    raw_masked = ((raw_masked - np.min(raw_masked)) / (np.max(raw_masked) - np.min(raw_masked))*255).astype(np.uint8)
+
     np.save(os.path.join(des_home, x+"-masked.npy"), raw_masked)
     # np.save(os.path.join(des_home, x+"-dlmask.npy"), raw_masks)
     np.save(os.path.join(des_home, x+".npy"), raw_imgs)
