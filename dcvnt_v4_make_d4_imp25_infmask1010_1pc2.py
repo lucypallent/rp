@@ -76,9 +76,9 @@ from skimage import measure
 readvdnames = lambda x: open(x).read().rstrip().split('\n')
 pe_list = readvdnames(f"d6/image_sets/all_patients.txt")[::-1]
 
-og_home = 'dataset4/NCOV-BF/NpyData-infmask5010-test-1pc' # '/content/test'
+og_home = 'dataset4/NCOV-BF/NpyData-infmask2510-test-1pc' # '/content/test'
 src_home = 'unet-results' # '/content' # where lung masks are saved 'unet-results'
-des_home = 'dataset4/NCOV-BF/NpyData-imp50-infmask1010-test-1pc'
+des_home = 'dataset4/NCOV-BF/NpyData-imp25-infmask1010-test-1pc'
 
 
 def create_masked_lungs(x):
@@ -90,10 +90,10 @@ def create_masked_lungs(x):
 
     raw_infmasked10 = np.zeros((length, 512, 512))
     raw_masked10 = np.zeros((length, 512, 512))
-    raw_masked50 = np.zeros((length, 512, 512))
+    raw_masked25 = np.zeros((length, 512, 512))
 
     kernel = np.ones((10,10), np.uint8)
-    kernel2 = np.ones((50,50), np.uint8)
+    kernel2 = np.ones((25,25), np.uint8)
 
 
     for i in range(length):
@@ -107,8 +107,8 @@ def create_masked_lungs(x):
         labels_mask[labels_mask!=0] = 1
         labels_slice = labels_mask.astype('uint8')
 
-        # dilate the lungs by 50 pixels
-        dilated_slice50 = cv2.dilate(labels_slice, kernel2, iterations=1)
+        # dilate the lungs by 25 pixels
+        dilated_slice25 = cv2.dilate(labels_slice, kernel2, iterations=1)
 
         # dilate the lungs by 10 pixels
         dilated_slice10 = cv2.dilate(labels_slice, kernel, iterations=1)
@@ -117,7 +117,7 @@ def create_masked_lungs(x):
         dilated_img = cv2.dilate(raw_imgs[i], kernel, iterations=1)
 
         # mask the images
-        raw_infmasked10[i] = cv2.bitwise_and(dilated_img, dilated_img, mask=dilated_slice50)
+        raw_infmasked10[i] = cv2.bitwise_and(dilated_img, dilated_img, mask=dilated_slice25)
         raw_masked10[i] = dilated_slice10
 
     # add together raw_masked10 and raw_infmasked10 to combine the any values of 2 become 1
@@ -152,7 +152,7 @@ def create_masked_lungs(x):
 
     raw_masked = np.zeros((length, 512, 512))
     kernel = np.ones((10,10), np.uint8)
-    kernel2 = np.ones((50,50), np.uint8)
+    kernel2 = np.ones((25,25), np.uint8)
 
 
     for i in range(length):
@@ -198,8 +198,8 @@ from scipy.ndimage import zoom
 
 readvdnames = lambda x: open(x).read().rstrip().split('\n')
 
-src_home = 'dataset4/NCOV-BF/NpyData-imp50-infmask1010-test-1pc'
-des_home = 'dataset4/NCOV-BF/NpyData-size224x336-imp50-infmask1010-test-1pc'
+src_home = 'dataset4/NCOV-BF/NpyData-imp25-infmask1010-test-1pc'
+des_home = 'dataset4/NCOV-BF/NpyData-size224x336-imp25-infmask1010-test-1pc'
 
 os.makedirs(des_home, exist_ok=True)
 
