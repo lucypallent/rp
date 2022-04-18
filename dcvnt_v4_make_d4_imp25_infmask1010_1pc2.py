@@ -141,20 +141,9 @@ def create_masked_lungs(x):
     length = len(raw_imgs)
 
     raw_masked = np.zeros((length, 512, 512))
-
     for i in range(length):
-        # select the two largest shapes as the lungs
-        labels_mask = measure.label(raw_masks[i])
-        regions = measure.regionprops(labels_mask)
-        regions.sort(key=lambda x: x.area, reverse=True)
-        if len(regions) > 1:
-            for rg in regions[2:]:
-                labels_mask[rg.coords[:,0], rg.coords[:,1]] = 0
-        labels_mask[labels_mask!=0] = 1
-        labels_slice = labels_mask.astype('uint8')
-
         # mask the images
-        raw_masked[i] = cv2.bitwise_and(raw_imgs[i], raw_imgs[i], mask=dilated_slice)
+        raw_masked[i] = cv2.bitwise_and(raw_imgs[i], raw_imgs[i], mask=raw_masks[i])
 
     raw_masked = ((raw_masked - np.min(raw_masked)) / (np.max(raw_masked) - np.min(raw_masked))).astype(np.float32)
 
