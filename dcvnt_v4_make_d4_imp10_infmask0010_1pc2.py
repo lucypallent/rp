@@ -131,6 +131,9 @@ with futures.ProcessPoolExecutor(max_workers=num_threads) as executor:
         print ("{}/{} done...".format(i, len(fs)))
 ############################ end of preprocessing .npys (creating d4)
 
+src_home = 'unet-results' # '/content' # where lung masks are saved 'unet-results'
+des_home = 'dataset4/NCOV-BF/NpyData-imp10-infmask0010-test-1pc'
+
 ############################ create the masked lungs
 
 def create_masked_lungs(x):
@@ -143,7 +146,7 @@ def create_masked_lungs(x):
     raw_masked = np.zeros((length, 512, 512))
     for i in range(length):
         # mask the images
-        raw_masked[i] = cv2.bitwise_and(raw_imgs[i], raw_imgs[i], mask=raw_imgs[i])
+        raw_masked[i] = cv2.bitwise_and(raw_imgs[i], raw_imgs[i], mask=raw_masks[i])
 
     raw_masked = ((raw_masked - np.min(raw_masked)) / (np.max(raw_masked) - np.min(raw_masked))).astype(np.float32)
 
