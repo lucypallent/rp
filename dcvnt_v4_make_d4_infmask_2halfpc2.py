@@ -601,7 +601,7 @@ image_root = 'dataset3/NCOV-BF/NpyData/'
 testsize = 352
 test_loader = test_dataset2(image_root, testsize)
 pth_path = 'd6/mdls/Inf-Net-100.pth'
-save_path = 'dataset4/NCOV-BF/NpyData-infmask-test-2halfpc'
+save_path = 'dataset4/NCOV-BF/NpyData-infmask-test-2halfpc/'
 model = Inf_Net()
 model.load_state_dict(torch.load(pth_path, map_location={'cuda:1':'cuda:0'}))
 model.cuda()
