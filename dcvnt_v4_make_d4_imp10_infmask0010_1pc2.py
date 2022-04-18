@@ -55,16 +55,6 @@ import argparse
 import imageio
 import cv2
 
-image_root = 'dataset3/NCOV-BF/NpyData/'
-testsize = 352
-test_loader = test_dataset2(image_root, testsize)
-pth_path = 'd6/mdls/Inf-Net-100.pth'
-save_path = 'dataset4/NCOV-BF/NpyData-infmask-test-1pc/'
-model = Inf_Net()
-model.load_state_dict(torch.load(pth_path, map_location={'cuda:1':'cuda:0'}))
-model.cuda()
-model.eval()
-
 # create the infnet limited to being the shape of the lungs
 from zqlib import imgs2vid
 import cv2
