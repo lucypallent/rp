@@ -127,7 +127,7 @@ def create_masked_lungs(x):
 
 
     np.save(os.path.join(des_home, x+"-infmask.npy"), raw_infmasked10)
-    # np.save(os.path.join(des_home, x+"-dlmask.npy"), raw_imp_masked)
+    np.save(os.path.join(des_home, x+"-dlmask.npy"), raw_imp_masked)
     # np.save(os.path.join(des_home, x+".npy"), raw_imgs)
 
 ############################ start of preprocessing .npys (creating d4)
@@ -146,14 +146,11 @@ with futures.ProcessPoolExecutor(max_workers=num_threads) as executor:
 def create_masked_lungs(x):
     print(x)
     raw_imgs = np.load(os.path.join(src_home, x+"-2.npy")) # -2 is the img which appears like normal orig is blck sqr
-    raw_masks = np.load(os.path.join(src_home, x+"-dlmask.npy"))
+    raw_masks = np.load(os.path.join(des_home, x+"-dlmask.npy"))
 
     length = len(raw_imgs)
 
     raw_masked = np.zeros((length, 512, 512))
-    kernel = np.ones((10,10), np.uint8)
-    kernel2 = np.ones((50,50), np.uint8)
-
 
     for i in range(length):
         # select the two largest shapes as the lungs
@@ -165,9 +162,6 @@ def create_masked_lungs(x):
                 labels_mask[rg.coords[:,0], rg.coords[:,1]] = 0
         labels_mask[labels_mask!=0] = 1
         labels_slice = labels_mask.astype('uint8')
-
-        # dilate the lungs by 10 pixels
-        dilated_slice = cv2.dilate(labels_slice, kernel2, iterations=1)
 
         # mask the images
         raw_masked[i] = cv2.bitwise_and(raw_imgs[i], raw_imgs[i], mask=dilated_slice)
