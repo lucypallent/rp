@@ -1851,19 +1851,12 @@ for e in range(TRAIN_EPOCH):
              run["training/1Pneum/labels/loss"].log(loss)
              run["training/1Pneum/labels/acc"].log(acc)
         prob_preds = F.softmax(preds, dim=1)
-        print(prob_preds)
-        print(torch.max(prob_preds))
         if prob_preds[0, 0] > prob_preds[0, 1]: # ie prob of 0 NonPneum is higher
              run["training/0NonPneum/pred/loss"].log(loss)
              run["training/0NonPneum/pred/acc"].log(acc)
         elif prob_preds[0, 0] < prob_preds[0, 1]: # ie prob of 1 Pneum is higher
              run["training/1Pneum/pred/loss"].log(loss)
              run["training/1Pneum/pred/acc"].log(acc)
-
-        # elif labels[0] == 2:
-        #      run["training/3CAP/loss"].log(loss)
-        #      run["training/3CAP/acc"].log(acc)
-
 
         loss.backward()
         optimizer.step()
@@ -1916,12 +1909,14 @@ for e in range(TRAIN_EPOCH):
                          run["validation/1Pneum/labels/acc"].log(val_acc)
                          Val_Acc_pneum.write(val_acc)
 
-                    if preds[0] == 0:
-                         run["validation/0NonPneum/pred/loss"].log(val_loss)
-                         run["validation/0NonPneum/pred/acc"].log(val_acc)
-                    elif preds[0] == 1:
-                         run["validation/1Pneum/pred/loss"].log(val_loss)
-                         run["validation/1Pneum/pred/acc"].log(val_acc)
+                    prob_preds = F.softmax(preds, dim=1)
+                    if prob_preds[0, 0] > prob_preds[0, 1]: # ie prob of 0 NonPneum is higher
+                        run["validation/0NonPneum/pred/loss"].log(val_loss)
+                        run["validation/0NonPneum/pred/acc"].log(val_acc)
+                    elif prob_preds[0, 0] < prob_preds[0, 1]: # ie prob of 1 Pneum is higher
+                        run["validation/1Pneum/pred/loss"].log(val_loss)
+                        run["validation/1Pneum/pred/acc"].log(val_acc)
+
 
                     prob_preds = F.softmax(preds, dim=1)
                     prob_non_pneum = prob_preds[0, 0].item()
