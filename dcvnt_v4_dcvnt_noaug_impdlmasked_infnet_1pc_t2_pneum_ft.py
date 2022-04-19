@@ -1612,7 +1612,7 @@ ValidLoader = torch.utils.data.DataLoader(Validset,
 
 Val_CE, Val_Acc = [ScalarContainer() for _ in range(2)]
 
-gts, pcovs = [], []
+gts, ppneum = [], []
 
 # copied from metrics
 def sensitivity_specificity(y_true, y_score):
@@ -1671,7 +1671,7 @@ with torch.no_grad():
         gt = labels.item()
 
         gts.append(gt)
-        pcovs.append(prob_ncov)
+        ppneum.append(prob_pneum)
 
         print ("{} {} {} {} {}".format(all_info[0]["name"], pid, prob_pneum, prob_non_pneum, labels.item()))
 
@@ -1679,8 +1679,8 @@ with torch.no_grad():
 
 # from metrics import sensitivity_specificity
 Ece, Eacc = Val_CE.read(), Val_Acc.read()
-gts, pcovs = np.asarray(gts), np.asarray(pcovs)
-_, _, Eauc = sensitivity_specificity(gts, pcovs)
+gts, ppneum = np.asarray(gts), np.asarray(ppneum)
+_, _, Eauc = sensitivity_specificity(gts, ppneum)
 e = 0
 print("VALIDATION | E [{}] | CE: {:1.5f} | ValAcc: {:1.3f} | ValAUC: {:1.3f}".format(e, Ece, Eacc, Eauc))
 
@@ -1897,7 +1897,7 @@ for e in range(TRAIN_EPOCH):
             print("Do evaluation...")
             with torch.no_grad():
                 gts = []
-                pcovs = []
+                ppneum = []
                 for i, (all_F, all_L, all_info) in enumerate(ValidLoader):
                     labels = all_L.cuda(non_blocking=True)
                     preds = model([all_F.cuda(non_blocking=True)])
@@ -1921,12 +1921,12 @@ for e in range(TRAIN_EPOCH):
                          run["validation/1Pneum/pred/acc"].log(val_acc)
 
                     prob_preds = F.softmax(preds, dim=1)
-                    prob_normal = prob_preds[0, 0].item()
-                    prob_ncov = prob_preds[0, 1].item()
+                    prob_non_pneum = prob_preds[0, 0].item()
+                    prob_pneum = prob_preds[0, 1].item()
                     gt = labels.item()
 
                     gts.append(gt)
-                    pcovs.append(prob_ncov)
+                    ppneum.append(prob_pneum)
 
                     Val_CE.write(val_loss); Val_Acc.write(val_acc)
 
@@ -1934,8 +1934,8 @@ for e in range(TRAIN_EPOCH):
                     # Val_Acc = val_acc
 
                 #Eap = average_precision_score(gts, pcovs)
-                gts, pcovs = np.asarray(gts), np.asarray(pcovs)
-                _, _, Eauc = sensitivity_specificity(gts, pcovs)
+                gts, ppneum = np.asarray(gts), np.asarray(ppneum)
+                _, _, Eauc = sensitivity_specificity(gts, ppneum)
 
                 # Ece = Val_CE
                 # Eacc = Val_Acc
