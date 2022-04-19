@@ -1840,6 +1840,8 @@ for e in range(TRAIN_EPOCH):
 
         run["training/batch/loss"].log(loss)
         run["training/batch/acc"].log(acc)
+        print(labels)
+        print(preds)
 
         if labels[0] == 0:
              run["training/0NonPneum/labels/loss"].log(loss)
