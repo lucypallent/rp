@@ -1665,15 +1665,15 @@ with torch.no_grad():
         pid = name.split('/')[-1][:-4]
 
         prob_preds = F.softmax(preds, dim=1)
-        prob_normal = prob_preds[0, 0].item()
-        prob_ncov = prob_preds[0, 1].item()
-        prob_cap =  prob_preds[0, 2].item() # this should work
+        prob_pneum = prob_preds[0, 0].item()
+        prob_non_pneum = prob_preds[0, 1].item()
+        # prob_cap =  prob_preds[0, 2].item() # this should work
         gt = labels.item()
 
         gts.append(gt)
         pcovs.append(prob_ncov)
 
-        print ("{} {} {} {} {} {}".format(all_info[0]["name"], pid, prob_normal, prob_ncov, prob_cap, labels.item()))
+        print ("{} {} {} {} {}".format(all_info[0]["name"], pid, prob_pneum, prob_non_pneum, labels.item()))
 
         # Val_CE.write(val_loss); Val_Acc.write(val_acc)
 
@@ -1842,16 +1842,24 @@ for e in range(TRAIN_EPOCH):
         run["training/batch/acc"].log(acc)
 
         if labels[0] == 0:
-             run["training/1NonCOVID/loss"].log(loss)
-             run["training/1NonCOVID/acc"].log(acc)
+             run["training/0NonPneum/labels/loss"].log(loss)
+             run["training/0NonPneum/labels/acc"].log(acc)
 
         elif labels[0] == 1:
-             run["training/2COVID/loss"].log(loss)
-             run["training/2COVID/acc"].log(acc)
+             run["training/1Pneum/labels/loss"].log(loss)
+             run["training/1Pneum/labels/acc"].log(acc)
 
-        elif labels[0] == 2:
-             run["training/3CAP/loss"].log(loss)
-             run["training/3CAP/acc"].log(acc)
+        if pred[0] == 0:
+             run["training/0NonPneum/pred/loss"].log(loss)
+             run["training/0NonPneum/pred/acc"].log(acc)
+
+        elif pred[0] == 1:
+             run["training/1Pneum/pred/loss"].log(loss)
+             run["training/1Pneum/pred/acc"].log(acc)
+
+        # elif labels[0] == 2:
+        #      run["training/3CAP/loss"].log(loss)
+        #      run["training/3CAP/acc"].log(acc)
 
 
         loss.backward()
@@ -1883,6 +1891,8 @@ for e in range(TRAIN_EPOCH):
                                                 shuffle=True,)
 
             Val_CE, Val_Acc = [ScalarContainer() for _ in range(2)]
+            Val_Acc_non_pneum = [ScalarContainer() for _ in range(1)]
+            Val_Acc_pneum = [ScalarContainer() for _ in range(1)]
 
             print("Do evaluation...")
             with torch.no_grad():
@@ -1895,16 +1905,20 @@ for e in range(TRAIN_EPOCH):
                     val_acc = topk_accuracies(preds, labels, [1])[0]
 
                     if labels[0] == 0:
-                         run["validation/1NonCOVID/loss"].log(val_loss)
-                         run["validation/1NonCOVID/acc"].log(val_acc)
-
+                         run["validation/0NonPneum/labels/loss"].log(val_loss)
+                         run["validation/0NonPneum/labels/acc"].log(val_acc)
+                         Val_Acc_non_pneum.write(val_acc)
                     elif labels[0] == 1:
-                         run["validation/2COVID/loss"].log(val_loss)
-                         run["validation/2COVID/acc"].log(val_acc)
+                         run["validation/1Pneum/labels/loss"].log(val_loss)
+                         run["validation/1Pneum/labels/acc"].log(val_acc)
+                         Val_Acc_pneum.write(val_acc)
 
-                    elif labels[0] == 2:
-                         run["validation/3CAP/loss"].log(val_loss)
-                         run["validation/3CAP/acc"].log(val_acc)
+                    if pred[0] == 0:
+                         run["validation/0NonPneum/pred/loss"].log(val_loss)
+                         run["validation/0NonPneum/pred/acc"].log(val_acc)
+                    elif pred[0] == 1:
+                         run["validation/1Pneum/pred/loss"].log(val_loss)
+                         run["validation/1Pneum/pred/acc"].log(val_acc)
 
                     prob_preds = F.softmax(preds, dim=1)
                     prob_normal = prob_preds[0, 0].item()
@@ -1926,10 +1940,14 @@ for e in range(TRAIN_EPOCH):
                 # Ece = Val_CE
                 # Eacc = Val_Acc
                 Ece, Eacc = Val_CE.read(), Val_Acc.read()
+                Eacc_np, Eacc_p = Val_Acc_non_pneum.read(), Val_Acc_pneum.read()
 
-                print("VALIDATION | E [{}] | CE: {:1.5f} | ValAcc: {:1.3f} | ValAUC: {:1.3f}".format(e, Ece, Eacc, Eauc))
+
+                print("VALIDATION | E [{}] | CE: {:1.5f} | ValAcc: {:1.3f} | ValAccNP: {:1.3f} | ValAccP: {:1.3f} | ValAUC: {:1.3f}".format(e, Ece, Eacc, Eacc_np, Eacc_p, Eauc))
                 run["validation/ValLoss"].log(Ece)
                 run["validation/ValAcc"].log(Eacc)
+                run["validation/ValAUC"].log(Eauc)
+
                 # run["validation/ValAUC"].log(Eauc) - not calculated properly still for 2 classes only
                 if Eacc > best_acc:
                     best_acc = Eacc
@@ -1939,6 +1957,10 @@ for e in range(TRAIN_EPOCH):
                     print(f"Dump weights {best_model_save_path} to disk...")
                     torch.save(model.state_dict(), best_model_save_path)
                     run["validation/best_model_epoch"].log(e)
+                    run["validation/0NonPneum/bestValAcc"].log(Eacc_np)
+                    run["validation/1Pneum/bestValAcc"].log(Eacc_p)
+                    run["validation/bestValAUC"].log(Eauc)
+
 
 
     if LR_DECAY != 1:
@@ -1947,6 +1969,8 @@ for e in range(TRAIN_EPOCH):
             print("Setting LR: {}".format(optimizer.param_groups[0]["lr"]))
 
 # get testing to work
+########################################### below has note been changed but never runs so i think is fine
+
 
 # define Testset
 SAMPLE_NUMBER = -1
