@@ -55,9 +55,9 @@ random.seed(0); torch.manual_seed(0); np.random.seed(0)
 device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
 
 run = neptune.init(
-    project="bluefox2000email/res-project",
-    api_token="eyJhcGlfYWRkcmVzcyI6Imh0dHBzOi8vYXBwLm5lcHR1bmUuYWkiLCJhcGlfdXJsIjoiaHR0cHM6Ly9hcHAubmVwdHVuZS5haSIsImFwaV9rZXkiOiIwMjlmMGNkMC04NmRkLTRmMmUtOTk5OS03ODg1MDM0YzRmZWMifQ==",
-)  #
+    project="lucyhollypallent/res-preoject",
+    api_token="eyJhcGlfYWRkcmVzcyI6Imh0dHBzOi8vYXBwLm5lcHR1bmUuYWkiLCJhcGlfdXJsIjoiaHR0cHM6Ly9hcHAubmVwdHVuZS5haSIsImFwaV9rZXkiOiI2YWVjODQwOS0yZDQ5LTQ5NjAtYjgyOC0xOTBkNDFjOWE3OTYifQ==",
+)  # your credentials
 
 
 DATA_ROOT = 'dataset4/NCOV-BF'
@@ -1710,7 +1710,7 @@ INIT_MODEL_PATH = 'ncov-Epoch_00140-auc95p9.pth'
 INIT_MODEL_STRICT = "True"
 SNAPSHOT_FREQ = 5
 TRAIN_EPOCH = 200 #, will likely stop it early
-SNAPSHOT_HOME = "experiments_v4_dcvnt_noaug_infmask1010_t2_1pc_pnm_ft2"
+SNAPSHOT_HOME = "experiments_v4_dcvnt_noaug_infmask1010_t2_1pc_covcap_fe"
 SNAPSHOT_MODEL_TPL = "ncov-Epoch_{:05d}.pth"
 
 
