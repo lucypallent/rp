@@ -1853,11 +1853,10 @@ for e in range(TRAIN_EPOCH):
         prob_preds = F.softmax(preds, dim=1)
         print(prob_preds)
         print(torch.max(prob_preds))
-        if preds[0] == 0:
+        if prob_preds[0, 0] > prob_preds[0, 1]: # ie prob of 0 NonPneum is higher
              run["training/0NonPneum/pred/loss"].log(loss)
              run["training/0NonPneum/pred/acc"].log(acc)
-
-        elif preds[0] == 1:
+        elif prob_preds[0, 0] < prob_preds[0, 1]: # ie prob of 1 Pneum is higher
              run["training/1Pneum/pred/loss"].log(loss)
              run["training/1Pneum/pred/acc"].log(acc)
 
