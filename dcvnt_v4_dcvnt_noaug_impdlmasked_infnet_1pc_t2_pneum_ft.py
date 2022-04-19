@@ -1887,7 +1887,7 @@ for e in range(TRAIN_EPOCH):
                                                 shuffle=True,)
 
             Val_CE, Val_Acc = [ScalarContainer() for _ in range(2)]
-            print('\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\')
+            print('---------------------------------------------------------')
             print(type(Val_CE))
             print(type(ScalarContainer()))
             Val_Acc_non_pneum = [ScalarContainer() for _ in range(1)]
