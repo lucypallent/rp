@@ -57,9 +57,9 @@ random.seed(0); torch.manual_seed(0); np.random.seed(0)
 device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
 
 run = neptune.init(
-    project="bluefox2000email/res-project",
-    api_token="eyJhcGlfYWRkcmVzcyI6Imh0dHBzOi8vYXBwLm5lcHR1bmUuYWkiLCJhcGlfdXJsIjoiaHR0cHM6Ly9hcHAubmVwdHVuZS5haSIsImFwaV9rZXkiOiIwMjlmMGNkMC04NmRkLTRmMmUtOTk5OS03ODg1MDM0YzRmZWMifQ==",
-)  #
+    project="lucyhollypallent/res-preoject",
+    api_token="eyJhcGlfYWRkcmVzcyI6Imh0dHBzOi8vYXBwLm5lcHR1bmUuYWkiLCJhcGlfdXJsIjoiaHR0cHM6Ly9hcHAubmVwdHVuZS5haSIsImFwaV9rZXkiOiI2YWVjODQwOS0yZDQ5LTQ5NjAtYjgyOC0xOTBkNDFjOWE3OTYifQ==",
+)  # your credentials
 
 
 DATA_ROOT = 'dataset4/NCOV-BF'
