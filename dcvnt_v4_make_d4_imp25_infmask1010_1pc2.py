@@ -1,3 +1,9 @@
+
+
+# src_home = 'dataset4/NCOV-BF/NpyData-imp50-infmask1010-test-1pc'
+# des_home = 'dataset4/NCOV-BF/NpyData-size224x336-imp50-infmask1010-test-1pc'
+
+
 ############################ start of import
 import torch
 import torchvision
@@ -70,67 +76,6 @@ og_home = 'dataset4/NCOV-BF/NpyData-infmask2510-test-1pc' # '/content/test'
 src_home = 'unet-results' # '/content' # where lung masks are saved 'unet-results'
 des_home = 'dataset4/NCOV-BF/NpyData-imp25-infmask1010-test-1pc'
 
-
-def create_masked_lungs(x):
-    print(x)
-    print('make masks')
-    raw_imgs = np.load(os.path.join(og_home, x+'-infmask-orig.npy')) # -2 is the img which appears like normal orig is blck sqr
-    raw_masks = np.load(os.path.join(src_home, x+'-dlmask.npy'))
-
-    length = len(raw_imgs)
-
-    raw_infmasked10 = np.zeros((length, 512, 512))
-    raw_masked00 = np.zeros((length, 512, 512))
-    # raw_masked10 = np.zeros((length, 512, 512))
-
-    kernel = np.ones((10,10), np.uint8)
-    kernel2 = np.ones((10,10), np.uint8)
-
-
-    for i in range(length):
-        # select the two largest shapes as the lungs
-        labels_mask = measure.label(raw_masks[i])
-        regions = measure.regionprops(labels_mask)
-        regions.sort(key=lambda x: x.area, reverse=True)
-        if len(regions) > 1:
-            for rg in regions[2:]:
-                labels_mask[rg.coords[:,0], rg.coords[:,1]] = 0
-        labels_mask[labels_mask!=0] = 1
-        labels_slice = labels_mask.astype('uint8')
-
-        # dilate the lungs by 10 pixels
-        dilated_slice10 = cv2.dilate(labels_slice, kernel2, iterations=1)
-
-        # dilate the lungs by 00 pixels
-        dilated_slice00 = labels_slice #cv2.dilate(labels_slice, kernel, iterations=1)
-
-        # dilate the covid lung infection selections by 10 pixels
-        dilated_img = cv2.dilate(raw_imgs[i], kernel, iterations=1)
-
-        # mask the images
-        raw_infmasked10[i] = cv2.bitwise_and(dilated_img, dilated_img, mask=dilated_slice10)
-        raw_masked00[i] = dilated_slice00
-
-    # add together raw_masked00 and raw_infmasked10 to combine the any values of 2 become 1
-    raw_imp_masked = raw_infmasked10 + raw_masked00
-    raw_imp_masked[raw_imp_masked >= 1.0] = 1.0
-    raw_imp_masked[raw_imp_masked < 1.0] = 0.0
-
-
-    np.save(os.path.join(des_home, x+"-infmask.npy"), raw_infmasked10)
-    np.save(os.path.join(des_home, x+"-dlmask.npy"), raw_imp_masked)
-    # np.save(os.path.join(des_home, x+".npy"), raw_imgs)
-#
-# ############################ start of preprocessing .npys (creating d4)
-# from concurrent import futures
-#
-# num_threads=10
-#
-# with futures.ProcessPoolExecutor(max_workers=num_threads) as executor:
-#     fs = [executor.submit(create_masked_lungs, x, ) for x in pe_list[::-1]]
-#     for i, f in enumerate(futures.as_completed(fs)):
-#         print ("{}/{} done...".format(i, len(fs)))
-# ############################ end of preprocessing .npys (creating d4)
 
 src_home = 'unet-results' # '/content' # where lung masks are saved 'unet-results'
 des_home = 'dataset4/NCOV-BF/NpyData-imp25-infmask1010-test-1pc'
