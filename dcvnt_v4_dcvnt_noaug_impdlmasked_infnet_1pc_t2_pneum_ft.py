@@ -1849,11 +1849,11 @@ for e in range(TRAIN_EPOCH):
              run["training/1Pneum/labels/loss"].log(loss)
              run["training/1Pneum/labels/acc"].log(acc)
 
-        if pred[0] == 0:
+        if preds[0] == 0:
              run["training/0NonPneum/pred/loss"].log(loss)
              run["training/0NonPneum/pred/acc"].log(acc)
 
-        elif pred[0] == 1:
+        elif preds[0] == 1:
              run["training/1Pneum/pred/loss"].log(loss)
              run["training/1Pneum/pred/acc"].log(acc)
 
@@ -1913,10 +1913,10 @@ for e in range(TRAIN_EPOCH):
                          run["validation/1Pneum/labels/acc"].log(val_acc)
                          Val_Acc_pneum.write(val_acc)
 
-                    if pred[0] == 0:
+                    if preds[0] == 0:
                          run["validation/0NonPneum/pred/loss"].log(val_loss)
                          run["validation/0NonPneum/pred/acc"].log(val_acc)
-                    elif pred[0] == 1:
+                    elif preds[0] == 1:
                          run["validation/1Pneum/pred/loss"].log(val_loss)
                          run["validation/1Pneum/pred/acc"].log(val_acc)
 
