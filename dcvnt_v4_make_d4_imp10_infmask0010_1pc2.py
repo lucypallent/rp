@@ -141,21 +141,10 @@ def create_masked_lungs(x):
     print(x)
     print('make masked lungs')
     raw_imgs = np.load(os.path.join(src_home, x+"-2.npy")) # -2 is the img which appears like normal orig is blck sqr
-    # print(np.min(raw_imgs))
-    print(np.unique(raw_imgs))
-    print(type(raw_imgs[0,0,0]))
-    # print('raw imgs')
-    # print('raw imgs')
+
     raw_masks = np.load(os.path.join(des_home, x+"-dlmask.npy")).astype('uint8')
-    # print(raw_masks))
-    # print(np.unique(raw_masks.astype('uint8')))
-    # print(type(raw_masks.astype('uint8')[0,0,0]))
-    print('raw masks')
 
     raw_masks_bin = np.load(os.path.join(src_home, x+'-dlmask.npy'))
-    # print(np.min(raw_imgs))
-    print(np.unique(raw_masks_bin))
-    print(type(raw_masks_bin[0,0,0]))
 
     length = len(raw_imgs)
 
@@ -171,77 +160,77 @@ def create_masked_lungs(x):
     # np.save(os.path.join(des_home, x+".npy"), raw_imgs)
 
 
-create_masked_lungs('patient-P9')
-# ############################ start of preprocessing .npys (creating d4)
-# from concurrent import futures
-#
-# num_threads=10
-#
-# with futures.ProcessPoolExecutor(max_workers=num_threads) as executor:
-#     fs = [executor.submit(create_masked_lungs, x, ) for x in pe_list[::-1]]
-#     for i, f in enumerate(futures.as_completed(fs)):
-#         print ("{}/{} done...".format(i, len(fs)))
-# ############################ end of preprocessing .npys (creating d4)
-#
-# ############################ start of functions for preprocessing .npys create 224x336
-# ### = just removed
-# import os
-# import numpy as np
-#
-# from scipy.ndimage import zoom
-#
-# readvdnames = lambda x: open(x).read().rstrip().split('\n')
-#
-# src_home = 'dataset4/NCOV-BF/NpyData-imp10-infmask0010-test-1pc'
-# des_home = 'dataset4/NCOV-BF/NpyData-size224x336-imp10-infmask0010-test-1pc'
-#
-# os.makedirs(des_home, exist_ok=True)
-#
-# #for d in dirs:
-# #    os.makedirs(os.path.join(des_home, d), exist_ok=True)
-#
-# pe_list = readvdnames(f"dataset3/NCOV-BF/ImageSets-old/lung_test.txt")[::-1]
-#
-# new_size = (224, 336)   # 224x336       # average isotropic shape: 193x281
-#
-# new_height, new_width = new_size
-#
-# clip_range = (0.15, 1)
-#
-# slice_resolution = 1
-# from zqlib import imgs2vid
-# import cv2
-#
-# def resize_cta_images(x):        # dtype is "PE"/"NORMAL"
-#     print (x)
-#     if os.path.isfile(os.path.join(des_home, x+".npy")) is True:
-#         return
-#     ### raw_imgs = np.uint8(np.load(os.path.join(src_home, x+".npy")))
-#     raw_imgs = np.load(os.path.join(src_home, x+"-masked.npy"))
-#     raw_masks = np.load(os.path.join(src_home, x+"-infmask.npy"))
-#     length = len(raw_imgs)
-#
-#     height, width = raw_imgs.shape[1:3]
-#     zoomed_imgs = zoom(raw_imgs, (slice_resolution, new_height/height, new_width/width))
-#     zoomed_imgs = ((zoomed_imgs - np.min(zoomed_imgs)) / (np.max(zoomed_imgs) - np.min(zoomed_imgs))).astype(np.float32)
-#     np.save(os.path.join(des_home, x+".npy"), zoomed_imgs)
-#
-#     zoomed_masks = zoom(raw_masks, (slice_resolution, new_height/height, new_width/width))
-#     zoomed_masks[zoomed_masks > 0.01] = 1.0
-#     zoomed_masks[zoomed_masks <= 0.01] = 0.0
-#     zoomed_masks = zoomed_masks.astype(np.float32)
-#     np.save(os.path.join(des_home, x+"-dlmask.npy"), zoomed_masks)
-#
-#     #imgs2vid(immasks, "debug/{}.avi".format(x))
-# ############################ end of functions for preprocessing .npys (creating d4)
-#
-# ############################ start of preprocessing .npys (creating d4)
-# from concurrent import futures
-#
-# num_threads=10
-#
-# with futures.ProcessPoolExecutor(max_workers=num_threads) as executor:
-#     fs = [executor.submit(resize_cta_images, x, ) for x in pe_list[::-1]]
-#     for i, f in enumerate(futures.as_completed(fs)):
-#         print ("{}/{} done...".format(i, len(fs)))
-# ############################ end of preprocessing .npys (creating d4)
+# create_masked_lungs('patient-P9')
+############################ start of preprocessing .npys (creating d4)
+from concurrent import futures
+
+num_threads=10
+
+with futures.ProcessPoolExecutor(max_workers=num_threads) as executor:
+    fs = [executor.submit(create_masked_lungs, x, ) for x in pe_list[::-1]]
+    for i, f in enumerate(futures.as_completed(fs)):
+        print ("{}/{} done...".format(i, len(fs)))
+############################ end of preprocessing .npys (creating d4)
+
+############################ start of functions for preprocessing .npys create 224x336
+### = just removed
+import os
+import numpy as np
+
+from scipy.ndimage import zoom
+
+readvdnames = lambda x: open(x).read().rstrip().split('\n')
+
+src_home = 'dataset4/NCOV-BF/NpyData-imp10-infmask0010-test-1pc'
+des_home = 'dataset4/NCOV-BF/NpyData-size224x336-imp10-infmask0010-test-1pc'
+
+os.makedirs(des_home, exist_ok=True)
+
+#for d in dirs:
+#    os.makedirs(os.path.join(des_home, d), exist_ok=True)
+
+pe_list = readvdnames(f"dataset3/NCOV-BF/ImageSets-old/lung_test.txt")[::-1]
+
+new_size = (224, 336)   # 224x336       # average isotropic shape: 193x281
+
+new_height, new_width = new_size
+
+clip_range = (0.15, 1)
+
+slice_resolution = 1
+from zqlib import imgs2vid
+import cv2
+
+def resize_cta_images(x):        # dtype is "PE"/"NORMAL"
+    print (x)
+    if os.path.isfile(os.path.join(des_home, x+".npy")) is True:
+        return
+    ### raw_imgs = np.uint8(np.load(os.path.join(src_home, x+".npy")))
+    raw_imgs = np.load(os.path.join(src_home, x+"-masked.npy"))
+    raw_masks = np.load(os.path.join(src_home, x+"-infmask.npy"))
+    length = len(raw_imgs)
+
+    height, width = raw_imgs.shape[1:3]
+    zoomed_imgs = zoom(raw_imgs, (slice_resolution, new_height/height, new_width/width))
+    zoomed_imgs = ((zoomed_imgs - np.min(zoomed_imgs)) / (np.max(zoomed_imgs) - np.min(zoomed_imgs))).astype(np.float32)
+    np.save(os.path.join(des_home, x+".npy"), zoomed_imgs)
+
+    zoomed_masks = zoom(raw_masks, (slice_resolution, new_height/height, new_width/width))
+    zoomed_masks[zoomed_masks > 0.01] = 1.0
+    zoomed_masks[zoomed_masks <= 0.01] = 0.0
+    zoomed_masks = zoomed_masks.astype(np.float32)
+    np.save(os.path.join(des_home, x+"-dlmask.npy"), zoomed_masks)
+
+    #imgs2vid(immasks, "debug/{}.avi".format(x))
+############################ end of functions for preprocessing .npys (creating d4)
+
+############################ start of preprocessing .npys (creating d4)
+from concurrent import futures
+
+num_threads=10
+
+with futures.ProcessPoolExecutor(max_workers=num_threads) as executor:
+    fs = [executor.submit(resize_cta_images, x, ) for x in pe_list[::-1]]
+    for i, f in enumerate(futures.as_completed(fs)):
+        print ("{}/{} done...".format(i, len(fs)))
+############################ end of preprocessing .npys (creating d4)
