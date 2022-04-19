@@ -1850,7 +1850,9 @@ for e in range(TRAIN_EPOCH):
         elif labels[0] == 1:
              run["training/1Pneum/labels/loss"].log(loss)
              run["training/1Pneum/labels/acc"].log(acc)
-
+        prob_preds = F.softmax(preds, dim=1)
+        print(prob_preds)
+        print(torch.max(prob_preds))
         if preds[0] == 0:
              run["training/0NonPneum/pred/loss"].log(loss)
              run["training/0NonPneum/pred/acc"].log(acc)
