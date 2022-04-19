@@ -120,17 +120,17 @@ def create_masked_lungs(x):
     np.save(os.path.join(des_home, x+"-infmask.npy"), raw_infmasked10)
     np.save(os.path.join(des_home, x+"-dlmask.npy"), raw_imp_masked)
     # np.save(os.path.join(des_home, x+".npy"), raw_imgs)
-
-############################ start of preprocessing .npys (creating d4)
-from concurrent import futures
-
-num_threads=10
-
-with futures.ProcessPoolExecutor(max_workers=num_threads) as executor:
-    fs = [executor.submit(create_masked_lungs, x, ) for x in pe_list[::-1]]
-    for i, f in enumerate(futures.as_completed(fs)):
-        print ("{}/{} done...".format(i, len(fs)))
-############################ end of preprocessing .npys (creating d4)
+#
+# ############################ start of preprocessing .npys (creating d4)
+# from concurrent import futures
+#
+# num_threads=10
+#
+# with futures.ProcessPoolExecutor(max_workers=num_threads) as executor:
+#     fs = [executor.submit(create_masked_lungs, x, ) for x in pe_list[::-1]]
+#     for i, f in enumerate(futures.as_completed(fs)):
+#         print ("{}/{} done...".format(i, len(fs)))
+# ############################ end of preprocessing .npys (creating d4)
 
 src_home = 'unet-results' # '/content' # where lung masks are saved 'unet-results'
 des_home = 'dataset4/NCOV-BF/NpyData-imp10-infmask0010-test-1pc'
@@ -141,9 +141,15 @@ def create_masked_lungs(x):
     print(x)
     print('make masked lungs')
     raw_imgs = np.load(os.path.join(src_home, x+"-2.npy")) # -2 is the img which appears like normal orig is blck sqr
+    print(np.min(raw_imgs))
+    print(np.max(raw_imgs))
+    print(raw_imgs.shape)
     # print('raw imgs')
     # print('raw imgs')
     raw_masks = np.load(os.path.join(des_home, x+"-dlmask.npy"))
+    print(np.min(raw_masks))
+    print(np.max(raw_masks))
+    print(raw_masks.shape)
     print('raw masks')
 
     length = len(raw_imgs)
