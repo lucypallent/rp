@@ -1845,19 +1845,19 @@ for e in range(TRAIN_EPOCH):
         print(preds)
 
         if labels[0] == 0:
-             run["training/0NonPneum/labels/loss"].log(loss)
-             run["training/0NonPneum/labels/acc"].log(acc)
+             run["training/0CAP/labels/loss"].log(loss)
+             run["training/0CAP/labels/acc"].log(acc)
 
         elif labels[0] == 1:
-             run["training/1Pneum/labels/loss"].log(loss)
-             run["training/1Pneum/labels/acc"].log(acc)
+             run["training/1COVID19/labels/loss"].log(loss)
+             run["training/1COVID19/labels/acc"].log(acc)
         prob_preds = F.softmax(preds, dim=1)
         if prob_preds[0, 0] > prob_preds[0, 1]: # ie prob of 0 NonPneum is higher
-             run["training/0NonPneum/pred/loss"].log(loss)
-             run["training/0NonPneum/pred/acc"].log(acc)
+             run["training/0CAP/pred/loss"].log(loss)
+             run["training/0CAP/pred/acc"].log(acc)
         elif prob_preds[0, 0] < prob_preds[0, 1]: # ie prob of 1 Pneum is higher
-             run["training/1Pneum/pred/loss"].log(loss)
-             run["training/1Pneum/pred/acc"].log(acc)
+             run["training/1COVID19/pred/loss"].log(loss)
+             run["training/1COVID19/pred/acc"].log(acc)
 
         loss.backward()
         optimizer.step()
