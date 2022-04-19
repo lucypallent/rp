@@ -152,6 +152,11 @@ def create_masked_lungs(x):
     print(type(raw_masks[0,0,0]))
     print('raw masks')
 
+    raw_masks_bin = np.load(os.path.join(src_home, x+'-dlmask.npy'))
+    # print(np.min(raw_imgs))
+    print(np.unique(raw_masks_bin))
+    print(type(raw_masks_bin[0,0,0]))
+
     length = len(raw_imgs)
 
     raw_masked = np.zeros((length, 512, 512))
