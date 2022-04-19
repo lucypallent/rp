@@ -1711,7 +1711,7 @@ INIT_MODEL_PATH = 'ncov-Epoch_00140-auc95p9.pth'
 INIT_MODEL_STRICT = "True"
 SNAPSHOT_FREQ = 5
 TRAIN_EPOCH = 200 #, will likely stop it early
-SNAPSHOT_HOME = "experiments_v4_dcvnt_noaug_infmask1010_t2_1pc_pnm_ft"
+SNAPSHOT_HOME = "experiments_v4_dcvnt_noaug_infmask1010_t2_1pc_covcap_ft"
 SNAPSHOT_MODEL_TPL = "ncov-Epoch_{:05d}.pth"
 
 
