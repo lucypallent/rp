@@ -148,8 +148,8 @@ def create_masked_lungs(x):
     # print('raw imgs')
     raw_masks = np.load(os.path.join(des_home, x+"-dlmask.npy"))
     # print(raw_masks))
-    print(np.unique(raw_masks))
-    print(type(raw_masks[0,0,0]))
+    print(np.unique(raw_masks.astype('uint8')))
+    print(type(raw_masks.astype('uint8')[0,0,0]))
     print('raw masks')
 
     raw_masks_bin = np.load(os.path.join(src_home, x+'-dlmask.npy'))
