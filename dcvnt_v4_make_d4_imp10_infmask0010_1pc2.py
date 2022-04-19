@@ -73,6 +73,7 @@ des_home = 'dataset4/NCOV-BF/NpyData-imp10-infmask0010-test-1pc'
 
 def create_masked_lungs(x):
     print(x)
+    print('make masks')
     raw_imgs = np.load(os.path.join(og_home, x+'-infmask-orig.npy')) # -2 is the img which appears like normal orig is blck sqr
     raw_masks = np.load(os.path.join(src_home, x+'-dlmask.npy'))
 
@@ -138,8 +139,12 @@ des_home = 'dataset4/NCOV-BF/NpyData-imp10-infmask0010-test-1pc'
 
 def create_masked_lungs(x):
     print(x)
+    print('make masked lungs')
     raw_imgs = np.load(os.path.join(src_home, x+"-2.npy")) # -2 is the img which appears like normal orig is blck sqr
+    # print('raw imgs')
+    # print('raw imgs')
     raw_masks = np.load(os.path.join(des_home, x+"-dlmask.npy"))
+    print('raw masks')
 
     length = len(raw_imgs)
 
@@ -154,6 +159,8 @@ def create_masked_lungs(x):
     # np.save(os.path.join(des_home, x+"-dlmask.npy"), raw_masks)
     # np.save(os.path.join(des_home, x+".npy"), raw_imgs)
 
+
+create_masked_lungs('patient-P9')
 ############################ start of preprocessing .npys (creating d4)
 from concurrent import futures
 
