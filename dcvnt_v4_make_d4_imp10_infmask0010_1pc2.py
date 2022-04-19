@@ -143,7 +143,7 @@ def create_masked_lungs(x):
     raw_imgs = np.load(os.path.join(src_home, x+"-2.npy")) # -2 is the img which appears like normal orig is blck sqr
     # print(np.min(raw_imgs))
     print(np.unique(raw_imgs))
-    print(type(shape))
+    print(type(raw_imgs))
     # print('raw imgs')
     # print('raw imgs')
     raw_masks = np.load(os.path.join(des_home, x+"-dlmask.npy"))
