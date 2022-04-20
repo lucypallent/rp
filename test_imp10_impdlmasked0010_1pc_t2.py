@@ -1892,7 +1892,7 @@ def test_model(model_pth):
                         crop_w=TRAIN_CROP_SIZE[1], num_classes=NUM_CLASSES)
     model = torch.nn.DataParallel(model).cuda()
 
-    model.module.classifier[1] = nn.Linear(model.module.classifier[1].in_features, NUM_CLASSES)
+    model.module.classifier[1] = nn.Linear(model.module.classifier[1].in_features, NUM_CLASSES).cuda()
     model.load_state_dict(torch.load(model_pth))
     model.eval()
 
