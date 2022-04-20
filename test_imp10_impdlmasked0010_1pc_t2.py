@@ -1967,13 +1967,13 @@ models = [m for m in os.listdir(model_folder) if os.path.isfile(os.path.join(mod
 model_lst = [model_folder + '/' + m for m in models]
 
 # # DEBUG:
-test_model(model_lst[0])
+# test_model(model_lst[0])
 
-# from concurrent import futures
-#
-# num_threads=10
-#
-# with futures.ProcessPoolExecutor(max_workers=num_threads) as executor:
-#     fs = [executor.submit(test_model, x, ) for x in model_lst]
-#     for i, f in enumerate(futures.as_completed(fs)):
-#         print ("{}/{} done...".format(i, len(fs)))
+from concurrent import futures
+
+num_threads=10
+
+with futures.ProcessPoolExecutor(max_workers=num_threads) as executor:
+    fs = [executor.submit(test_model, x, ) for x in model_lst]
+    for i, f in enumerate(futures.as_completed(fs)):
+        print ("{}/{} done...".format(i, len(fs)))
