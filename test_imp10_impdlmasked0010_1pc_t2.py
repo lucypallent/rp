@@ -1890,8 +1890,9 @@ def test_model(model_pth):
                         input_channel=2,
                         crop_h=TRAIN_CROP_SIZE[0],
                         crop_w=TRAIN_CROP_SIZE[1], num_classes=NUM_CLASSES)
-    model.module.classifier[1] = nn.Linear(model.module.classifier[1].in_features, NUM_CLASSES)
     model = torch.nn.DataParallel(model).cuda()
+
+    model.module.classifier[1] = nn.Linear(model.module.classifier[1].in_features, NUM_CLASSES)
     model.load_state_dict(torch.load(model_pth))
     model.eval()
 
@@ -1965,7 +1966,7 @@ model_folder = 'experiments_v4_dcvnt_noaug_imp10_infmask0010_t2_1pc'
 models = [m for m in os.listdir(model_folder) if os.path.isfile(os.path.join(model_folder, m))]
 model_lst = [model_folder + '/' + m for m in models]
 
-# # DEBUG: 
+# # DEBUG:
 test_model(model_lst[0])
 
 # from concurrent import futures
