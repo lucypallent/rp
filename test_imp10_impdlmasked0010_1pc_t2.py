@@ -1867,7 +1867,7 @@ def test_model(model_pth):
     SAMPLE_NUMBER = -1
 
     Testset = CTDataset(data_home=DATA_ROOT,
-                                   split='test')#,
+                                   split='valid')#, trying something
                                   #  sample_number=SAMPLE_NUMBER)
 
     criterion = torch.nn.CrossEntropyLoss(reduction="mean")
