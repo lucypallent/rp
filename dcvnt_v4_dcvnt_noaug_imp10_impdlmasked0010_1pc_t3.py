@@ -1606,7 +1606,7 @@ NUM_WORKERS = 2
 # added weighted class
 wghts = torch.tensor([198, 81, 32], dtype=torch.float32)
 nwghts = [1 - (x / sum(wghts)) for x in wghts]
-nwghts = torch.FloatTensor(nwghts)
+nwghts = torch.FloatTensor(nwghts).cuda()
 
 criterion = torch.nn.CrossEntropyLoss(weight=nwghts, reduction="mean")
 
@@ -1778,7 +1778,7 @@ lr_scher = torch.optim.lr_scheduler.ExponentialLR(optimizer, gamma=LR_DECAY, las
 # added weighted class
 wghts = torch.tensor([198, 81, 32], dtype=torch.float32)
 nwghts = [1 - (x / sum(wghts)) for x in wghts]
-nwghts = torch.FloatTensor(nwghts)
+nwghts = torch.FloatTensor(nwghts).cuda()
 criterion = torch.nn.CrossEntropyLoss(weight=nwghts, reduction="mean")
 
 # model.load_state_dict(torch.load(INIT_MODEL_PATH, \
@@ -1975,7 +1975,7 @@ Testset = CTDataset(data_home=DATA_ROOT,
 # added weighted class
 wghts = torch.tensor([198, 81, 32], dtype=torch.float32)
 nwghts = [1 - (x / sum(wghts)) for x in wghts]
-nwghts = torch.FloatTensor(nwghts)
+nwghts = torch.FloatTensor(nwghts).cuda()
 
 criterion = torch.nn.CrossEntropyLoss(weight=nwghts, reduction="mean")
 TestLoader = torch.utils.data.DataLoader(Testset,
