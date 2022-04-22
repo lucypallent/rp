@@ -1929,7 +1929,7 @@ def test_model(model_pth, folder_pth, run):
                 prob_preds_covcap = F.softmax(pred_covcap, dim=1)
                 print(prob_preds)
                 print(prob_preds_covcap)
-                prob_norm = torch.tensor([[0]])
+                prob_norm = torch.tensor([[0]]).cuda()
                 prob_preds_covcap = torch.cat((prob_norm, prob_preds_covcap), 1)
                 prob_preds = prob_preds + prob_preds_covcap
                 predicted = torch.max(prob_preds, 1)[1]
