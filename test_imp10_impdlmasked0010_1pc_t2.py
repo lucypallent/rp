@@ -1998,7 +1998,7 @@ def test_model(model_pth, folder_pth, run):
 
     # get the ROC Curve
     from sklearn.metrics import roc_curv, roc_auc_score
-    
+
     macro_roc_auc_ovo = roc_auc_score(true, pred_probs, multi_class="ovo", average="macro")
     weighted_roc_auc_ovo = roc_auc_score(
         true, pred_probs, multi_class="ovo", average="weighted"
@@ -2015,6 +2015,9 @@ def test_model(model_pth, folder_pth, run):
         "One-vs-Rest ROC AUC scores:\n{:.6f} (macro),\n{:.6f} "
         "(weighted by prevalence)".format(macro_roc_auc_ovr, weighted_roc_auc_ovr)
     )
+
+    print(roc_auc_score(true, pred_probs, multi_class="ovr"))
+    print(roc_auc_score(true, pred_probs, multi_class="ovo"))
 
     # get accuracy averaged out across class
     print(accuracy_score(true, pred))
