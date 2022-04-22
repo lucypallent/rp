@@ -2025,12 +2025,17 @@ def test_model(model_pth, folder_pth, run):
     fpr = dict()
     tpr = dict()
     roc_auc = dict()
+    print(true)
+    print(pred_probs)
+    from sklearn.preprocessing import label_binarize
+    true_bin = label_binarize(true, classes=[0, 1, 2])
+    print(true_bin)
     for i in range(n_classes):
-        fpr[i], tpr[i], _ = roc_curve(true[:, i], pred_probs[:, i])
+        fpr[i], tpr[i], _ = roc_curve(true_bin[:, i], pred_probs[:, i])
         roc_auc[i] = auc(fpr[i], tpr[i])
 
     # Compute micro-average ROC curve and ROC area
-    fpr["micro"], tpr["micro"], _ = roc_curve(true.ravel(), pred_probs.ravel())
+    fpr["micro"], tpr["micro"], _ = roc_curve(true_bin.ravel(), pred_probs.ravel())
     roc_auc["micro"] = auc(fpr["micro"], tpr["micro"])
 
     fig = plt.figure()
