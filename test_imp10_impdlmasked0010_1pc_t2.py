@@ -50,18 +50,6 @@ import neptune.new as neptune
 from neptune.new.types import File
 
 
-random.seed(0); torch.manual_seed(0); np.random.seed(0)
-device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
-
-run = neptune.init(
-    project="lucyhollypallent/res-preoject",
-    api_token="eyJhcGlfYWRkcmVzcyI6Imh0dHBzOi8vYXBwLm5lcHR1bmUuYWkiLCJhcGlfdXJsIjoiaHR0cHM6Ly9hcHAubmVwdHVuZS5haSIsImFwaV9rZXkiOiI2YWVjODQwOS0yZDQ5LTQ5NjAtYjgyOC0xOTBkNDFjOWE3OTYifQ==",
-)  # your credentials
-
-
-
-DATA_ROOT = 'dataset4/NCOV-BF'
-
 # dataset3/NCOV-BF/
 ############################ end of setup
 
@@ -246,7 +234,6 @@ def Rand_Transforms(imgs, masks,
 ############################ end of CTDataset functions
 
 ############################ start of defining CTDataset
-readvdnames = lambda x: open(x).read().rstrip().split('\n')
 
 class CTDataset(data.Dataset):
     def __init__(self, data_home="",
@@ -373,13 +360,6 @@ class CTDataset(data.Dataset):
 #     pdb.set_trace()
 
 ############################ start of defining decovnet hyperparameters
-CFG_FILE = "cfgs/test.yaml"
-Validset = CTDataset(data_home=DATA_ROOT, split='test',)
-
-MODEL_UID = 'baseline_i3d'
-NUM_CLASSES = 3
-DEPTH = 50
-ARCH = 'i3d'
 
 ############################ end of defining decovnet hyperparameters
 ############################ start of defining decovnet
@@ -1352,72 +1332,6 @@ def init_weights(model, fc_init_std=0.01, zero_init_final_bn=True):
             m.weight.data.normal_(mean=0.0, std=fc_init_std)
             m.bias.data.zero_()
 
-#_MODEL_STAGE_DEPTH = {50: (3, 4, 6, 3), 101: (3, 4, 23, 3)}
-_MODEL_STAGE_DEPTH = {50: (1, 1, 1, 1), 101: (3, 4, 23, 3)}
-
-_POOL1 = {
-    "c2d": [[2, 1, 1]],
-    "c2d_nopool": [[1, 1, 1]],
-    "i3d": [[2, 1, 1]],
-    "i3d_nopool": [[1, 1, 1]],
-    "slowonly": [[1, 1, 1]],
-    "slowfast": [[1, 1, 1], [1, 1, 1]],
-}
-
-# Basis of temporal kernel sizes for each of the stage.
-_TEMPORAL_KERNEL_BASIS = {
-    "c2d": [
-        [[1]],  # conv1 temporal kernel.
-        [[1]],  # res2 temporal kernel.
-        [[1]],  # res3 temporal kernel.
-        [[1]],  # res4 temporal kernel.
-        [[1]],  # res5 temporal kernel.
-    ],
-    "c2d_nopool": [
-        [[1]],  # conv1 temporal kernel.
-        [[1]],  # res2 temporal kernel.
-        [[1]],  # res3 temporal kernel.
-        [[1]],  # res4 temporal kernel.
-        [[1]],  # res5 temporal kernel.
-    ],
-    "i3d": [
-        [[5]],  # conv1 temporal kernel.
-        [[3]],  # res2 temporal kernel.
-        [[3, 1]],  # res3 temporal kernel.
-        [[3, 1]],  # res4 temporal kernel.
-        [[1, 3]],  # res5 temporal kernel.
-    ],
-    "i3d_nopool": [
-        [[5]],  # conv1 temporal kernel.
-        [[3]],  # res2 temporal kernel.
-        [[3, 1]],  # res3 temporal kernel.
-        [[3, 1]],  # res4 temporal kernel.
-        [[1, 3]],  # res5 temporal kernel.
-    ],
-    "slowonly": [
-        [[1]],  # conv1 temporal kernel.
-        [[1]],  # res2 temporal kernel.
-        [[1]],  # res3 temporal kernel.
-        [[3]],  # res4 temporal kernel.
-        [[3]],  # res5 temporal kernel.
-    ],
-    "slowfast": [
-        [[1], [5]],  # conv1 temporal kernel for slow and fast pathway.
-        [[1], [3]],  # res2 temporal kernel for slow and fast pathway.
-        [[1], [3]],  # res3 temporal kernel for slow and fast pathway.
-        [[3], [3]],  # res4 temporal kernel for slow and fast pathway.
-        [[3], [3]],  # res5 temporal kernel for slow and fast pathway.
-    ],
-}
-
-_POOL1 = {
-    "c2d": [[2, 1, 1]],
-    "c2d_nopool": [[1, 1, 1]],
-    "i3d": [[2, 1, 1]],
-    "i3d_nopool": [[1, 1, 1]],
-    "slowonly": [[1, 1, 1]],
-    "slowfast": [[1, 1, 1], [1, 1, 1]],
-}
 
 
 class ENModel(nn.Module):
@@ -1735,6 +1649,94 @@ def sensitivity_specificity(y_true, y_score):
     return sensitivity, specificity, auc
 
 def test_model(model_pth):
+    random.seed(0); torch.manual_seed(0); np.random.seed(0)
+    device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
+
+    run = neptune.init(
+        project="lucyhollypallent/res-preoject",
+        api_token="eyJhcGlfYWRkcmVzcyI6Imh0dHBzOi8vYXBwLm5lcHR1bmUuYWkiLCJhcGlfdXJsIjoiaHR0cHM6Ly9hcHAubmVwdHVuZS5haSIsImFwaV9rZXkiOiI2YWVjODQwOS0yZDQ5LTQ5NjAtYjgyOC0xOTBkNDFjOWE3OTYifQ==",
+    )  # your credentials
+
+    DATA_ROOT = 'dataset4/NCOV-BF'
+
+    readvdnames = lambda x: open(x).read().rstrip().split('\n')
+
+    CFG_FILE = "cfgs/test.yaml"
+    Validset = CTDataset(data_home=DATA_ROOT, split='test',)
+
+    MODEL_UID = 'baseline_i3d'
+    NUM_CLASSES = 3
+    DEPTH = 50
+    ARCH = 'i3d'
+
+    #_MODEL_STAGE_DEPTH = {50: (3, 4, 6, 3), 101: (3, 4, 23, 3)}
+    _MODEL_STAGE_DEPTH = {50: (1, 1, 1, 1), 101: (3, 4, 23, 3)}
+
+    _POOL1 = {
+        "c2d": [[2, 1, 1]],
+        "c2d_nopool": [[1, 1, 1]],
+        "i3d": [[2, 1, 1]],
+        "i3d_nopool": [[1, 1, 1]],
+        "slowonly": [[1, 1, 1]],
+        "slowfast": [[1, 1, 1], [1, 1, 1]],
+    }
+
+    # Basis of temporal kernel sizes for each of the stage.
+    _TEMPORAL_KERNEL_BASIS = {
+        "c2d": [
+            [[1]],  # conv1 temporal kernel.
+            [[1]],  # res2 temporal kernel.
+            [[1]],  # res3 temporal kernel.
+            [[1]],  # res4 temporal kernel.
+            [[1]],  # res5 temporal kernel.
+        ],
+        "c2d_nopool": [
+            [[1]],  # conv1 temporal kernel.
+            [[1]],  # res2 temporal kernel.
+            [[1]],  # res3 temporal kernel.
+            [[1]],  # res4 temporal kernel.
+            [[1]],  # res5 temporal kernel.
+        ],
+        "i3d": [
+            [[5]],  # conv1 temporal kernel.
+            [[3]],  # res2 temporal kernel.
+            [[3, 1]],  # res3 temporal kernel.
+            [[3, 1]],  # res4 temporal kernel.
+            [[1, 3]],  # res5 temporal kernel.
+        ],
+        "i3d_nopool": [
+            [[5]],  # conv1 temporal kernel.
+            [[3]],  # res2 temporal kernel.
+            [[3, 1]],  # res3 temporal kernel.
+            [[3, 1]],  # res4 temporal kernel.
+            [[1, 3]],  # res5 temporal kernel.
+        ],
+        "slowonly": [
+            [[1]],  # conv1 temporal kernel.
+            [[1]],  # res2 temporal kernel.
+            [[1]],  # res3 temporal kernel.
+            [[3]],  # res4 temporal kernel.
+            [[3]],  # res5 temporal kernel.
+        ],
+        "slowfast": [
+            [[1], [5]],  # conv1 temporal kernel for slow and fast pathway.
+            [[1], [3]],  # res2 temporal kernel for slow and fast pathway.
+            [[1], [3]],  # res3 temporal kernel for slow and fast pathway.
+            [[3], [3]],  # res4 temporal kernel for slow and fast pathway.
+            [[3], [3]],  # res5 temporal kernel for slow and fast pathway.
+        ],
+    }
+
+    _POOL1 = {
+        "c2d": [[2, 1, 1]],
+        "c2d_nopool": [[1, 1, 1]],
+        "i3d": [[2, 1, 1]],
+        "i3d_nopool": [[1, 1, 1]],
+        "slowonly": [[1, 1, 1]],
+        "slowfast": [[1, 1, 1], [1, 1, 1]],
+    }
+
+
     ############### Set up Variables ###############
     TRAIN_CROP_SIZE = tuple([224, 336])
     CLIP_RANGE = [float(x) for x in [0.3, 0.7]]
