@@ -2127,6 +2127,7 @@ import sys, getopt
 arg_lst = sys.argv
 
 def main(argv):
+
     run = neptune.init(
         project="lucyhollypallent/res-preoject",
         api_token="eyJhcGlfYWRkcmVzcyI6Imh0dHBzOi8vYXBwLm5lcHR1bmUuYWkiLCJhcGlfdXJsIjoiaHR0cHM6Ly9hcHAubmVwdHVuZS5haSIsImFwaV9rZXkiOiI2YWVjODQwOS0yZDQ5LTQ5NjAtYjgyOC0xOTBkNDFjOWE3OTYifQ==",
@@ -2140,6 +2141,9 @@ def main(argv):
 
     model_folder = sys.argv[1]
     data_folder = sys.argv[2]
+    print('Model is =====> ' + str(model_folder))
+    print('Data is =====> ' + str(data_folder))
+
 
     # get the list of models in the directory
     # model_folder = 'experiments_v4_dcvnt_noaug_imp10_infmask0010_t2_1pc'
