@@ -1940,19 +1940,19 @@ def test_model(model_pth, folder_pth, run):
     e = 0
     print("TEST | E [{}] | CE: {:1.5f} | ValAcc: {:1.3f} | ValAUC: {:1.3f}".format(e, Ece, Eacc, Eauc))
 
-    run["test/all/TestLoss"].log(Ece)
+    # run["test/all/TestLoss"].log(Ece)
     run["test/all/TestAcc"].log(Eacc)
 
     NCov_Ece, NCov_Eacc = NCov_Tes_CE.read(), NCov_Tes_Acc.read()
-    run["test/1NonCOVID/TestLoss"].log(NCov_Ece)
+    # run["test/1NonCOVID/TestLoss"].log(NCov_Ece)
     run["test/1NonCOVID/TestAcc"].log(NCov_Eacc)
 
     Cov_Ece, Cov_Eacc = Cov_Tes_CE.read(), Cov_Tes_Acc.read()
-    run["test/2COVID/TestLoss"].log(Cov_Ece)
+    # run["test/2COVID/TestLoss"].log(Cov_Ece)
     run["test/2COVID/TestAcc"].log(Cov_Eacc)
 
     CAP_Ece, CAP_Eacc = CAP_Tes_CE.read(), CAP_Tes_Acc.read()
-    run["test/3CAP/TestLoss"].log(CAP_Ece)
+    # run["test/3CAP/TestLoss"].log(CAP_Ece)
     run["test/3CAP/TestAcc"].log(CAP_Eacc)
 
     # code to run classification scores
