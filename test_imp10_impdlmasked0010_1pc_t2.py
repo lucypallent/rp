@@ -1553,8 +1553,8 @@ class ENModel(nn.Module):
                             nn.Conv3d(128, 64, kernel_size = 3, padding = 1),
                             nn.ReLU(inplace=True),
                             nn.AdaptiveMaxPool3d((4, 12, 18)),
-                            nn.Conv3d(64, 32, kernel_size=3, padding=1),
                             nn.ReLU(inplace=True),
+                            nn.Conv3d(64, 32, kernel_size=3, padding=1),
                             nn.AdaptiveMaxPool3d((1, 6, 9)),
                             nn.Dropout3d(p = 0),
                             nn.Conv3d(32, 32, kernel_size=3, padding=1),
@@ -1990,39 +1990,26 @@ def test_model(model_pth):
     # print(f"Dump weights {final_model_save_path} to disk...")
     # torch.save(model.state_dict(), final_model_save_path)
 
-# get the list of models in the directory
-model_folder = 'experiments_v4_dcvnt_noaug_imp10_infmask0010_t2_1pc'
-models = [m for m in os.listdir(model_folder) if os.path.isfile(os.path.join(model_folder, m))]
-model_lst = [model_folder + '/' + m for m in models]
 
-# # DEBUG:
-test_model(model_lst[0])
+# add comand line supports
+import sys, getopt
+arg_lst = sys.argv
 
-# for m in model_lst:
-#     test_model(m)
+def main(argv):
+    for opt, arg in opts:
+        if opt in ('-m', '--model_pth'):
+            model_folder = arg
 
-# code implementing currently
+    # get the list of models in the directory
+    # model_folder = 'experiments_v4_dcvnt_noaug_imp10_infmask0010_t2_1pc'
+    models = [m for m in os.listdir(model_folder) if os.path.isfile(os.path.join(model_folder, m))]
+    model_lst = [model_folder + '/' + m for m in models]
 
-# # code to run classification scores
-# from sklearn.metrics import classification_report
-# from sklearn.metrics import accuracy_score
-#
-# true = true.to('cpu')
-# pred = pred.to('cpu')
-#
-# target_names = ['NonCOVID', 'COVID', 'CAP']
-#
-# # get precision, recall, f1-score
-# print(classification_report(true, pred, target_names=target_names, digits=4))
-#
-# # get accuracy each individual class
-# from sklearn.metrics import confusion_matrix
-# matrix = confusion_matrix(true, pred)
-# print(matrix.diagonal()/matrix.sum(axis=1))
-#
-# # get accuracy averaged out across class
-# print(accuracy_score(true, pred))
+    # # DEBUG:
+    test_model(model_lst[0])
 
-# # add comand line supports
-# import sys, getopt
-# arg_lst = sys.argv
+    # for m in model_lst:
+    #     test_model(m)
+
+if __name__ == '__main__':
+    main(sys.argv[1:])
