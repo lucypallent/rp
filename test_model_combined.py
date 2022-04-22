@@ -1927,6 +1927,8 @@ def test_model(model_pth, folder_pth, run):
                 # cases where it is not equal to 0
                 pred_covcap = model_covcap([all_F.cuda(non_blocking=True)])
                 prob_preds_covcap = F.softmax(pred_covcap, dim=1)
+                print(prob_preds)
+                print(prob_preds_covcap)
                 prob_preds = prob_preds + prob_preds_covcap
                 predicted = torch.max(prob_preds, 1)[1]
 
