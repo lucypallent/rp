@@ -2004,6 +2004,8 @@ def main(argv):
 
 
     for opt, arg in opts:
+        try:
+            opts, args = getopt.getopt(argv, 'hi:o:', ['model_pth=']
         if opt in ('-m', '--model_pth'):
             model_folder = arg
 
