@@ -1588,14 +1588,14 @@ class ENModel(nn.Module):
         #x = self.s5(x)
         #x = self.head(x)
         return x
-
-
-if __name__ == "__main__":
-    model = ENModel()
-    aa = torch.ones((1, 1, 10, 128, 128))
-    model([aa])
-    model_param = sum(x.numel() for x in model.parameters())
-    print (model_param)
+#
+#
+# if __name__ == "__main__":
+#     model = ENModel()
+#     aa = torch.ones((1, 1, 10, 128, 128))
+#     model([aa])
+#     model_param = sum(x.numel() for x in model.parameters())
+#     print (model_param)
 ############################ end of defining decovnet
 
 ############################ start of running decovnet
