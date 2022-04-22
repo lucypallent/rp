@@ -2026,11 +2026,11 @@ def test_model(model_pth, folder_pth, run):
     tpr = dict()
     roc_auc = dict()
     for i in range(n_classes):
-        fpr[i], tpr[i], _ = roc_curve(y_test[:, i], y_score[:, i])
+        fpr[i], tpr[i], _ = roc_curve(true[:, i], pred_probs[:, i])
         roc_auc[i] = auc(fpr[i], tpr[i])
 
     # Compute micro-average ROC curve and ROC area
-    fpr["micro"], tpr["micro"], _ = roc_curve(y_test.ravel(), y_score.ravel())
+    fpr["micro"], tpr["micro"], _ = roc_curve(true.ravel(), pred_probs.ravel())
     roc_auc["micro"] = auc(fpr["micro"], tpr["micro"])
 
     fig = plt.figure()
