@@ -1978,7 +1978,7 @@ def test_model(model_pth, folder_pth, run):
     import seaborn as sns
     import matplotlib.pyplot as plt
 
-    ax = sns.heatmap(cf_matrix, annot=True, cmap='Blues')
+    ax = sns.heatmap(matrix, annot=True, cmap='Blues')
 
     ax.set_title('Confusion Matrix for ' + str(model_pth) + '\n\n');
     ax.set_xlabel('\nPredicted classification')
