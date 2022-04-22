@@ -1974,6 +1974,32 @@ def test_model(model_pth, folder_pth, run):
     matrix = confusion_matrix(true, pred)
     print(matrix.diagonal()/matrix.sum(axis=1))
 
+    # display the confusion confusion_matrix
+    import seaborn as sns
+    import matplotlib.pyplot as plt
+
+    ax = sns.heatmap(cf_matrix, annot=True, cmap='Blues')
+
+    ax.set_title('Confusion Matrix for ' + str(model_pth) + '\n\n');
+    ax.set_xlabel('\nPredicted classification')
+    ax.set_ylabel('Actual classification ');
+
+    ## Ticket labels - List must be in alphabetical order
+    ax.xaxis.set_ticklabels(target_names)
+    ax.yaxis.set_ticklabels(target_names)
+
+    run["evaluation/conf_matrix"].log(File.as_image(fig))
+    # run['training/batch/img'].log(File.as_image(all_F[0,0,0]))
+
+    # run["evaluation/ROC"].upload("roc.png")
+    # run["evaluation/precision-recall"].upload("prec-recall.jpg")
+# see above to see how png and jpg were generated
+
+
+    ## Display the visualization of the Confusion Matrix.
+    plt.show()
+
+
     # get accuracy averaged out across class
     print(accuracy_score(true, pred))
 
