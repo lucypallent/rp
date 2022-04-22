@@ -1914,7 +1914,7 @@ def test_model(model_pth):
             print(labels)
             print('preds')
             print(preds)
-            true = torch.cat((true, labels[0]), 0)
+            true = torch.cat((true, labels), 0)
             print(true)
             val_loss = criterion(preds, labels)
             val_acc = topk_accuracies(preds, labels, [1])[0]
