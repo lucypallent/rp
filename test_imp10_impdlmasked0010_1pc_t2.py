@@ -1580,8 +1580,6 @@ class ENModel(nn.Module):
 
 ########################### recently commented out
 # ############################ start of running decovnet
-# NUM_CLASSES = 3
-# NUM_WORKERS = 2
 # # model = import_module(f"model.{MODEL_UID}")
 # # ENModel = getattr(model, "ENModel")
 #
@@ -1724,6 +1722,9 @@ def test_model(model_pth):
     )  # your credentials
 
     DATA_ROOT = 'dataset4/NCOV-BF'
+    NUM_CLASSES = 3
+    NUM_WORKERS = 2
+
 
 
     CFG_FILE = "cfgs/test.yaml"
