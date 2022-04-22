@@ -1713,7 +1713,7 @@ def sensitivity_specificity(y_true, y_score):
 
     return sensitivity, specificity, auc
 
-def test_model(model_pth, folder_pth, run):
+def test_model(model_pth, folder_pth, run, model_covcap_pth):
     random.seed(0); torch.manual_seed(0); np.random.seed(0)
     device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
 
@@ -1897,7 +1897,7 @@ def test_model(model_pth, folder_pth, run):
                         crop_w=TRAIN_CROP_SIZE[1], num_classes=NUM_CLASSES)
     model_covcap = torch.nn.DataParallel(model_covcap).cuda()
 
-    model_covcap.load_state_dict(torch.load('experiments_v4_dcvnt_noaug_imp10_infmask0010_t2_1pc_covcap_ft/ncov-Epoch_00005.pth'))
+    model_covcap.load_state_dict(torch.load(model_covcap_pth))
     model_covcap.eval()
 
     ############### Set up Optimization ###############
@@ -2162,6 +2162,9 @@ def main(argv):
 
     model_folder = sys.argv[1]
     data_folder = sys.argv[2]
+    model_covcap_folder = 'experiments_v4_dcvnt_noaug_imp10_infmask0010_t2_1pc_covcap_ft' # sys.argv[3]
+    # model_covcap_pth = 'experiments_v4_dcvnt_noaug_imp10_infmask0010_t2_1pc_covcap_ft/ncov-Epoch_00005.pth'
+
     print('Model is =====> ' + str(model_folder))
     print('Data is =====> ' + str(data_folder))
 
@@ -2171,12 +2174,16 @@ def main(argv):
     models = [m for m in os.listdir(model_folder) if os.path.isfile(os.path.join(model_folder, m))]
     model_lst = [model_folder + '/' + m for m in models]
 
+    models_cc = [m for m in os.listdir(model_covcap_folder) if os.path.isfile(os.path.join(model_covcap_folder, m))]
+    model_lst_cc = [model_covcap_folder + '/' + m for m in models_cc]
+
     # # # DEBUG:
     # test_model(model_lst[0])
 
     for m in model_lst:
-        # test_model(m, 'NpyData-size224x336-imp10-infmask0010-test-1pc')
-        test_model(m, data_folder, run)
+        for mcc in model_lst_cc:
+            # test_model(m, 'NpyData-size224x336-imp10-infmask0010-test-1pc')
+            test_model(m, data_folder, run, mcc)
 
 if __name__ == '__main__':
     main(sys.argv[1:])
