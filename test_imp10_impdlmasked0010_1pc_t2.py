@@ -234,6 +234,7 @@ def Rand_Transforms(imgs, masks,
 ############################ end of CTDataset functions
 
 ############################ start of defining CTDataset
+readvdnames = lambda x: open(x).read().rstrip().split('\n')
 
 class CTDataset(data.Dataset):
     def __init__(self, data_home="",
@@ -1659,7 +1660,6 @@ def test_model(model_pth):
 
     DATA_ROOT = 'dataset4/NCOV-BF'
 
-    readvdnames = lambda x: open(x).read().rstrip().split('\n')
 
     CFG_FILE = "cfgs/test.yaml"
     Validset = CTDataset(data_home=DATA_ROOT, split='test',)
