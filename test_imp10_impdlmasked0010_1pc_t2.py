@@ -1717,11 +1717,6 @@ def test_model(model_pth, folder_pth):
     random.seed(0); torch.manual_seed(0); np.random.seed(0)
     device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
 
-    run = neptune.init(
-        project="lucyhollypallent/res-preoject",
-        api_token="eyJhcGlfYWRkcmVzcyI6Imh0dHBzOi8vYXBwLm5lcHR1bmUuYWkiLCJhcGlfdXJsIjoiaHR0cHM6Ly9hcHAubmVwdHVuZS5haSIsImFwaV9rZXkiOiI2YWVjODQwOS0yZDQ5LTQ5NjAtYjgyOC0xOTBkNDFjOWE3OTYifQ==",
-    )  # your credentials
-
     DATA_ROOT = 'dataset4/NCOV-BF'
     NUM_CLASSES = 3
     NUM_WORKERS = 2
@@ -1993,20 +1988,19 @@ import sys, getopt
 arg_lst = sys.argv
 
 def main(argv):
+    run = neptune.init(
+        project="lucyhollypallent/res-preoject",
+        api_token="eyJhcGlfYWRkcmVzcyI6Imh0dHBzOi8vYXBwLm5lcHR1bmUuYWkiLCJhcGlfdXJsIjoiaHR0cHM6Ly9hcHAubmVwdHVuZS5haSIsImFwaV9rZXkiOiI2YWVjODQwOS0yZDQ5LTQ5NjAtYjgyOC0xOTBkNDFjOWE3OTYifQ==",
+    )  # your credentials
 
 
-
-
-
-
-
-    # for opt, arg in opts:
-    #     try:
+    # for opt, arg in opts    #     try:
     #         opts, args = getopt.getopt(argv, 'hi:o:', ['model_pth=']
     #     if opt in ('-m', '--model_pth'):
     #         model_folder = arg
 
     model_folder = sys.argv[1]
+    data_folder = sys.argv[2]
 
     # get the list of models in the directory
     # model_folder = 'experiments_v4_dcvnt_noaug_imp10_infmask0010_t2_1pc'
@@ -2017,8 +2011,9 @@ def main(argv):
     # test_model(model_lst[0])
 
     for m in model_lst:
-        test_model(m, 'NpyData-size224x336-imp10-infmask0010-test-1pc')
-
+        # test_model(m, 'NpyData-size224x336-imp10-infmask0010-test-1pc')
+        test_model(m, data_folder)
+        
 if __name__ == '__main__':
     main(sys.argv[1:])
 
