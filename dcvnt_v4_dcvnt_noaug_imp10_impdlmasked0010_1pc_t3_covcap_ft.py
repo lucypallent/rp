@@ -1596,7 +1596,7 @@ NUM_WORKERS = 2
 # ENModel = getattr(model, "ENModel")
 
 # added weighted class
-wghts = torch.tensor([198, 81, 32], dtype=torch.float32)
+wghts = torch.tensor([81, 32], dtype=torch.float32)
 nwghts = [1 - (x / sum(wghts)) for x in wghts]
 nwghts = torch.FloatTensor(nwghts).cuda()
 
@@ -1768,7 +1768,7 @@ TrainLoader = torch.utils.data.DataLoader(Trainset,
 optimizer = torch.optim.Adam(model.parameters(), lr=LEARNING_RATE, weight_decay=WEIGHT_DECAY)
 lr_scher = torch.optim.lr_scheduler.ExponentialLR(optimizer, gamma=LR_DECAY, last_epoch=-1)
 # added weighted class
-wghts = torch.tensor([198, 81, 32], dtype=torch.float32)
+wghts = torch.tensor([81, 32], dtype=torch.float32)
 nwghts = [1 - (x / sum(wghts)) for x in wghts]
 nwghts = torch.FloatTensor(nwghts).cuda()
 
@@ -1988,7 +1988,7 @@ Testset = CTDataset(data_home=DATA_ROOT,
                               #  sample_number=SAMPLE_NUMBER)
 
 # added weighted class
-wghts = torch.tensor([198, 81, 32], dtype=torch.float32)
+wghts = torch.tensor([81, 32], dtype=torch.float32)
 nwghts = [1 - (x / sum(wghts)) for x in wghts]
 nwghts = torch.FloatTensor(nwghts).cuda()
 
