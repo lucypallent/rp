@@ -2166,7 +2166,7 @@ def main(argv):
 
     model_folder = sys.argv[1]
     data_folder = sys.argv[2]
-    # model_covcap_folder = 'experiments_v4_dcvnt_noaug_imp10_infmask0010_t2_1pc_covcap_ft' # sys.argv[3]
+    model_covcap_folder = 'experiments_v4_dcvnt_noaug_imp10_infmask0010_t2_1pc_covcap_ft' # sys.argv[3]
     # model_covcap_pth = 'experiments_v4_dcvnt_noaug_imp10_infmask0010_t2_1pc_covcap_ft/ncov-Epoch_00005.pth'
 
     fldr_lst = ['experiments_v4_dcvnt_noaug_imp10_infmask0010_t2_1pc_covcap_ft',
