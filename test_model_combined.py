@@ -1912,8 +1912,6 @@ def test_model(model_pth, folder_pth, run, model_covcap_pth):
 
             # preds = model([all_F.cuda(non_blocking=True)])   # I3D
             true = torch.cat((true, labels), 0)
-            val_loss = criterion(preds, labels)
-            val_acc = topk_accuracies(preds, labels, [1])[0]
 
             name = all_info[0]["name"]
             pid = name.split('/')[-1][:-4]
@@ -1933,6 +1931,12 @@ def test_model(model_pth, folder_pth, run, model_covcap_pth):
                 prob_preds_covcap = torch.cat((prob_norm, prob_preds_covcap), 1)
                 prob_preds = prob_preds + prob_preds_covcap
                 predicted = torch.max(prob_preds, 1)[1]
+                preds_norm = torch.tensor([[0]]).cuda()
+                preds_covcap = torch.cat((preds_norm, pred_covcap), 1)
+                preds = preds + preds_covcap
+
+            val_loss = criterion(preds, labels)
+            val_acc = topk_accuracies(preds, labels, [1])[0]
 
             pred = torch.cat((pred, predicted), 0)
 
