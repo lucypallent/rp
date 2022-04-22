@@ -1713,7 +1713,7 @@ def sensitivity_specificity(y_true, y_score):
 
     return sensitivity, specificity, auc
 
-def test_model(model_pth, folder_pth):
+def test_model(model_pth, folder_pth, run):
     random.seed(0); torch.manual_seed(0); np.random.seed(0)
     device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
 
@@ -2012,8 +2012,8 @@ def main(argv):
 
     for m in model_lst:
         # test_model(m, 'NpyData-size224x336-imp10-infmask0010-test-1pc')
-        test_model(m, data_folder)
-        
+        test_model(m, data_folder, run)
+
 if __name__ == '__main__':
     main(sys.argv[1:])
 
