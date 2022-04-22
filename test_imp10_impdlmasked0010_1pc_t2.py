@@ -1997,8 +1997,8 @@ def test_model(model_pth, folder_pth, run):
     # run['training/batch/img'].log(File.as_image(all_F[0,0,0]))
 
     # get the ROC Curve
-    from sklearn.metrics import roc_curve, roc_auc_score
-
+    from sklearn.metrics import roc_curve, roc_auc_score, auc
+    
     macro_roc_auc_ovo = roc_auc_score(true, pred_probs, multi_class="ovo", average="macro")
     weighted_roc_auc_ovo = roc_auc_score(
         true, pred_probs, multi_class="ovo", average="weighted"
