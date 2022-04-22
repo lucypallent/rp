@@ -1979,7 +1979,7 @@ def test_model(model_pth, folder_pth, run):
     import matplotlib.pyplot as plt
 
     fig, ax = plt.subplots()
-    ax.sns.heatmap(matrix, annot=True, cmap='Blues')
+    sns.heatmap(matrix, annot=True, cmap='Blues')
 
     ax.set_title('Confusion Matrix for ' + str(model_pth) + '\n\n');
     ax.set_xlabel('\nPredicted classification')
