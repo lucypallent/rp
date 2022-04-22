@@ -242,19 +242,20 @@ class CTDataset(data.Dataset):
                        fold_id=None,
                        crop_size=(196, 288),
                        clip_range=(0.2, 0.7),   # useless
-                       logger=None):
+                       logger=None,
+                       folder = 'NpyData-size224x336-imp10-infmask0010-test-1pc'):
 
         _embo_f = os.path.join(data_home, "ImageSets", "ncov_{}.txt".format(split))
         _norm_f = os.path.join(data_home, "ImageSets", "normal_{}.txt".format(split))
         _cap_f = os.path.join(data_home, "ImageSets", "cap_{}.txt".format(split))
         # Build a dictionary to record {path - label} pair
-        meta_pos   = [[os.path.join(data_home, "NpyData-size224x336-imp10-infmask0010-test-1pc", "{}.npy".format(x)), 1]
+        meta_pos   = [[os.path.join(data_home, folder, "{}.npy".format(x)), 1]
                                 for x in readvdnames(_embo_f)]
 
-        meta_neg   = [[os.path.join(data_home, "NpyData-size224x336-imp10-infmask0010-test-1pc", "{}.npy".format(x)), 0]
+        meta_neg   = [[os.path.join(data_home, folder, "{}.npy".format(x)), 0]
                                 for x in readvdnames(_norm_f)]
 
-        meta_cap   = [[os.path.join(data_home, "NpyData-size224x336-imp10-infmask0010-test-1pc", "{}.npy".format(x)), 2]
+        meta_cap   = [[os.path.join(data_home, folder, "{}.npy".format(x)), 2]
                                 for x in readvdnames(_cap_f)]
 
         if split == "train":
@@ -1712,7 +1713,7 @@ def sensitivity_specificity(y_true, y_score):
 
     return sensitivity, specificity, auc
 
-def test_model(model_pth):
+def test_model(model_pth, folder_pth):
     random.seed(0); torch.manual_seed(0); np.random.seed(0)
     device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
 
@@ -1726,7 +1727,7 @@ def test_model(model_pth):
     NUM_WORKERS = 2
 
     CFG_FILE = "cfgs/test.yaml"
-    Validset = CTDataset(data_home=DATA_ROOT, split='test',)
+    Validset = CTDataset(data_home=DATA_ROOT, split='test', folder=folder_pth)
 
     MODEL_UID = 'baseline_i3d'
     NUM_CLASSES = 3
@@ -1762,13 +1763,15 @@ def test_model(model_pth):
                          split='train',
                          #fold_id=FOLD_ID,
                          crop_size=TRAIN_CROP_SIZE,
-                         clip_range=CLIP_RANGE)
+                         clip_range=CLIP_RANGE,
+                         folder=folder_pth)
 
     Validset = CTDataset(data_home=DATA_ROOT,
                          split='valid',
                          #fold_id=FOLD_ID,
                          crop_size=TRAIN_CROP_SIZE,
-                         clip_range=CLIP_RANGE)
+                         clip_range=CLIP_RANGE,
+                         folder=folder_pth)
 
 
 
@@ -1861,7 +1864,8 @@ def test_model(model_pth):
     SAMPLE_NUMBER = -1
 
     Testset = CTDataset(data_home=DATA_ROOT,
-                                   split='valid')#, trying something
+                                   split='valid',
+                                   folder=folder_pth)#, trying something
                                   #  sample_number=SAMPLE_NUMBER)
 
     criterion = torch.nn.CrossEntropyLoss(reduction="mean")
@@ -2013,7 +2017,7 @@ def main(argv):
     # test_model(model_lst[0])
 
     for m in model_lst:
-        test_model(m)
+        test_model(m, 'NpyData-size224x336-imp10-infmask0010-test-1pc')
 
 if __name__ == '__main__':
     main(sys.argv[1:])
