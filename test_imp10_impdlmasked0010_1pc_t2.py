@@ -2009,11 +2009,11 @@ def main(argv):
     models = [m for m in os.listdir(model_folder) if os.path.isfile(os.path.join(model_folder, m))]
     model_lst = [model_folder + '/' + m for m in models]
 
-    # # DEBUG:
-    test_model(model_lst[0])
+    # # # DEBUG:
+    # test_model(model_lst[0])
 
-    # for m in model_lst:
-    #     test_model(m)
+    for m in model_lst:
+        test_model(m)
 
 if __name__ == '__main__':
     main(sys.argv[1:])
