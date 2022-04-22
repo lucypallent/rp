@@ -1725,8 +1725,6 @@ def test_model(model_pth):
     NUM_CLASSES = 3
     NUM_WORKERS = 2
 
-
-
     CFG_FILE = "cfgs/test.yaml"
     Validset = CTDataset(data_home=DATA_ROOT, split='test',)
 
@@ -1789,7 +1787,7 @@ def test_model(model_pth):
     model.module.classifier[1] = nn.Linear(model.module.classifier[1].in_features, NUM_CLASSES).cuda()
 
 
-    print(model)
+    # print(model)
 
     TrainLoader = torch.utils.data.DataLoader(Trainset,
                                         batch_size=BATCH_SIZE_PER_GPU,
@@ -1968,6 +1966,8 @@ def test_model(model_pth):
     target_names = ['NonCOVID', 'COVID', 'CAP']
 
     # get precision, recall, f1-score
+    print('Summary Report ======> ' + model_pth)
+
     print(classification_report(true, pred, target_names=target_names, digits=4))
 
     # get accuracy each individual class
