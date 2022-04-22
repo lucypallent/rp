@@ -2169,10 +2169,10 @@ def main(argv):
     model_covcap_folder = 'experiments_v4_dcvnt_noaug_imp10_infmask0010_t2_1pc_covcap_ft' # sys.argv[3]
     # model_covcap_pth = 'experiments_v4_dcvnt_noaug_imp10_infmask0010_t2_1pc_covcap_ft/ncov-Epoch_00005.pth'
 
-    fldr_lst = ['experiments_v4_dcvnt_noaug_imp10_infmask0010_t2_1pc_covcap_ft',
-                'experiments_v4_dcvnt_noaug_imp10_infmask0010_t3_1pc_covcap_ft',
-                'experiments_v4_dcvnt_noaug_imp10_infmask0010_t4_1pc_covcap_ft',
-                'experiments_v4_dcvnt_noaug_imp10_infmask0010_t5_1pc_covcap_ft']
+    fldr_lst = ['experiments_v4_dcvnt_noaug_imp10_infmask0010_t2_1pc',
+                'experiments_v4_dcvnt_noaug_imp10_infmask0010_t3_1pc',
+                'experiments_v4_dcvnt_noaug_imp10_infmask0010_t4_1pc',
+                'experiments_v4_dcvnt_noaug_imp10_infmask0010_t5_1pc']
 
     for f in fldr_lst:
         model_folder = f
