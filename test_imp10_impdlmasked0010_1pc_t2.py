@@ -1998,7 +1998,8 @@ def test_model(model_pth, folder_pth, run):
 
     # get the ROC Curve
     from sklearn.metrics import roc_curve, roc_auc_score, auc
-    
+    from itertools import cycle
+
     macro_roc_auc_ovo = roc_auc_score(true, pred_probs, multi_class="ovo", average="macro")
     weighted_roc_auc_ovo = roc_auc_score(
         true, pred_probs, multi_class="ovo", average="weighted"
