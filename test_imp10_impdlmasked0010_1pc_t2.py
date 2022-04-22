@@ -1854,6 +1854,7 @@ def test_model(model_pth, folder_pth, run):
     print('RUNNNING======> ' + model_pth)
     true = torch.tensor([]).to(device)
     pred = torch.tensor([]).to(device)
+    pred_probs = torch.tensor([]).to(device)
 
     # define Testset
     SAMPLE_NUMBER = -1
@@ -1908,6 +1909,8 @@ def test_model(model_pth, folder_pth, run):
             pid = name.split('/')[-1][:-4]
 
             prob_preds = F.softmax(preds, dim=1)
+            pred_probs = torch.cat((pred_probs, prob_preds), 0)
+
             # Get predictions from the maximum value
             predicted = torch.max(prob_preds, 1)[1]
             pred = torch.cat((pred, predicted), 0)
@@ -1961,6 +1964,7 @@ def test_model(model_pth, folder_pth, run):
 
     true = true.to('cpu')
     pred = pred.to('cpu')
+    pred_probs = pred_probs.to('cpu')
 
     target_names = ['NonCOVID', 'COVID', 'CAP']
 
@@ -1992,14 +1996,25 @@ def test_model(model_pth, folder_pth, run):
     run["evaluation/conf_matrix"].log(File.as_image(fig))
     # run['training/batch/img'].log(File.as_image(all_F[0,0,0]))
 
-    # run["evaluation/ROC"].upload("roc.png")
-    # run["evaluation/precision-recall"].upload("prec-recall.jpg")
-# see above to see how png and jpg were generated
-
-
-    ## Display the visualization of the Confusion Matrix.
-    plt.show()
-
+    # get the ROC Curve
+    from sklearn.metrics import roc_curv, roc_auc_score
+    
+    macro_roc_auc_ovo = roc_auc_score(true, pred_probs, multi_class="ovo", average="macro")
+    weighted_roc_auc_ovo = roc_auc_score(
+        true, pred_probs, multi_class="ovo", average="weighted"
+    )
+    macro_roc_auc_ovr = roc_auc_score(true, pred_probs, multi_class="ovr", average="macro")
+    weighted_roc_auc_ovr = roc_auc_score(
+        true, pred_probs, multi_class="ovr", average="weighted"
+    )
+    print(
+        "One-vs-One ROC AUC scores:\n{:.6f} (macro),\n{:.6f} "
+        "(weighted by prevalence)".format(macro_roc_auc_ovo, weighted_roc_auc_ovo)
+    )
+    print(
+        "One-vs-Rest ROC AUC scores:\n{:.6f} (macro),\n{:.6f} "
+        "(weighted by prevalence)".format(macro_roc_auc_ovr, weighted_roc_auc_ovr)
+    )
 
     # get accuracy averaged out across class
     print(accuracy_score(true, pred))
