@@ -1598,31 +1598,33 @@ class ENModel(nn.Module):
 #     print (model_param)
 ############################ end of defining decovnet
 
-############################ start of running decovnet
-NUM_CLASSES = 3
-NUM_WORKERS = 2
-# model = import_module(f"model.{MODEL_UID}")
-# ENModel = getattr(model, "ENModel")
-
-criterion = torch.nn.CrossEntropyLoss(reduction="mean")
-
-model = ENModel(arch=ARCH, resnet_depth=DEPTH,
-                input_channel=2, num_classes=NUM_CLASSES)
-model = torch.nn.DataParallel(model).cuda()
-
-model.load_state_dict(torch.load('ncov-Epoch_00140-auc95p9.pth'))
-model.eval()
-model.module.classifier[1] = nn.Linear(model.module.classifier[1].in_features, NUM_CLASSES).cuda()
-
-ValidLoader = torch.utils.data.DataLoader(Validset,
-                                    batch_size=1,
-                                    num_workers=NUM_WORKERS,
-                                    collate_fn=Train_Collatefn,
-                                    shuffle=False,)
-
-Val_CE, Val_Acc = [ScalarContainer() for _ in range(2)]
-
-gts, pcovs = [], []
+########################### recently commented out
+# ############################ start of running decovnet
+# NUM_CLASSES = 3
+# NUM_WORKERS = 2
+# # model = import_module(f"model.{MODEL_UID}")
+# # ENModel = getattr(model, "ENModel")
+#
+# criterion = torch.nn.CrossEntropyLoss(reduction="mean")
+#
+# model = ENModel(arch=ARCH, resnet_depth=DEPTH,
+#                 input_channel=2, num_classes=NUM_CLASSES)
+# model = torch.nn.DataParallel(model).cuda()
+#
+# model.load_state_dict(torch.load('ncov-Epoch_00140-auc95p9.pth'))
+# model.eval()
+# model.module.classifier[1] = nn.Linear(model.module.classifier[1].in_features, NUM_CLASSES).cuda()
+#
+# ValidLoader = torch.utils.data.DataLoader(Validset,
+#                                     batch_size=1,
+#                                     num_workers=NUM_WORKERS,
+#                                     collate_fn=Train_Collatefn,
+#                                     shuffle=False,)
+#
+# Val_CE, Val_Acc = [ScalarContainer() for _ in range(2)]
+#
+# gts, pcovs = [], []
+########################### recently commented out
 
 # copied from metrics
 def sensitivity_specificity(y_true, y_score):
@@ -1658,173 +1660,44 @@ def sensitivity_specificity(y_true, y_score):
         auc += (sensitivity[i+1]-sensitivity[i]) * specificity[i]
 
     return sensitivity, specificity, auc
-
-print('2nd valid loader??')
-
-with torch.no_grad():
-    for i, (all_F, all_L, all_info) in enumerate(ValidLoader):
-        labels = all_L.cuda()
-        preds = model([all_F.cuda()])
-        print(preds)
-        print(labels)
-
-        # val_loss = criterion(preds, labels)
-        val_acc = topk_accuracies(preds, labels, [1])[0]
-
-        name = all_info[0]["name"]
-        pid = name.split('/')[-1][:-4]
-
-        prob_preds = F.softmax(preds, dim=1)
-        prob_normal = prob_preds[0, 0].item()
-        prob_ncov = prob_preds[0, 1].item()
-        prob_cap =  prob_preds[0, 2].item() # this should work
-        gt = labels.item()
-
-        gts.append(gt)
-        pcovs.append(prob_ncov)
-
-        print ("{} {} {} {} {} {}".format(all_info[0]["name"], pid, prob_normal, prob_ncov, prob_cap, labels.item()))
-
-        # Val_CE.write(val_loss); Val_Acc.write(val_acc)
-
-# from metrics import sensitivity_specificity
-Ece, Eacc = Val_CE.read(), Val_Acc.read()
-gts, pcovs = np.asarray(gts), np.asarray(pcovs)
-_, _, Eauc = sensitivity_specificity(gts, pcovs)
-e = 0
-print("VALIDATION | E [{}] | CE: {:1.5f} | ValAcc: {:1.3f} | ValAUC: {:1.3f}".format(e, Ece, Eacc, Eauc))
-
-"""# Getting Training to work"""
-
-# import warnings
+########################### recently commented out
+# print('2nd valid loader??')
 #
-# def fxn():
-#     warnings.warn("deprecated", UserWarning)
+# with torch.no_grad():
+#     for i, (all_F, all_L, all_info) in enumerate(ValidLoader):
+#         labels = all_L.cuda()
+#         preds = model([all_F.cuda()])
+#         print(preds)
+#         print(labels)
 #
-# with warnings.catch_warnings():
-#     warnings.simplefilter("once")
-#     fxn()
+#         # val_loss = criterion(preds, labels)
+#         val_acc = topk_accuracies(preds, labels, [1])[0]
 #
-# import warnings
-# warnings.filterwarnings("ignore", category=UserWarning)
-
-############### Set up Variables ###############
-TRAIN_CROP_SIZE = tuple([224, 336])
-CLIP_RANGE = [float(x) for x in [0.3, 0.7]]
-DATA_ROOT = 'dataset4/NCOV-BF'
-BATCH_SIZE_PER_GPU = 1
-LEARNING_RATE = 1e-5
-WEIGHT_DECAY = 0
-LR_DECAY = 1
-INIT_MODEL_PATH = 'ncov-Epoch_00140-auc95p9.pth'
-INIT_MODEL_STRICT = "True"
-SNAPSHOT_FREQ = 5
-TRAIN_EPOCH = 200 #, will likely stop it early
-SNAPSHOT_HOME = "experiments_v4_dcvnt_noaug_imp10_infmask0010_t2_1pc"
-SNAPSHOT_MODEL_TPL = "ncov-Epoch_{:05d}.pth"
-
-
-
-random.seed(0); torch.manual_seed(0); np.random.seed(0)
-local_rank = 0
-
-
-############### Set up Dataloaders ###############
-Trainset = CTDataset(data_home=DATA_ROOT,
-                     split='train',
-                     #fold_id=FOLD_ID,
-                     crop_size=TRAIN_CROP_SIZE,
-                     clip_range=CLIP_RANGE)
-
-Validset = CTDataset(data_home=DATA_ROOT,
-                     split='valid',
-                     #fold_id=FOLD_ID,
-                     crop_size=TRAIN_CROP_SIZE,
-                     clip_range=CLIP_RANGE)
-
-
-
-model = ENModel(arch=ARCH, resnet_depth=DEPTH,
-                    input_channel=2,
-                    crop_h=TRAIN_CROP_SIZE[0],
-                    crop_w=TRAIN_CROP_SIZE[1], num_classes=NUM_CLASSES)
-
-model = torch.nn.DataParallel(model).cuda()
-
-# model.load_state_dict(torch.load('ncov-Epoch_00140-auc95p9.pth'))
-
-model.load_state_dict(torch.load(INIT_MODEL_PATH, \
-                 map_location=f'cuda:{local_rank}'), strict=INIT_MODEL_STRICT)
-model.eval()
-model.module.classifier[1] = nn.Linear(model.module.classifier[1].in_features, NUM_CLASSES).cuda()
-
-
-print(model)
-
-TrainLoader = torch.utils.data.DataLoader(Trainset,
-                                    batch_size=BATCH_SIZE_PER_GPU,
-                                        num_workers=NUM_WORKERS,
-                                        collate_fn=Train_Collatefn,
-                                        shuffle=True,
-                                        pin_memory=True)
-
-############### Set up Optimization ###############
-optimizer = torch.optim.Adam(model.parameters(), lr=LEARNING_RATE, weight_decay=WEIGHT_DECAY)
-lr_scher = torch.optim.lr_scheduler.ExponentialLR(optimizer, gamma=LR_DECAY, last_epoch=-1)
-criterion = torch.nn.CrossEntropyLoss(reduction="mean")
-
-
-# model.load_state_dict(torch.load(INIT_MODEL_PATH, \
-#                  map_location=f'cuda:{local_rank}'), strict=INIT_MODEL_STRICT)
-
-# model.eval()
-
-dset_len, loader_len = len(Trainset), len(TrainLoader)
-
-Epoch_CE, Epoch_Acc = [ScalarContainer() for _ in range(2)]
-
-############### Sending Model data to Neptune ###############
-run["config/model"] = type(model).__name__
-run["config/criterion"] = type(criterion).__name__
-run["config/optimizer"] = type(optimizer).__name__
-
-
-dataset_size = {"train": len(Trainset), "val": len(Validset), 'test': len(Validset)}
-# currently Validset & Testset are the same size
-
-data_tfms = {'function': 'cta_images, cta_masks = Rand_Transforms(cta_images, cta_masks, ANGLE_R=10, TRANS_R=0.1, SCALE_R=0.2, SHEAR_R=10, BRIGHT_R=0.5, CONTRAST_R=0.3)',
-'ANGLE_R': 10,
-'TRANS_R': 0.1,
-'SCALE_R': 0.2,
-'SHEAR_R': 10,
-'BRIGHT_R': 0.5,
-'CONTRAST_R': 0.3,
-}
-
-run["config/dataset/path"] = DATA_ROOT
-run["config/dataset/transforms"] =  data_tfms
-run["config/dataset/size"] = dataset_size
-
-
-parameters = {
-    "lr": LEARNING_RATE,
-    "bs": BATCH_SIZE_PER_GPU,
-    "input_sz": 224 * 336 ,
-    "n_classes": NUM_CLASSES,
-    "model_filename": "decovnet_v0_10ep",
-    "device": torch.device("cuda:0" if torch.cuda.is_available() else "cpu"),
-    'weight_decay': WEIGHT_DECAY,
-    'lr_decay': LR_DECAY,
-    'train_crop_size': TRAIN_CROP_SIZE,
-    'clip_range': CLIP_RANGE,
-    'SNAPSHOT_FREQ': SNAPSHOT_FREQ,
-    'train_epoch': TRAIN_EPOCH,
-    'pre-trained-DeCoVNet': 'ncov-Epoch_00140-auc95p9.pth',
-}
-
-run["config/hyperparameters"] = parameters
-
-
+#         name = all_info[0]["name"]
+#         pid = name.split('/')[-1][:-4]
+#
+#         prob_preds = F.softmax(preds, dim=1)
+#         prob_normal = prob_preds[0, 0].item()
+#         prob_ncov = prob_preds[0, 1].item()
+#         prob_cap =  prob_preds[0, 2].item() # this should work
+#         gt = labels.item()
+#
+#         gts.append(gt)
+#         pcovs.append(prob_ncov)
+#
+#         print ("{} {} {} {} {} {}".format(all_info[0]["name"], pid, prob_normal, prob_ncov, prob_cap, labels.item()))
+#
+#         # Val_CE.write(val_loss); Val_Acc.write(val_acc)
+#
+# # from metrics import sensitivity_specificity
+# Ece, Eacc = Val_CE.read(), Val_Acc.read()
+# gts, pcovs = np.asarray(gts), np.asarray(pcovs)
+# _, _, Eauc = sensitivity_specificity(gts, pcovs)
+# e = 0
+# print("VALIDATION | E [{}] | CE: {:1.5f} | ValAcc: {:1.3f} | ValAUC: {:1.3f}".format(e, Ece, Eacc, Eauc))
+#
+# """# Getting Training to work"""
+########################### recently commented out
 
 # copied from metrics
 def sensitivity_specificity(y_true, y_score):
@@ -1862,6 +1735,123 @@ def sensitivity_specificity(y_true, y_score):
     return sensitivity, specificity, auc
 
 def test_model(model_pth):
+    ############### Set up Variables ###############
+    TRAIN_CROP_SIZE = tuple([224, 336])
+    CLIP_RANGE = [float(x) for x in [0.3, 0.7]]
+    DATA_ROOT = 'dataset4/NCOV-BF'
+    BATCH_SIZE_PER_GPU = 1
+    LEARNING_RATE = 1e-5
+    WEIGHT_DECAY = 0
+    LR_DECAY = 1
+    INIT_MODEL_PATH = 'ncov-Epoch_00140-auc95p9.pth'
+    INIT_MODEL_STRICT = "True"
+    SNAPSHOT_FREQ = 5
+    TRAIN_EPOCH = 200 #, will likely stop it early
+    SNAPSHOT_HOME = "experiments_v4_dcvnt_noaug_imp10_infmask0010_t2_1pc"
+    SNAPSHOT_MODEL_TPL = "ncov-Epoch_{:05d}.pth"
+
+
+
+    random.seed(0); torch.manual_seed(0); np.random.seed(0)
+    local_rank = 0
+
+
+    ############### Set up Dataloaders ###############
+    Trainset = CTDataset(data_home=DATA_ROOT,
+                         split='train',
+                         #fold_id=FOLD_ID,
+                         crop_size=TRAIN_CROP_SIZE,
+                         clip_range=CLIP_RANGE)
+
+    Validset = CTDataset(data_home=DATA_ROOT,
+                         split='valid',
+                         #fold_id=FOLD_ID,
+                         crop_size=TRAIN_CROP_SIZE,
+                         clip_range=CLIP_RANGE)
+
+
+
+    model = ENModel(arch=ARCH, resnet_depth=DEPTH,
+                        input_channel=2,
+                        crop_h=TRAIN_CROP_SIZE[0],
+                        crop_w=TRAIN_CROP_SIZE[1], num_classes=NUM_CLASSES)
+
+    model = torch.nn.DataParallel(model).cuda()
+
+    # model.load_state_dict(torch.load('ncov-Epoch_00140-auc95p9.pth'))
+
+    model.load_state_dict(torch.load(INIT_MODEL_PATH, \
+                     map_location=f'cuda:{local_rank}'), strict=INIT_MODEL_STRICT)
+    model.eval()
+    model.module.classifier[1] = nn.Linear(model.module.classifier[1].in_features, NUM_CLASSES).cuda()
+
+
+    print(model)
+
+    TrainLoader = torch.utils.data.DataLoader(Trainset,
+                                        batch_size=BATCH_SIZE_PER_GPU,
+                                            num_workers=NUM_WORKERS,
+                                            collate_fn=Train_Collatefn,
+                                            shuffle=True,
+                                            pin_memory=True)
+
+    ############### Set up Optimization ###############
+    optimizer = torch.optim.Adam(model.parameters(), lr=LEARNING_RATE, weight_decay=WEIGHT_DECAY)
+    lr_scher = torch.optim.lr_scheduler.ExponentialLR(optimizer, gamma=LR_DECAY, last_epoch=-1)
+    criterion = torch.nn.CrossEntropyLoss(reduction="mean")
+
+
+    # model.load_state_dict(torch.load(INIT_MODEL_PATH, \
+    #                  map_location=f'cuda:{local_rank}'), strict=INIT_MODEL_STRICT)
+
+    # model.eval()
+
+    dset_len, loader_len = len(Trainset), len(TrainLoader)
+
+    Epoch_CE, Epoch_Acc = [ScalarContainer() for _ in range(2)]
+
+    ############### Sending Model data to Neptune ###############
+    run["config/model"] = type(model).__name__
+    run["config/criterion"] = type(criterion).__name__
+    run["config/optimizer"] = type(optimizer).__name__
+
+
+    dataset_size = {"train": len(Trainset), "val": len(Validset), 'test': len(Validset)}
+    # currently Validset & Testset are the same size
+
+    data_tfms = {'function': 'cta_images, cta_masks = Rand_Transforms(cta_images, cta_masks, ANGLE_R=10, TRANS_R=0.1, SCALE_R=0.2, SHEAR_R=10, BRIGHT_R=0.5, CONTRAST_R=0.3)',
+    'ANGLE_R': 10,
+    'TRANS_R': 0.1,
+    'SCALE_R': 0.2,
+    'SHEAR_R': 10,
+    'BRIGHT_R': 0.5,
+    'CONTRAST_R': 0.3,
+    }
+
+    run["config/dataset/path"] = DATA_ROOT
+    run["config/dataset/transforms"] =  data_tfms
+    run["config/dataset/size"] = dataset_size
+
+
+    parameters = {
+        "lr": LEARNING_RATE,
+        "bs": BATCH_SIZE_PER_GPU,
+        "input_sz": 224 * 336 ,
+        "n_classes": NUM_CLASSES,
+        "model_filename": "decovnet_v0_10ep",
+        "device": torch.device("cuda:0" if torch.cuda.is_available() else "cpu"),
+        'weight_decay': WEIGHT_DECAY,
+        'lr_decay': LR_DECAY,
+        'train_crop_size': TRAIN_CROP_SIZE,
+        'clip_range': CLIP_RANGE,
+        'SNAPSHOT_FREQ': SNAPSHOT_FREQ,
+        'train_epoch': TRAIN_EPOCH,
+        'pre-trained-DeCoVNet': 'ncov-Epoch_00140-auc95p9.pth',
+    }
+
+    run["config/hyperparameters"] = parameters
+
+
     print('RUNNNING======> ' + model_pth)
     true = torch.tensor([]).to(device)
     pred = torch.tensor([]).to(device)
@@ -2003,11 +1993,13 @@ def main(argv):
 
 
 
-    for opt, arg in opts:
-        try:
-            opts, args = getopt.getopt(argv, 'hi:o:', ['model_pth=']
-        if opt in ('-m', '--model_pth'):
-            model_folder = arg
+    # for opt, arg in opts:
+    #     try:
+    #         opts, args = getopt.getopt(argv, 'hi:o:', ['model_pth=']
+    #     if opt in ('-m', '--model_pth'):
+    #         model_folder = arg
+
+        model_folder = sys.argv[1]
 
     # get the list of models in the directory
     # model_folder = 'experiments_v4_dcvnt_noaug_imp10_infmask0010_t2_1pc'
