@@ -1996,6 +1996,13 @@ import sys, getopt
 arg_lst = sys.argv
 
 def main(argv):
+
+
+
+
+
+
+
     for opt, arg in opts:
         if opt in ('-m', '--model_pth'):
             model_folder = arg
