@@ -1988,7 +1988,7 @@ def test_model(model_pth, folder_pth, run):
     ax.xaxis.set_ticklabels(target_names)
     ax.yaxis.set_ticklabels(target_names)
 
-    run["evaluation/conf_matrix"].log(File.as_image(fig))
+    run["evaluation/conf_matrix"].log(File.as_image(ax))
     # run['training/batch/img'].log(File.as_image(all_F[0,0,0]))
 
     # run["evaluation/ROC"].upload("roc.png")
