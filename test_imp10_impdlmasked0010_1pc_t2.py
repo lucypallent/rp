@@ -1863,6 +1863,9 @@ def sensitivity_specificity(y_true, y_score):
 
 def test_model(model_pth):
     print('RUNNNING======> ' + model_pth)
+    true = torch.tensor([]).to(device)
+    pred = torch.tensor([]).to(device)
+
     # define Testset
     SAMPLE_NUMBER = -1
 
@@ -1907,6 +1910,11 @@ def test_model(model_pth):
             preds = model([all_F.cuda(non_blocking=True)])
 
             # preds = model([all_F.cuda(non_blocking=True)])   # I3D
+            print('labels')
+            print(labels)
+            print('preds')
+            print(preds)
+            true = torch.cat((true, labels), 0)
 
             val_loss = criterion(preds, labels)
             val_acc = topk_accuracies(preds, labels, [1])[0]
@@ -1915,14 +1923,23 @@ def test_model(model_pth):
             pid = name.split('/')[-1][:-4]
 
             prob_preds = F.softmax(preds, dim=1)
+            print('prob_preds')
+            print(prob_pred)
+            # Get predictions from the maximum value
+            predicted = torch.max(prob_pred, 1)[1]
+            print('predicted')
+            print(predicted)
+            pred = torch.cat((pred, predicted), 0)
+
             prob_normal = prob_preds[0, 0].item()
             prob_ncov = prob_preds[0, 1].item()
+            prob_cap = prob_preds[0, 2].item()
             gt = labels.item()
 
             gts.append(gt)
             pcovs.append(prob_ncov)
 
-            print ("{} {} {} {} {}".format(all_info[0]["name"], pid, prob_normal, prob_ncov, labels.item()))
+            print ("{} {} {} {} {} {}".format(all_info[0]["name"], pid, prob_normal, prob_ncov, prob_cap, labels.item()))
 
             Tes_CE.write(val_loss); Tes_Acc.write(val_acc)
 
@@ -1971,12 +1988,44 @@ model_lst = [model_folder + '/' + m for m in models]
 
 for m in model_lst:
     test_model(m)
+#
+# true = torch.tensor([]).to(device)
+# pred = torch.tensor([]).to(device)
+#
+#  # test for t
+# for i, data in enumerate(ctTestDataloader):
+#
+#     images = data['images'].to(device)
+#     labels = data['labels'].to(device)
+#
+#     outputs = r3d_18(images)
+#     true = torch.cat((true, labels), 0)
+#
+#
+#     # Get predictions from the maximum value
+#     predicted = torch.max(outputs.data, 1)[1]
+#     pred = torch.cat((pred, predicted), 0)
+#
+#     # early stop
+#     if i == 6:
+#         break
 
-# from concurrent import futures
-#
-# num_threads=10
-#
-# with futures.ProcessPoolExecutor(max_workers=num_threads) as executor:
-#     fs = [executor.submit(test_model, x, ) for x in model_lst]
-#     for i, f in enumerate(futures.as_completed(fs)):
-#         print ("{}/{} done...".format(i, len(fs)))
+# code to run classification scores
+from sklearn.metrics import classification_report
+from sklearn.metrics import accuracy_score
+
+true = true.to('cpu')
+pred = pred.to('cpu')
+
+target_names = ['NonCOVID', 'COVID', 'CAP']
+
+# get precision, recall, f1-score
+print(classification_report(true, pred, target_names=target_names, digits=4))
+
+# get accuracy each individual class
+from sklearn.metrics import confusion_matrix
+matrix = confusion_matrix(true, pred)
+print(matrix.diagonal()/matrix.sum(axis=1))
+
+# get accuracy averaged out across class
+print(accuracy_score(true, pred))
