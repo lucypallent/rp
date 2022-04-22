@@ -50,7 +50,6 @@ import neptune.new as neptune
 from neptune.new.types import File
 
 
-
 random.seed(0); torch.manual_seed(0); np.random.seed(0)
 device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
 
@@ -58,6 +57,7 @@ run = neptune.init(
     project="lucyhollypallent/res-preoject",
     api_token="eyJhcGlfYWRkcmVzcyI6Imh0dHBzOi8vYXBwLm5lcHR1bmUuYWkiLCJhcGlfdXJsIjoiaHR0cHM6Ly9hcHAubmVwdHVuZS5haSIsImFwaV9rZXkiOiI2YWVjODQwOS0yZDQ5LTQ5NjAtYjgyOC0xOTBkNDFjOWE3OTYifQ==",
 )  # your credentials
+
 
 
 DATA_ROOT = 'dataset4/NCOV-BF'
@@ -1914,8 +1914,8 @@ def test_model(model_pth):
             print(labels)
             print('preds')
             print(preds)
-            true = torch.cat((true, labels), 0)
-
+            true = torch.cat((true, labels[0]), 0)
+            print(true)
             val_loss = criterion(preds, labels)
             val_acc = topk_accuracies(preds, labels, [1])[0]
 
@@ -1924,7 +1924,7 @@ def test_model(model_pth):
 
             prob_preds = F.softmax(preds, dim=1)
             print('prob_preds')
-            print(prob_pred)
+            print(prob_preds)
             # Get predictions from the maximum value
             predicted = torch.max(prob_pred, 1)[1]
             print('predicted')
@@ -1984,11 +1984,12 @@ models = [m for m in os.listdir(model_folder) if os.path.isfile(os.path.join(mod
 model_lst = [model_folder + '/' + m for m in models]
 
 # # DEBUG:
-# test_model(model_lst[0])
+test_model(model_lst[0])
 
-for m in model_lst:
-    test_model(m)
-#
+# for m in model_lst:
+#     test_model(m)
+
+# code implementing currently
 # true = torch.tensor([]).to(device)
 # pred = torch.tensor([]).to(device)
 #
@@ -2029,3 +2030,7 @@ print(matrix.diagonal()/matrix.sum(axis=1))
 
 # get accuracy averaged out across class
 print(accuracy_score(true, pred))
+
+# # add comand line supports
+# import sys, getopt
+# arg_lst = sys.argv
