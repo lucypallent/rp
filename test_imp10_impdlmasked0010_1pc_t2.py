@@ -2074,7 +2074,7 @@ def test_model(model_pth, folder_pth, run):
     roc_auc["macro"] = auc(fpr["macro"], tpr["macro"])
 
     # Plot all ROC curves
-    plt.figure()
+    fig = plt.figure()
     plt.plot(
         fpr["micro"],
         tpr["micro"],
