@@ -1991,25 +1991,30 @@ def test_model(model_pth):
     # torch.save(model.state_dict(), final_model_save_path)
 
 
-# add comand line supports
-import sys, getopt
-arg_lst = sys.argv
+# # add comand line supports
+# import sys, getopt
+# arg_lst = sys.argv
+#
+# def main(argv):
+#     for opt, arg in opts:
+#         if opt in ('-m', '--model_pth'):
+#             model_folder = arg
+#
+#     # get the list of models in the directory
+#     # model_folder = 'experiments_v4_dcvnt_noaug_imp10_infmask0010_t2_1pc'
+#     models = [m for m in os.listdir(model_folder) if os.path.isfile(os.path.join(model_folder, m))]
+#     model_lst = [model_folder + '/' + m for m in models]
+#
+#     # # DEBUG:
+#     test_model(model_lst[0])
+#
+#     # for m in model_lst:
+#     #     test_model(m)
+#
+# if __name__ == '__main__':
+#     main(sys.argv[1:])
 
-def main(argv):
-    for opt, arg in opts:
-        if opt in ('-m', '--model_pth'):
-            model_folder = arg
-
-    # get the list of models in the directory
-    # model_folder = 'experiments_v4_dcvnt_noaug_imp10_infmask0010_t2_1pc'
-    models = [m for m in os.listdir(model_folder) if os.path.isfile(os.path.join(model_folder, m))]
-    model_lst = [model_folder + '/' + m for m in models]
-
-    # # DEBUG:
-    test_model(model_lst[0])
-
-    # for m in model_lst:
-    #     test_model(m)
-
-if __name__ == '__main__':
-    main(sys.argv[1:])
+model_folder = 'experiments_v4_dcvnt_noaug_imp10_infmask0010_t2_1pc'
+models = [m for m in os.listdir(model_folder) if os.path.isfile(os.path.join(model_folder, m))]
+model_lst = [model_folder + '/' + m for m in models]
+test_model(model_lst[0])
