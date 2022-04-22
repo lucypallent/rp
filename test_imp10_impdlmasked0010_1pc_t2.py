@@ -2001,7 +2001,7 @@ def main(argv):
     #     if opt in ('-m', '--model_pth'):
     #         model_folder = arg
 
-        model_folder = sys.argv[1]
+    model_folder = sys.argv[1]
 
     # get the list of models in the directory
     # model_folder = 'experiments_v4_dcvnt_noaug_imp10_infmask0010_t2_1pc'
