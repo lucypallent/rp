@@ -1910,12 +1910,7 @@ def test_model(model_pth):
             preds = model([all_F.cuda(non_blocking=True)])
 
             # preds = model([all_F.cuda(non_blocking=True)])   # I3D
-            print('labels')
-            print(labels)
-            print('preds')
-            print(preds)
             true = torch.cat((true, labels), 0)
-            print(true)
             val_loss = criterion(preds, labels)
             val_acc = topk_accuracies(preds, labels, [1])[0]
 
@@ -1923,12 +1918,8 @@ def test_model(model_pth):
             pid = name.split('/')[-1][:-4]
 
             prob_preds = F.softmax(preds, dim=1)
-            print('prob_preds')
-            print(prob_preds)
             # Get predictions from the maximum value
             predicted = torch.max(prob_preds, 1)[1]
-            print('predicted')
-            print(predicted)
             pred = torch.cat((pred, predicted), 0)
 
             prob_normal = prob_preds[0, 0].item()
@@ -1974,6 +1965,27 @@ def test_model(model_pth):
     run["test/3CAP/TestLoss"].log(CAP_Ece)
     run["test/3CAP/TestAcc"].log(CAP_Eacc)
 
+    # code to run classification scores
+    from sklearn.metrics import classification_report
+    from sklearn.metrics import accuracy_score
+
+    true = true.to('cpu')
+    pred = pred.to('cpu')
+
+    target_names = ['NonCOVID', 'COVID', 'CAP']
+
+    # get precision, recall, f1-score
+    print(classification_report(true, pred, target_names=target_names, digits=4))
+
+    # get accuracy each individual class
+    from sklearn.metrics import confusion_matrix
+    matrix = confusion_matrix(true, pred)
+    print(matrix.diagonal()/matrix.sum(axis=1))
+
+    # get accuracy averaged out across class
+    print(accuracy_score(true, pred))
+
+
     # final_model_save_path = os.path.join(SNAPSHOT_HOME, 'ncov-final.pth')
     # print(f"Dump weights {final_model_save_path} to disk...")
     # torch.save(model.state_dict(), final_model_save_path)
@@ -1990,46 +2002,26 @@ test_model(model_lst[0])
 #     test_model(m)
 
 # code implementing currently
-# true = torch.tensor([]).to(device)
-# pred = torch.tensor([]).to(device)
-#
-#  # test for t
-# for i, data in enumerate(ctTestDataloader):
-#
-#     images = data['images'].to(device)
-#     labels = data['labels'].to(device)
-#
-#     outputs = r3d_18(images)
-#     true = torch.cat((true, labels), 0)
-#
-#
-#     # Get predictions from the maximum value
-#     predicted = torch.max(outputs.data, 1)[1]
-#     pred = torch.cat((pred, predicted), 0)
-#
-#     # early stop
-#     if i == 6:
-#         break
 
-# code to run classification scores
-from sklearn.metrics import classification_report
-from sklearn.metrics import accuracy_score
-
-true = true.to('cpu')
-pred = pred.to('cpu')
-
-target_names = ['NonCOVID', 'COVID', 'CAP']
-
-# get precision, recall, f1-score
-print(classification_report(true, pred, target_names=target_names, digits=4))
-
-# get accuracy each individual class
-from sklearn.metrics import confusion_matrix
-matrix = confusion_matrix(true, pred)
-print(matrix.diagonal()/matrix.sum(axis=1))
-
-# get accuracy averaged out across class
-print(accuracy_score(true, pred))
+# # code to run classification scores
+# from sklearn.metrics import classification_report
+# from sklearn.metrics import accuracy_score
+#
+# true = true.to('cpu')
+# pred = pred.to('cpu')
+#
+# target_names = ['NonCOVID', 'COVID', 'CAP']
+#
+# # get precision, recall, f1-score
+# print(classification_report(true, pred, target_names=target_names, digits=4))
+#
+# # get accuracy each individual class
+# from sklearn.metrics import confusion_matrix
+# matrix = confusion_matrix(true, pred)
+# print(matrix.diagonal()/matrix.sum(axis=1))
+#
+# # get accuracy averaged out across class
+# print(accuracy_score(true, pred))
 
 # # add comand line supports
 # import sys, getopt
