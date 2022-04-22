@@ -1926,7 +1926,7 @@ def test_model(model_pth):
             print('prob_preds')
             print(prob_preds)
             # Get predictions from the maximum value
-            predicted = torch.max(prob_pred, 1)[1]
+            predicted = torch.max(prob_preds, 1)[1]
             print('predicted')
             print(predicted)
             pred = torch.cat((pred, predicted), 0)
