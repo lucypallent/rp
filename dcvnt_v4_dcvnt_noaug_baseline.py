@@ -1869,7 +1869,7 @@ NUM_WORKERS = 2
 criterion = torch.nn.CrossEntropyLoss(reduction="mean")
 
 model = r3d_50
-# model = torch.nn.DataParallel(model).cuda()
+model = torch.nn.DataParallel(model).cuda()
 
 # model.load_state_dict(torch.load('ncov-Epoch_00140-auc95p9.pth'))
 model.train()
