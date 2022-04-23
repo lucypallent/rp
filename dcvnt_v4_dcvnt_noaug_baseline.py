@@ -2102,6 +2102,7 @@ for e in range(TRAIN_EPOCH):
     for i, (all_F, all_L, all_info) in enumerate(TrainLoader):
         optimizer.zero_grad()
         # tik = time.time()
+        all_F = torch.cat((all_F,all_F,all_F),1)
         print(type(all_F))
         print(all_F.size())
         preds = model([all_F.cuda(non_blocking=True)])   # I3D
