@@ -247,94 +247,94 @@ def Train_Collatefn(data):
 #     masks = np.asarray([np.asarray(x, dtype=np.uint8) for x in pil_masks], dtype=np.uint8)
 #     return imgs, masks
 # ############################ end of CTDataset functions
-#
-#
-#
-# def Train_Collatefn(data):
-#     all_F, all_L, all_info = [], [], []
-#
-#     for i in range(len(data)):
-#         all_F.append(data[i][0])
-#         all_L.append(data[i][1])
-#         all_info.append(data[i][2])
-#     all_F = torch.cat(all_F, dim=0)
-#     all_L = torch.cat(all_L, dim=0)
-#     return all_F, all_L, all_info
-#
-# # Rand_Affine
-# def Rand_Affine(img, ANGLE_R=10, TRANS_R=0.2, SCALE_R=0.3, SHEAR_R=15, FLIP_B=False):
-#     assert isinstance(img, Image.Image) or isinstance(img[0], Image.Image)
-#
-#     def affop(img, angle, translate, scale, shear, flip):
-#         if flip:
-#             img = img.transpose(Image.FLIP_LEFT_RIGHT)
-#         _img = TF.affine(img, angle, translate, scale, shear, resample=Image.BILINEAR)
-#         return _img
-#     if isinstance(img, list):
-#         w, h = img[0].size
-#     else:
-#         w, h = img.size
-#     angle = random.randint(-ANGLE_R, ANGLE_R)
-#     translate = (random.randint(int(-w*TRANS_R), int(w*TRANS_R)),
-#                  random.randint(int(-h*TRANS_R), int(h*TRANS_R)))  # x, y axis
-#     scale = 1 + round(random.uniform(-SCALE_R, SCALE_R), 1)
-#     shear = random.randint(-SHEAR_R, SHEAR_R)
-#     flip = FLIP_B and random.random() >= 0.5
-#     #print (angle, translate, scale, shear)
-#     if isinstance(img, list):
-#         img_L = []
-#         for i_img in img:
-#             i_img = affop(i_img, angle, translate, scale, shear, flip)
-#             img_L.append(i_img)
-#         return img_L
-#     else:
-#         _img = affop(img, angle, translate, scale, shear, flip)
-#         return _img
-#
-# #Rand_Crop
-# # img must be a np.uint8 TxHxW datatype numpy
-# def Rand_Crop(img, crop_size):
-#     shape = img.shape[1:]	# h, w
-#     crop_y = random.randint(0, shape[0] - crop_size[0])
-#     crop_x = random.randint(0, shape[1] - crop_size[1])
-#     crop_img = img[:, crop_y:crop_y+crop_size[0], crop_x:crop_x+crop_size[1]]
-#     return crop_img
-#
-# # Rand_Transforms
-# def Rand_Transforms(imgs, masks,
-#                     ANGLE_R=10, TRANS_R=0.1,
-#                     SCALE_R=0.2, SHEAR_R=10,
-#                     BRIGHT_R=0.5, CONTRAST_R=0.3):
-#     # To Image.Image instances
-#     pil_imgs = [Image.fromarray(x) for x in imgs]
-#     pil_masks = [Image.fromarray(x) for x in masks]
-#     w, h = pil_imgs[0].size
-#
-#     # Affine Transforms
-#     def affop(img, angle, translate, scale, shear):
-#         _img = TF.affine(img, angle, translate, scale, shear, resample=Image.BILINEAR)
-#         return _img
-#     angle = random.randint(-ANGLE_R, ANGLE_R)
-#     translate = (random.randint(int(-w*TRANS_R), int(w*TRANS_R)),
-#                  random.randint(int(-h*TRANS_R), int(h*TRANS_R)))  # x, y axis
-#     scale = 1 + round(random.uniform(-SCALE_R, SCALE_R), 1)
-#     shear = random.randint(-SHEAR_R, SHEAR_R)
-#     pil_imgs = [affop(x, angle, translate, scale, shear) for x in pil_imgs]
-#     pil_masks = [affop(x, angle, translate, scale, shear) for x in pil_masks]
-#
-#     # Color Transforms
-#     def colorop(img, bright, contrast):
-#         _img = TF.adjust_brightness(img, bright)
-#         _img = TF.adjust_contrast(_img, contrast)
-#         return _img
-#     bright = 1 + round(random.uniform(-BRIGHT_R, BRIGHT_R), 1)
-#     contrast = 1 + round(random.uniform(-CONTRAST_R, CONTRAST_R), 1)
-#     pil_imgs = [colorop(x, bright, contrast) for x in pil_imgs]
-#
-#     imgs = np.asarray([np.asarray(x, dtype=np.uint8) for x in pil_imgs], dtype=np.uint8)
-#     masks = np.asarray([np.asarray(x, dtype=np.uint8) for x in pil_masks], dtype=np.uint8)
-#     return imgs, masks
-############################ end of CTDataset functions
+
+
+
+def Train_Collatefn(data):
+    all_F, all_L, all_info = [], [], []
+
+    for i in range(len(data)):
+        all_F.append(data[i][0])
+        all_L.append(data[i][1])
+        all_info.append(data[i][2])
+    all_F = torch.cat(all_F, dim=0)
+    all_L = torch.cat(all_L, dim=0)
+    return all_F, all_L, all_info
+
+# Rand_Affine
+def Rand_Affine(img, ANGLE_R=10, TRANS_R=0.2, SCALE_R=0.3, SHEAR_R=15, FLIP_B=False):
+    assert isinstance(img, Image.Image) or isinstance(img[0], Image.Image)
+
+    def affop(img, angle, translate, scale, shear, flip):
+        if flip:
+            img = img.transpose(Image.FLIP_LEFT_RIGHT)
+        _img = TF.affine(img, angle, translate, scale, shear, resample=Image.BILINEAR)
+        return _img
+    if isinstance(img, list):
+        w, h = img[0].size
+    else:
+        w, h = img.size
+    angle = random.randint(-ANGLE_R, ANGLE_R)
+    translate = (random.randint(int(-w*TRANS_R), int(w*TRANS_R)),
+                 random.randint(int(-h*TRANS_R), int(h*TRANS_R)))  # x, y axis
+    scale = 1 + round(random.uniform(-SCALE_R, SCALE_R), 1)
+    shear = random.randint(-SHEAR_R, SHEAR_R)
+    flip = FLIP_B and random.random() >= 0.5
+    #print (angle, translate, scale, shear)
+    if isinstance(img, list):
+        img_L = []
+        for i_img in img:
+            i_img = affop(i_img, angle, translate, scale, shear, flip)
+            img_L.append(i_img)
+        return img_L
+    else:
+        _img = affop(img, angle, translate, scale, shear, flip)
+        return _img
+
+#Rand_Crop
+# img must be a np.uint8 TxHxW datatype numpy
+def Rand_Crop(img, crop_size):
+    shape = img.shape[1:]	# h, w
+    crop_y = random.randint(0, shape[0] - crop_size[0])
+    crop_x = random.randint(0, shape[1] - crop_size[1])
+    crop_img = img[:, crop_y:crop_y+crop_size[0], crop_x:crop_x+crop_size[1]]
+    return crop_img
+
+# Rand_Transforms
+def Rand_Transforms(imgs, masks,
+                    ANGLE_R=10, TRANS_R=0.1,
+                    SCALE_R=0.2, SHEAR_R=10,
+                    BRIGHT_R=0.5, CONTRAST_R=0.3):
+    # To Image.Image instances
+    pil_imgs = [Image.fromarray(x) for x in imgs]
+    pil_masks = [Image.fromarray(x) for x in masks]
+    w, h = pil_imgs[0].size
+
+    # Affine Transforms
+    def affop(img, angle, translate, scale, shear):
+        _img = TF.affine(img, angle, translate, scale, shear, resample=Image.BILINEAR)
+        return _img
+    angle = random.randint(-ANGLE_R, ANGLE_R)
+    translate = (random.randint(int(-w*TRANS_R), int(w*TRANS_R)),
+                 random.randint(int(-h*TRANS_R), int(h*TRANS_R)))  # x, y axis
+    scale = 1 + round(random.uniform(-SCALE_R, SCALE_R), 1)
+    shear = random.randint(-SHEAR_R, SHEAR_R)
+    pil_imgs = [affop(x, angle, translate, scale, shear) for x in pil_imgs]
+    pil_masks = [affop(x, angle, translate, scale, shear) for x in pil_masks]
+
+    # Color Transforms
+    def colorop(img, bright, contrast):
+        _img = TF.adjust_brightness(img, bright)
+        _img = TF.adjust_contrast(_img, contrast)
+        return _img
+    bright = 1 + round(random.uniform(-BRIGHT_R, BRIGHT_R), 1)
+    contrast = 1 + round(random.uniform(-CONTRAST_R, CONTRAST_R), 1)
+    pil_imgs = [colorop(x, bright, contrast) for x in pil_imgs]
+
+    imgs = np.asarray([np.asarray(x, dtype=np.uint8) for x in pil_imgs], dtype=np.uint8)
+    masks = np.asarray([np.asarray(x, dtype=np.uint8) for x in pil_masks], dtype=np.uint8)
+    return imgs, masks
+########################### end of CTDataset functions
 
 ############################ start of defining CTDataset
 readvdnames = lambda x: open(x).read().rstrip().split('\n')
@@ -437,103 +437,103 @@ class CTDataset(data.Dataset):
 ############################ start of defining CTDataset
 readvdnames = lambda x: open(x).read().rstrip().split('\n')
 
-class CTDataset(data.Dataset):
-    def __init__(self, data_home="",
-                       split="train",
-                       fold_id=None,
-                       crop_size=(196, 288),
-                       clip_range=(0.2, 0.7),   # useless
-                       logger=None):
-
-        _embo_f = os.path.join(data_home, "ImageSets", "ncov_{}.txt".format(split))
-        _norm_f = os.path.join(data_home, "ImageSets", "normal_{}.txt".format(split))
-        _cap_f = os.path.join(data_home, "ImageSets", "cap_{}.txt".format(split))
-        # Build a dictionary to record {path - label} pair
-        meta_pos   = [[os.path.join(data_home, "NpyData-size224x336-test2", "{}.npy".format(x)), 1]
-                                for x in readvdnames(_embo_f)]
-
-        meta_neg   = [[os.path.join(data_home, "NpyData-size224x336-test2", "{}.npy".format(x)), 0]
-                                for x in readvdnames(_norm_f)]
-
-        meta_cap   = [[os.path.join(data_home, "NpyData-size224x336-test2", "{}.npy".format(x)), 2]
-                                for x in readvdnames(_cap_f)]
-
-        # not in the baseline implementation
-        # if split == "train":
-        #     lmg = len(meta_neg)
-        #     if len(meta_pos) > len(meta_neg):
-        #         for i in range(len(meta_pos) - len(meta_neg)):
-        #             meta_neg.append(random.choice(meta_neg))
-        #     else:
-        #         for i in range(len(meta_neg) - len(meta_pos)):
-        #             meta_pos.append(random.choice(meta_pos))
-        #     if len(meta_cap) > lmg:
-        #         for i in range(len(meta_cap) - len(meta_neg)):
-        #             meta_neg.append(random.choice(meta_cap))
-        #     else:
-        #         for i in range(len(meta_neg) - len(meta_cap)):
-        #             meta_cap.append(random.choice(meta_cap))
-
-        meta = meta_pos + meta_neg + meta_cap
-
-        #print (meta)
-        self.data_home = data_home
-        self.split = split
-        self.meta = meta
-        self.crop_size = crop_size
-        self.clip_range = clip_range
-        #print (self.meta)
-        self.data_len = len(self.meta)
-
-    def __getitem__(self, index):
-        data_path, label = self.meta[index]
-        mask_path = data_path.replace('.npy', '-dlmask.npy')
-
-        cta_images = np.load(data_path)
-        cta_masks = np.load(mask_path)
-
-        num_frames = len(cta_images)
-        shape = cta_images.shape
-
-        # Data augmentation
-        if self.split == "train":
-            cta_images, cta_masks = Rand_Transforms(cta_images, cta_masks, ANGLE_R=10, TRANS_R=0.1, SCALE_R=0.2, SHEAR_R=10,
-                                             BRIGHT_R=0.5, CONTRAST_R=0.3)
-
-        # To Tensor and Resize
-        cta_images = np.asarray(cta_images, dtype=np.float32)
-        cta_images = cta_images / 255.
-
-        images = np.concatenate([cta_images[None, :, :, :], cta_masks[None, :, :, :]], axis=0)
-        label = np.uint8([label])
-
-        info = {"name": data_path, "num_frames": num_frames, "shape": shape}
-
-        th_img = torch.unsqueeze(torch.from_numpy(images.copy()), 0).float()
-        th_label = torch.from_numpy(label.copy()).long()
-
-        return th_img, th_label, info
-
-    def __len__(self):
-        return self.data_len
-
-    def debug(self, index):
-        import cv2
-        from zqlib import assemble_multiple_images
-        th_img, th_label, info = self.__getitem__(index)
-        # th_img: NxCxTxHxW
-
-        img, label = th_img.numpy()[0, 0, :], th_label.numpy()[0]
-        n, h, w = img.shape
-        #if n % 2 != 0:
-        #    img = np.concatenate([img, np.zeros((1, h, w))], axis=0)
-        visual_img = assemble_multiple_images(img*255, number_width=16, pad_index=True)
-        os.makedirs("debug", exist_ok=True)
-        debug_f = os.path.join("debug/{}.jpg".format(\
-                            info["name"].replace('/', '_').replace('.', '')))
-        print ("[DEBUG] Writing to {}".format(debug_f))
-        cv2.imwrite(debug_f, visual_img)
-############################ end of defining CTDataset
+# class CTDataset(data.Dataset):
+#     def __init__(self, data_home="",
+#                        split="train",
+#                        fold_id=None,
+#                        crop_size=(196, 288),
+#                        clip_range=(0.2, 0.7),   # useless
+#                        logger=None):
+#
+#         _embo_f = os.path.join(data_home, "ImageSets", "ncov_{}.txt".format(split))
+#         _norm_f = os.path.join(data_home, "ImageSets", "normal_{}.txt".format(split))
+#         _cap_f = os.path.join(data_home, "ImageSets", "cap_{}.txt".format(split))
+#         # Build a dictionary to record {path - label} pair
+#         meta_pos   = [[os.path.join(data_home, "NpyData-size224x336-test2", "{}.npy".format(x)), 1]
+#                                 for x in readvdnames(_embo_f)]
+#
+#         meta_neg   = [[os.path.join(data_home, "NpyData-size224x336-test2", "{}.npy".format(x)), 0]
+#                                 for x in readvdnames(_norm_f)]
+#
+#         meta_cap   = [[os.path.join(data_home, "NpyData-size224x336-test2", "{}.npy".format(x)), 2]
+#                                 for x in readvdnames(_cap_f)]
+#
+#         # not in the baseline implementation
+#         # if split == "train":
+#         #     lmg = len(meta_neg)
+#         #     if len(meta_pos) > len(meta_neg):
+#         #         for i in range(len(meta_pos) - len(meta_neg)):
+#         #             meta_neg.append(random.choice(meta_neg))
+#         #     else:
+#         #         for i in range(len(meta_neg) - len(meta_pos)):
+#         #             meta_pos.append(random.choice(meta_pos))
+#         #     if len(meta_cap) > lmg:
+#         #         for i in range(len(meta_cap) - len(meta_neg)):
+#         #             meta_neg.append(random.choice(meta_cap))
+#         #     else:
+#         #         for i in range(len(meta_neg) - len(meta_cap)):
+#         #             meta_cap.append(random.choice(meta_cap))
+#
+#         meta = meta_pos + meta_neg + meta_cap
+#
+#         #print (meta)
+#         self.data_home = data_home
+#         self.split = split
+#         self.meta = meta
+#         self.crop_size = crop_size
+#         self.clip_range = clip_range
+#         #print (self.meta)
+#         self.data_len = len(self.meta)
+#
+#     def __getitem__(self, index):
+#         data_path, label = self.meta[index]
+#         mask_path = data_path.replace('.npy', '-dlmask.npy')
+#
+#         cta_images = np.load(data_path)
+#         cta_masks = np.load(mask_path)
+#
+#         num_frames = len(cta_images)
+#         shape = cta_images.shape
+#
+#         # Data augmentation
+#         if self.split == "train":
+#             cta_images, cta_masks = Rand_Transforms(cta_images, cta_masks, ANGLE_R=10, TRANS_R=0.1, SCALE_R=0.2, SHEAR_R=10,
+#                                              BRIGHT_R=0.5, CONTRAST_R=0.3)
+#
+#         # To Tensor and Resize
+#         cta_images = np.asarray(cta_images, dtype=np.float32)
+#         cta_images = cta_images / 255.
+#
+#         images = np.concatenate([cta_images[None, :, :, :], cta_masks[None, :, :, :]], axis=0)
+#         label = np.uint8([label])
+#
+#         info = {"name": data_path, "num_frames": num_frames, "shape": shape}
+#
+#         th_img = torch.unsqueeze(torch.from_numpy(images.copy()), 0).float()
+#         th_label = torch.from_numpy(label.copy()).long()
+#
+#         return th_img, th_label, info
+#
+#     def __len__(self):
+#         return self.data_len
+#
+#     def debug(self, index):
+#         import cv2
+#         from zqlib import assemble_multiple_images
+#         th_img, th_label, info = self.__getitem__(index)
+#         # th_img: NxCxTxHxW
+#
+#         img, label = th_img.numpy()[0, 0, :], th_label.numpy()[0]
+#         n, h, w = img.shape
+#         #if n % 2 != 0:
+#         #    img = np.concatenate([img, np.zeros((1, h, w))], axis=0)
+#         visual_img = assemble_multiple_images(img*255, number_width=16, pad_index=True)
+#         os.makedirs("debug", exist_ok=True)
+#         debug_f = os.path.join("debug/{}.jpg".format(\
+#                             info["name"].replace('/', '_').replace('.', '')))
+#         print ("[DEBUG] Writing to {}".format(debug_f))
+#         cv2.imwrite(debug_f, visual_img)
+# ############################ end of defining CTDataset
 
 
 # if __name__ == "__main__":
