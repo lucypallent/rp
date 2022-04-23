@@ -2344,8 +2344,7 @@ for e in range(TRAIN_EPOCH):
 SAMPLE_NUMBER = -1
 
 Testset = CTDataset(data_home=DATA_ROOT,
-                               split='valid',
-                               folder=folder_pth)#, trying something
+                               split='test')#,
                               #  sample_number=SAMPLE_NUMBER)
 
 criterion = torch.nn.CrossEntropyLoss(reduction="mean")
