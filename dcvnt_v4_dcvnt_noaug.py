@@ -395,7 +395,7 @@ class CTDataset(data.Dataset):
         #         for i in range(len(meta_non_pneum) - len(meta_pneum)):
         #             meta_pneum.append(random.choice(meta_pneum))
 
-        meta = meta_pneum + meta_non_pneum
+        # meta = meta_pneum + meta_non_pneum
 
         #print (meta)
         self.data_home = data_home
