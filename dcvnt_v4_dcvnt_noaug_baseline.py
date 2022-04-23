@@ -2372,7 +2372,8 @@ criterion = torch.nn.CrossEntropyLoss(reduction="mean")
 with torch.no_grad():
     for i, (all_F, all_L, all_info) in enumerate(TestLoader):
         labels = all_L.cuda()
-        preds = model([all_F.cuda(non_blocking=True)])
+        all_F = torch.cat((all_F,all_F,all_F),1)
+        preds = model(all_F.cuda(non_blocking=True))
 
         # preds = model([all_F.cuda(non_blocking=True)])   # I3D
         true = torch.cat((true, labels), 0)
