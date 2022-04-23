@@ -214,6 +214,9 @@ def Rand_Transforms(imgs, masks,
                     BRIGHT_R=0.5, CONTRAST_R=0.3):
     # To Image.Image instances
     pil_imgs = [Image.fromarray(x) for x in imgs]
+    print('--------------------------------------------------------------')
+    print(type(pil_imgs))
+
     pil_masks = [Image.fromarray(x) for x in masks]
     w, h = pil_imgs[0].size
 
@@ -236,7 +239,6 @@ def Rand_Transforms(imgs, masks,
         return _img
     bright = 1 + round(random.uniform(-BRIGHT_R, BRIGHT_R), 1)
     contrast = 1 + round(random.uniform(-CONTRAST_R, CONTRAST_R), 1)
-    print(type(pil_imgs))
     pil_imgs = [colorop(x, bright, contrast) for x in pil_imgs]
 
     imgs = np.asarray([np.asarray(x, dtype=np.uint8) for x in pil_imgs], dtype=np.uint8)
