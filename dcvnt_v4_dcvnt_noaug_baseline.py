@@ -1922,41 +1922,41 @@ ValidLoader = torch.utils.data.DataLoader(Validset,
 #
 # print('2nd valid loader??')
 
-# with torch.no_grad():
-#     for i, (all_F, all_L, all_info) in enumerate(ValidLoader):
-#         labels = all_L.cuda()
-#         all_F = torch.cat((all_F, all_F, all_F), 1)
-#         print(all_F.size())
-#         # preds = model([all_F.cuda()])
-#         preds = model(all_F.cuda())
-#         print(preds)
-#         print(labels)
-#
-#         # val_loss = criterion(preds, labels)
-#         val_acc = topk_accuracies(preds, labels, [1])[0]
-#
-#         name = all_info[0]["name"]
-#         pid = name.split('/')[-1][:-4]
-#
-#         prob_preds = F.softmax(preds, dim=1)
-#         prob_normal = prob_preds[0, 0].item()
-#         prob_ncov = prob_preds[0, 1].item()
-#         prob_cap =  prob_preds[0, 2].item() # this should work
-#         gt = labels.item()
-#
-#         gts.append(gt)
-#         pcovs.append(prob_ncov)
-#
-#         print ("{} {} {} {} {} {}".format(all_info[0]["name"], pid, prob_normal, prob_ncov, prob_cap, labels.item()))
-#
-#         # Val_CE.write(val_loss); Val_Acc.write(val_acc)
-#
-# # from metrics import sensitivity_specificity
-# Ece, Eacc = Val_CE.read(), Val_Acc.read()
-# gts, pcovs = np.asarray(gts), np.asarray(pcovs)
-# _, _, Eauc = sensitivity_specificity(gts, pcovs)
-# e = 0
-# print("VALIDATION | E [{}] | CE: {:1.5f} | ValAcc: {:1.3f} | ValAUC: {:1.3f}".format(e, Ece, Eacc, Eauc))
+with torch.no_grad():
+    for i, (all_F, all_L, all_info) in enumerate(ValidLoader):
+        labels = all_L.cuda()
+        all_F = torch.cat((all_F, all_F, all_F), 1)
+        print(all_F.size())
+        # preds = model([all_F.cuda()])
+        preds = model(all_F.cuda())
+        print(preds)
+        print(labels)
+
+        # val_loss = criterion(preds, labels)
+        val_acc = topk_accuracies(preds, labels, [1])[0]
+
+        name = all_info[0]["name"]
+        pid = name.split('/')[-1][:-4]
+
+        prob_preds = F.softmax(preds, dim=1)
+        prob_normal = prob_preds[0, 0].item()
+        prob_ncov = prob_preds[0, 1].item()
+        prob_cap =  prob_preds[0, 2].item() # this should work
+        gt = labels.item()
+
+        gts.append(gt)
+        pcovs.append(prob_ncov)
+
+        print ("{} {} {} {} {} {}".format(all_info[0]["name"], pid, prob_normal, prob_ncov, prob_cap, labels.item()))
+
+        # Val_CE.write(val_loss); Val_Acc.write(val_acc)
+
+# from metrics import sensitivity_specificity
+Ece, Eacc = Val_CE.read(), Val_Acc.read()
+gts, pcovs = np.asarray(gts), np.asarray(pcovs)
+_, _, Eauc = sensitivity_specificity(gts, pcovs)
+e = 0
+print("VALIDATION | E [{}] | CE: {:1.5f} | ValAcc: {:1.3f} | ValAUC: {:1.3f}".format(e, Ece, Eacc, Eauc))
 
 #
 # below commented out just checking above works
