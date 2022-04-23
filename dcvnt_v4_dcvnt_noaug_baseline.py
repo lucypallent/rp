@@ -324,6 +324,7 @@ for p in r3d_50.parameters():
 # change to classify for 3 classes
 r3d_50.fc = nn.Linear(r3d_50.fc.in_features, 3).to(device) # 2 classes
 
+print(r3d_50)
 DATA_ROOT = 'dataset4/NCOV-BF'
 
 # dataset3/NCOV-BF/
@@ -1868,10 +1869,11 @@ NUM_WORKERS = 2
 criterion = torch.nn.CrossEntropyLoss(reduction="mean")
 
 model = r3d_50
-model = torch.nn.DataParallel(model).cuda()
+# model = torch.nn.DataParallel(model).cuda()
 
 # model.load_state_dict(torch.load('ncov-Epoch_00140-auc95p9.pth'))
 model.train()
+print(model)
 
 ValidLoader = torch.utils.data.DataLoader(Validset,
                                     batch_size=1,
