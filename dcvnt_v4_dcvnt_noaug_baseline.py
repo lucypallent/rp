@@ -319,8 +319,8 @@ r3d_50.eval()
 r3d_50 = r3d_50.cuda()
 
 # so we're doing feature extraction
-for p in r3d_50.parameters():
-    p.requires_grad = False
+# for p in r3d_50.parameters():
+#     p.requires_grad = False
 
 # change to classify for 3 classes
 r3d_50.fc = nn.Linear(r3d_50.fc.in_features, 3).to(device) # 2 classes
