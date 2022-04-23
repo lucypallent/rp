@@ -2169,33 +2169,36 @@ def main(argv):
     model_covcap_folder = 'experiments_v4_dcvnt_noaug_imp10_infmask0010_t3_1pc_covcap_ft' # sys.argv[3]
     # model_covcap_pth = 'experiments_v4_dcvnt_noaug_imp10_infmask0010_t2_1pc_covcap_ft/ncov-Epoch_00005.pth'
 
-    fldr_lst = ['experiments_v4_dcvnt_noaug_imp10_infmask0010_t2_1pc',
-                'experiments_v4_dcvnt_noaug_imp10_infmask0010_t3_1pc',
-                'experiments_v4_dcvnt_noaug_imp10_infmask0010_t4_1pc',
-                'experiments_v4_dcvnt_noaug_imp10_infmask0010_t5_1pc']
+    # fldr_lst = ['experiments_v4_dcvnt_noaug_imp10_infmask0010_t2_1pc',
+    #             'experiments_v4_dcvnt_noaug_imp10_infmask0010_t3_1pc',
+    #             'experiments_v4_dcvnt_noaug_imp10_infmask0010_t4_1pc',
+    #             'experiments_v4_dcvnt_noaug_imp10_infmask0010_t5_1pc']
 
-    for f in fldr_lst:
-        model_folder = f
-        print('Model is =====> ' + str(model_folder))
-        print('Data is =====> ' + str(data_folder))
+    # for f in fldr_lst:
+    # model_folder = f
+    # print('Model is =====> ' + str(model_folder))
+    # print('Data is =====> ' + str(data_folder))
 
 
-        # get the list of models in the directory
-        # model_folder = 'experiments_v4_dcvnt_noaug_imp10_infmask0010_t2_1pc'
-        models = [m for m in os.listdir(model_folder) if os.path.isfile(os.path.join(model_folder, m))]
-        model_lst = [model_folder + '/' + m for m in models]
+    # get the list of models in the directory
+    # model_folder = 'experiments_v4_dcvnt_noaug_imp10_infmask0010_t2_1pc'
+    # models = [m for m in os.listdir(model_folder) if os.path.isfile(os.path.join(model_folder, m))]
+    # model_lst = [model_folder + '/' + m for m in models]
 
-        models_cc = [m for m in os.listdir(model_covcap_folder) if os.path.isfile(os.path.join(model_covcap_folder, m))]
-        model_lst_cc = [model_covcap_folder + '/' + m for m in models_cc]
+    models_cc = [m for m in os.listdir(model_covcap_folder) if os.path.isfile(os.path.join(model_covcap_folder, m))]
+    model_lst_cc = [model_covcap_folder + '/' + m for m in models_cc]
 
-        # # # DEBUG:
-        # test_model(model_lst[0])
+    # # # DEBUG:
+    # test_model(model_lst[0])
 
-        # for m in model_lst:
-        m = 'experiments_v4_dcvnt_noaug_imp10_infmask0010_t3_1pc/ncov-best.pth'
-        for mcc in model_lst_cc:
-            # test_model(m, 'NpyData-size224x336-imp10-infmask0010-test-1pc')
-            test_model(m, data_folder, run, mcc)
+    # for m in model_lst:
+    m = 'experiments_v4_dcvnt_noaug_imp10_infmask0010_t3_1pc/ncov-best.pth'
+    for i, mcc in enumerate(model_lst_cc):
+        # test_model(m, 'NpyData-size224x336-imp10-infmask0010-test-1pc')
+        print('this is run =>' + str(i))
+        print('covcap modle is =>' + mcc)
+        print('multiclass classifier is =>' + m)
+        test_model(m, data_folder, run, mcc)
 
 if __name__ == '__main__':
     main(sys.argv[1:])
