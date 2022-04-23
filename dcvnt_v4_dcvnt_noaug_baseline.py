@@ -2103,6 +2103,7 @@ for e in range(TRAIN_EPOCH):
         optimizer.zero_grad()
         # tik = time.time()
         print(type(all_F))
+        print(all_F.size())
         preds = model([all_F.cuda(non_blocking=True)])   # I3D
         labels = all_L.cuda(non_blocking=True)
         loss = criterion(preds, labels)
