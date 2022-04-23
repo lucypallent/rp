@@ -270,13 +270,13 @@ class CTDataset(data.Dataset):
         _norm_f = os.path.join(data_home, "ImageSets", "normal_{}.txt".format(split))
         _cap_f = os.path.join(data_home, "ImageSets", "cap_{}.txt".format(split))
         # Build a dictionary to record {path - label} pair
-        meta_pos   = [[os.path.join(data_home, "NpyData-size224x336", "{}.npy".format(x)), 1]
+        meta_pos   = [[os.path.join(data_home, "NpyData-size224x336-test2", "{}.npy".format(x)), 1]
                                 for x in readvdnames(_embo_f)]
 
-        meta_neg   = [[os.path.join(data_home, "NpyData-size224x336", "{}.npy".format(x)), 0]
+        meta_neg   = [[os.path.join(data_home, "NpyData-size224x336-test2", "{}.npy".format(x)), 0]
                                 for x in readvdnames(_norm_f)]
 
-        meta_cap   = [[os.path.join(data_home, "NpyData-size224x336", "{}.npy".format(x)), 2]
+        meta_cap   = [[os.path.join(data_home, "NpyData-size224x336-test2", "{}.npy".format(x)), 2]
                                 for x in readvdnames(_cap_f)]
 
         if split == "train":
