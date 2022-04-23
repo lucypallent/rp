@@ -1881,10 +1881,10 @@ ValidLoader = torch.utils.data.DataLoader(Validset,
                                     collate_fn=Train_Collatefn,
                                     shuffle=False,)
 
-# Val_CE, Val_Acc = [ScalarContainer() for _ in range(2)]
-#
-# gts, pcovs = [], []
-#
+Val_CE, Val_Acc = [ScalarContainer() for _ in range(2)]
+
+gts, pcovs = [], []
+
 # # copied from metrics
 # def sensitivity_specificity(y_true, y_score):
 #     desc_score_indices = np.argsort(y_score, kind="mergesort")[::-1]
