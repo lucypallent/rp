@@ -736,6 +736,8 @@ for i, data in enumerate(ctTestDataloader):
     images = data['images'].to(device)
     labels = data['labels'].to(device)
 
+    print(images.size())
+
     outputs = r3d50_1(images)
     true = torch.cat((true, labels), 0)
 
