@@ -47,6 +47,7 @@ import torch
 import random
 from scipy.ndimage import zoom
 import neptune.new as neptune
+from neptune.new.types import File
 
 
 random.seed(0); torch.manual_seed(0); np.random.seed(0)
@@ -2053,6 +2054,10 @@ for e in range(TRAIN_EPOCH):
     run["training/batch/epoch"].log(e)
     for i, (all_F, all_L, all_info) in enumerate(TrainLoader):
         optimizer.zero_grad()
+
+        # display image
+        run['training/batch/img'].log(File.as_image(all_F[0,0,0]))
+        run['training/batch/msk'].log(File.as_image(all_F[0,1,0]))
 
         # tik = time.time()
         preds = model([all_F.cuda(non_blocking=True)])   # I3D
