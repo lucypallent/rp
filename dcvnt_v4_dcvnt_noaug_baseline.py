@@ -1670,6 +1670,7 @@ with torch.no_grad():
     for i, (all_F, all_L, all_info) in enumerate(ValidLoader):
         labels = all_L.cuda()
         print(all_F)
+        print(all_F.size())
         # preds = model([all_F.cuda()])
         preds = model(all_F.cuda())
         print(preds)
