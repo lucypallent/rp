@@ -2369,6 +2369,10 @@ optimizer = torch.optim.Adam(model.parameters(), lr=LEARNING_RATE, weight_decay=
 lr_scher = torch.optim.lr_scheduler.ExponentialLR(optimizer, gamma=LR_DECAY, last_epoch=-1)
 criterion = torch.nn.CrossEntropyLoss(reduction="mean")
 
+true = torch.tensor([]).cuda()
+pred = torch.tensor([]).cuda()
+pred_probs = torch.tensor([]).cuda()
+
 with torch.no_grad():
     for i, (all_F, all_L, all_info) in enumerate(TestLoader):
         labels = all_L.cuda()
