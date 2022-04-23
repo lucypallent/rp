@@ -1672,7 +1672,7 @@ with torch.no_grad():
         print(all_F)
         print(all_F.size())
         # preds = model([all_F.cuda()])
-        preds = model(all_F.cuda())
+        preds = model(all_F[0].cuda())
         print(preds)
         print(labels)
 
