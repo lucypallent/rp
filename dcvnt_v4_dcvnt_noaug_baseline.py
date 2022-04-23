@@ -1986,7 +1986,7 @@ LR_DECAY = 1
 INIT_MODEL_PATH = 'ncov-Epoch_00140-auc95p9.pth'
 INIT_MODEL_STRICT = "True"
 SNAPSHOT_FREQ = 5
-TRAIN_EPOCH = 200 #, will likely stop it early
+TRAIN_EPOCH = 10 #, will likely stop it early
 SNAPSHOT_HOME = "experiments_v4_baseline_r3d50"
 SNAPSHOT_MODEL_TPL = "ncov-Epoch_{:05d}.pth"
 
@@ -2096,7 +2096,7 @@ run["config/hyperparameters"] = parameters
 ############### Training ###############
 print('2nd model training')
 best_acc = 0.0
-TRAIN_EPOCH = 5
+TRAIN_EPOCH = 10
 
 for e in range(TRAIN_EPOCH):
     run["training/batch/epoch"].log(e)
