@@ -2391,19 +2391,19 @@ with torch.no_grad():
 
         # Get predictions from the maximum value
         predicted = torch.max(prob_preds, 1)[1]
-        if predicted != 0:
-            # cases where it is not equal to 0
-            pred_covcap = model_covcap([all_F.cuda(non_blocking=True)])
-            prob_preds_covcap = F.softmax(pred_covcap, dim=1)
-            print(prob_preds)
-            print(prob_preds_covcap)
-            prob_norm = torch.tensor([[0]]).cuda()
-            prob_preds_covcap = torch.cat((prob_norm, prob_preds_covcap), 1)
-            prob_preds = prob_preds + prob_preds_covcap
-            predicted = torch.max(prob_preds, 1)[1]
-            preds_norm = torch.tensor([[0]]).cuda()
-            preds_covcap = torch.cat((preds_norm, pred_covcap), 1)
-            preds = preds + preds_covcap
+        # if predicted != 0:
+        #     # cases where it is not equal to 0
+        #     pred_covcap = model_covcap([all_F.cuda(non_blocking=True)])
+        #     prob_preds_covcap = F.softmax(pred_covcap, dim=1)
+        #     print(prob_preds)
+        #     print(prob_preds_covcap)
+        #     prob_norm = torch.tensor([[0]]).cuda()
+        #     prob_preds_covcap = torch.cat((prob_norm, prob_preds_covcap), 1)
+        #     prob_preds = prob_preds + prob_preds_covcap
+        #     predicted = torch.max(prob_preds, 1)[1]
+        #     preds_norm = torch.tensor([[0]]).cuda()
+        #     preds_covcap = torch.cat((preds_norm, pred_covcap), 1)
+        #     preds = preds + preds_covcap
 
         val_loss = criterion(preds, labels)
         val_acc = topk_accuracies(preds, labels, [1])[0]
