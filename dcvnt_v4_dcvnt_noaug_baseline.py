@@ -1922,6 +1922,7 @@ def sensitivity_specificity(y_true, y_score):
 #
 # print('2nd valid loader??')
 
+model.train()
 # with torch.no_grad():
 for i, (all_F, all_L, all_info) in enumerate(ValidLoader):
     labels = all_L.cuda()
@@ -2106,7 +2107,7 @@ for e in range(TRAIN_EPOCH):
         print(type(all_F))
         print(all_F.size())
         print(model)
-        preds = model([all_F.cuda(non_blocking=True)])   # I3D
+        preds = model(all_F.cuda(non_blocking=True))   # I3D
         labels = all_L.cuda(non_blocking=True)
         loss = criterion(preds, labels)
 
