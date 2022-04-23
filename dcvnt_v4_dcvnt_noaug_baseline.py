@@ -2105,6 +2105,7 @@ for e in range(TRAIN_EPOCH):
         all_F = torch.cat((all_F,all_F,all_F),1)
         print(type(all_F))
         print(all_F.size())
+        print(model)
         preds = model([all_F.cuda(non_blocking=True)])   # I3D
         labels = all_L.cuda(non_blocking=True)
         loss = criterion(preds, labels)
