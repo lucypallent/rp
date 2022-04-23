@@ -435,80 +435,80 @@ def Train_Collatefn(data):
     all_L = torch.cat(all_L, dim=0)
     return all_F, all_L, all_info
 
-# Rand_Affine
-def Rand_Affine(img, ANGLE_R=10, TRANS_R=0.2, SCALE_R=0.3, SHEAR_R=15, FLIP_B=False):
-    assert isinstance(img, Image.Image) or isinstance(img[0], Image.Image)
+# # Rand_Affine
+# def Rand_Affine(img, ANGLE_R=10, TRANS_R=0.2, SCALE_R=0.3, SHEAR_R=15, FLIP_B=False):
+#     assert isinstance(img, Image.Image) or isinstance(img[0], Image.Image)
+#
+#     def affop(img, angle, translate, scale, shear, flip):
+#         if flip:
+#             img = img.transpose(Image.FLIP_LEFT_RIGHT)
+#         _img = TF.affine(img, angle, translate, scale, shear, resample=Image.BILINEAR)
+#         return _img
+#     if isinstance(img, list):
+#         w, h = img[0].size
+#     else:
+#         w, h = img.size
+#     angle = random.randint(-ANGLE_R, ANGLE_R)
+#     translate = (random.randint(int(-w*TRANS_R), int(w*TRANS_R)),
+#                  random.randint(int(-h*TRANS_R), int(h*TRANS_R)))  # x, y axis
+#     scale = 1 + round(random.uniform(-SCALE_R, SCALE_R), 1)
+#     shear = random.randint(-SHEAR_R, SHEAR_R)
+#     flip = FLIP_B and random.random() >= 0.5
+#     #print (angle, translate, scale, shear)
+#     if isinstance(img, list):
+#         img_L = []
+#         for i_img in img:
+#             i_img = affop(i_img, angle, translate, scale, shear, flip)
+#             img_L.append(i_img)
+#         return img_L
+#     else:
+#         _img = affop(img, angle, translate, scale, shear, flip)
+#         return _img
 
-    def affop(img, angle, translate, scale, shear, flip):
-        if flip:
-            img = img.transpose(Image.FLIP_LEFT_RIGHT)
-        _img = TF.affine(img, angle, translate, scale, shear, resample=Image.BILINEAR)
-        return _img
-    if isinstance(img, list):
-        w, h = img[0].size
-    else:
-        w, h = img.size
-    angle = random.randint(-ANGLE_R, ANGLE_R)
-    translate = (random.randint(int(-w*TRANS_R), int(w*TRANS_R)),
-                 random.randint(int(-h*TRANS_R), int(h*TRANS_R)))  # x, y axis
-    scale = 1 + round(random.uniform(-SCALE_R, SCALE_R), 1)
-    shear = random.randint(-SHEAR_R, SHEAR_R)
-    flip = FLIP_B and random.random() >= 0.5
-    #print (angle, translate, scale, shear)
-    if isinstance(img, list):
-        img_L = []
-        for i_img in img:
-            i_img = affop(i_img, angle, translate, scale, shear, flip)
-            img_L.append(i_img)
-        return img_L
-    else:
-        _img = affop(img, angle, translate, scale, shear, flip)
-        return _img
-
-#Rand_Crop
-# img must be a np.uint8 TxHxW datatype numpy
-def Rand_Crop(img, crop_size):
-    shape = img.shape[1:]	# h, w
-    crop_y = random.randint(0, shape[0] - crop_size[0])
-    crop_x = random.randint(0, shape[1] - crop_size[1])
-    crop_img = img[:, crop_y:crop_y+crop_size[0], crop_x:crop_x+crop_size[1]]
-    return crop_img
-
-# Rand_Transforms
-def Rand_Transforms(imgs, masks,
-                    ANGLE_R=10, TRANS_R=0.1,
-                    SCALE_R=0.2, SHEAR_R=10,
-                    BRIGHT_R=0.5, CONTRAST_R=0.3):
-    # To Image.Image instances
-    pil_imgs = [Image.fromarray(x) for x in imgs]
-    pil_masks = [Image.fromarray(x) for x in masks]
-    w, h = pil_imgs[0].size
-
-    # Affine Transforms
-    def affop(img, angle, translate, scale, shear):
-        _img = TF.affine(img, angle, translate, scale, shear, resample=Image.BILINEAR)
-        return _img
-    angle = random.randint(-ANGLE_R, ANGLE_R)
-    translate = (random.randint(int(-w*TRANS_R), int(w*TRANS_R)),
-                 random.randint(int(-h*TRANS_R), int(h*TRANS_R)))  # x, y axis
-    scale = 1 + round(random.uniform(-SCALE_R, SCALE_R), 1)
-    shear = random.randint(-SHEAR_R, SHEAR_R)
-    pil_imgs = [affop(x, angle, translate, scale, shear) for x in pil_imgs]
-    pil_masks = [affop(x, angle, translate, scale, shear) for x in pil_masks]
-
-    # Color Transforms
-    def colorop(img, bright, contrast):
-        _img = TF.adjust_brightness(img, bright)
-        _img = TF.adjust_contrast(_img, contrast)
-        return _img
-    bright = 1 + round(random.uniform(-BRIGHT_R, BRIGHT_R), 1)
-    contrast = 1 + round(random.uniform(-CONTRAST_R, CONTRAST_R), 1)
-    pil_imgs = [colorop(x, bright, contrast) for x in pil_imgs]
-
-    imgs = np.asarray([np.asarray(x, dtype=np.uint8) for x in pil_imgs], dtype=np.uint8)
-    masks = np.asarray([np.asarray(x, dtype=np.uint8) for x in pil_masks], dtype=np.uint8)
-    return imgs, masks
-############################ end of CTDataset functions
+# #Rand_Crop
+# # img must be a np.uint8 TxHxW datatype numpy
+# def Rand_Crop(img, crop_size):
+#     shape = img.shape[1:]	# h, w
+#     crop_y = random.randint(0, shape[0] - crop_size[0])
+#     crop_x = random.randint(0, shape[1] - crop_size[1])
+#     crop_img = img[:, crop_y:crop_y+crop_size[0], crop_x:crop_x+crop_size[1]]
+#     return crop_img
+#
+# # Rand_Transforms
+# def Rand_Transforms(imgs, masks,
+#                     ANGLE_R=10, TRANS_R=0.1,
+#                     SCALE_R=0.2, SHEAR_R=10,
+#                     BRIGHT_R=0.5, CONTRAST_R=0.3):
+#     # To Image.Image instances
+#     pil_imgs = [Image.fromarray(x) for x in imgs]
+#     pil_masks = [Image.fromarray(x) for x in masks]
+#     w, h = pil_imgs[0].size
+#
+#     # Affine Transforms
+#     def affop(img, angle, translate, scale, shear):
+#         _img = TF.affine(img, angle, translate, scale, shear, resample=Image.BILINEAR)
+#         return _img
+#     angle = random.randint(-ANGLE_R, ANGLE_R)
+#     translate = (random.randint(int(-w*TRANS_R), int(w*TRANS_R)),
+#                  random.randint(int(-h*TRANS_R), int(h*TRANS_R)))  # x, y axis
+#     scale = 1 + round(random.uniform(-SCALE_R, SCALE_R), 1)
+#     shear = random.randint(-SHEAR_R, SHEAR_R)
+#     pil_imgs = [affop(x, angle, translate, scale, shear) for x in pil_imgs]
+#     pil_masks = [affop(x, angle, translate, scale, shear) for x in pil_masks]
+#
+#     # Color Transforms
+#     def colorop(img, bright, contrast):
+#         _img = TF.adjust_brightness(img, bright)
+#         _img = TF.adjust_contrast(_img, contrast)
+#         return _img
+#     bright = 1 + round(random.uniform(-BRIGHT_R, BRIGHT_R), 1)
+#     contrast = 1 + round(random.uniform(-CONTRAST_R, CONTRAST_R), 1)
+#     pil_imgs = [colorop(x, bright, contrast) for x in pil_imgs]
+#
+#     imgs = np.asarray([np.asarray(x, dtype=np.uint8) for x in pil_imgs], dtype=np.uint8)
+#     masks = np.asarray([np.asarray(x, dtype=np.uint8) for x in pil_masks], dtype=np.uint8)
+#     return imgs, masks
+# ############################ end of CTDataset functions
 
 ############################ start of defining CTDataset
 readvdnames = lambda x: open(x).read().rstrip().split('\n')
@@ -534,20 +534,20 @@ class CTDataset(data.Dataset):
         meta_cap   = [[os.path.join(data_home, "NpyData-size224x336-test2", "{}.npy".format(x)), 2]
                                 for x in readvdnames(_cap_f)]
 
-        if split == "train":
-            lmg = len(meta_neg)
-            if len(meta_pos) > len(meta_neg):
-                for i in range(len(meta_pos) - len(meta_neg)):
-                    meta_neg.append(random.choice(meta_neg))
-            else:
-                for i in range(len(meta_neg) - len(meta_pos)):
-                    meta_pos.append(random.choice(meta_pos))
-            if len(meta_cap) > lmg:
-                for i in range(len(meta_cap) - len(meta_neg)):
-                    meta_neg.append(random.choice(meta_cap))
-            else:
-                for i in range(len(meta_neg) - len(meta_cap)):
-                    meta_cap.append(random.choice(meta_cap))
+        # if split == "train":
+        #     lmg = len(meta_neg)
+        #     if len(meta_pos) > len(meta_neg):
+        #         for i in range(len(meta_pos) - len(meta_neg)):
+        #             meta_neg.append(random.choice(meta_neg))
+        #     else:
+        #         for i in range(len(meta_neg) - len(meta_pos)):
+        #             meta_pos.append(random.choice(meta_pos))
+        #     if len(meta_cap) > lmg:
+        #         for i in range(len(meta_cap) - len(meta_neg)):
+        #             meta_neg.append(random.choice(meta_cap))
+        #     else:
+        #         for i in range(len(meta_neg) - len(meta_cap)):
+        #             meta_cap.append(random.choice(meta_cap))
 
         meta = meta_pos + meta_neg + meta_cap
 
@@ -570,10 +570,10 @@ class CTDataset(data.Dataset):
         num_frames = len(cta_images)
         shape = cta_images.shape
 
-        # Data augmentation
-        if self.split == "train":
-            cta_images, cta_masks = Rand_Transforms(cta_images, cta_masks, ANGLE_R=10, TRANS_R=0.1, SCALE_R=0.2, SHEAR_R=10,
-                                             BRIGHT_R=0.5, CONTRAST_R=0.3)
+        # # Data augmentation
+        # if self.split == "train":
+        #     cta_images, cta_masks = Rand_Transforms(cta_images, cta_masks, ANGLE_R=10, TRANS_R=0.1, SCALE_R=0.2, SHEAR_R=10,
+        #                                      BRIGHT_R=0.5, CONTRAST_R=0.3)
 
         # To Tensor and Resize
         cta_images = np.asarray(cta_images, dtype=np.float32)
@@ -1881,134 +1881,135 @@ ValidLoader = torch.utils.data.DataLoader(Validset,
                                     collate_fn=Train_Collatefn,
                                     shuffle=False,)
 
-Val_CE, Val_Acc = [ScalarContainer() for _ in range(2)]
+# Val_CE, Val_Acc = [ScalarContainer() for _ in range(2)]
+#
+# gts, pcovs = [], []
+#
+# # copied from metrics
+# def sensitivity_specificity(y_true, y_score):
+#     desc_score_indices = np.argsort(y_score, kind="mergesort")[::-1]
+#     y_score = y_score[desc_score_indices]
+#     y_true = y_true[desc_score_indices]
+#
+#     N = len(y_score)
+#     tp, fp = 0, 0
+#     condition_positive, condition_negative = np.sum(y_true), N-np.sum(y_true)
+#
+#     sensitivity, specificity = np.zeros(N), np.zeros(N)
+#
+#     for i in range(N):
+#         predicted_positive = i+1
+#         predicted_negative = N - predicted_positive
+#         if y_true[i] == 1:
+#             tp += 1
+#         else:
+#             fp += 1
+#
+#         tn = condition_negative - fp
+#
+#         sensitivity[i] = tp / float(condition_positive)
+#         specificity[i] = tn / float(condition_negative + 1e-6)
+#
+#         # print( "tp: {}, fp: {}, tn: {}, sens: {}, spec: {}".format( tp,fp,tn,sensitivity[i], specificity[i]  )  )
+#
+#     sensitivity, specificity = np.r_[0, sensitivity, 1], np.r_[1, specificity, 0]
+#     auc = 0
+#     for i in range(len(sensitivity)-1):
+#         # auc += (sensitivity[i+1]-sensitivity[i]) * specificity[i]
+#         auc += (sensitivity[i+1]-sensitivity[i]) * specificity[i]
+#
+#     return sensitivity, specificity, auc
+#
+# print('2nd valid loader??')
 
-gts, pcovs = [], []
+# with torch.no_grad():
+#     for i, (all_F, all_L, all_info) in enumerate(ValidLoader):
+#         labels = all_L.cuda()
+#         all_F = torch.cat((all_F, all_F, all_F), 1)
+#         print(all_F.size())
+#         # preds = model([all_F.cuda()])
+#         preds = model(all_F.cuda())
+#         print(preds)
+#         print(labels)
+#
+#         # val_loss = criterion(preds, labels)
+#         val_acc = topk_accuracies(preds, labels, [1])[0]
+#
+#         name = all_info[0]["name"]
+#         pid = name.split('/')[-1][:-4]
+#
+#         prob_preds = F.softmax(preds, dim=1)
+#         prob_normal = prob_preds[0, 0].item()
+#         prob_ncov = prob_preds[0, 1].item()
+#         prob_cap =  prob_preds[0, 2].item() # this should work
+#         gt = labels.item()
+#
+#         gts.append(gt)
+#         pcovs.append(prob_ncov)
+#
+#         print ("{} {} {} {} {} {}".format(all_info[0]["name"], pid, prob_normal, prob_ncov, prob_cap, labels.item()))
+#
+#         # Val_CE.write(val_loss); Val_Acc.write(val_acc)
+#
+# # from metrics import sensitivity_specificity
+# Ece, Eacc = Val_CE.read(), Val_Acc.read()
+# gts, pcovs = np.asarray(gts), np.asarray(pcovs)
+# _, _, Eauc = sensitivity_specificity(gts, pcovs)
+# e = 0
+# print("VALIDATION | E [{}] | CE: {:1.5f} | ValAcc: {:1.3f} | ValAUC: {:1.3f}".format(e, Ece, Eacc, Eauc))
 
-# copied from metrics
-def sensitivity_specificity(y_true, y_score):
-    desc_score_indices = np.argsort(y_score, kind="mergesort")[::-1]
-    y_score = y_score[desc_score_indices]
-    y_true = y_true[desc_score_indices]
-
-    N = len(y_score)
-    tp, fp = 0, 0
-    condition_positive, condition_negative = np.sum(y_true), N-np.sum(y_true)
-
-    sensitivity, specificity = np.zeros(N), np.zeros(N)
-
-    for i in range(N):
-        predicted_positive = i+1
-        predicted_negative = N - predicted_positive
-        if y_true[i] == 1:
-            tp += 1
-        else:
-            fp += 1
-
-        tn = condition_negative - fp
-
-        sensitivity[i] = tp / float(condition_positive)
-        specificity[i] = tn / float(condition_negative + 1e-6)
-
-        # print( "tp: {}, fp: {}, tn: {}, sens: {}, spec: {}".format( tp,fp,tn,sensitivity[i], specificity[i]  )  )
-
-    sensitivity, specificity = np.r_[0, sensitivity, 1], np.r_[1, specificity, 0]
-    auc = 0
-    for i in range(len(sensitivity)-1):
-        # auc += (sensitivity[i+1]-sensitivity[i]) * specificity[i]
-        auc += (sensitivity[i+1]-sensitivity[i]) * specificity[i]
-
-    return sensitivity, specificity, auc
-
-print('2nd valid loader??')
-
-with torch.no_grad():
-    for i, (all_F, all_L, all_info) in enumerate(ValidLoader):
-        labels = all_L.cuda()
-        all_F = torch.cat((all_F, all_F, all_F), 1)
-        print(all_F.size())
-        # preds = model([all_F.cuda()])
-        preds = model(all_F.cuda())
-        print(preds)
-        print(labels)
-
-        # val_loss = criterion(preds, labels)
-        val_acc = topk_accuracies(preds, labels, [1])[0]
-
-        name = all_info[0]["name"]
-        pid = name.split('/')[-1][:-4]
-
-        prob_preds = F.softmax(preds, dim=1)
-        prob_normal = prob_preds[0, 0].item()
-        prob_ncov = prob_preds[0, 1].item()
-        prob_cap =  prob_preds[0, 2].item() # this should work
-        gt = labels.item()
-
-        gts.append(gt)
-        pcovs.append(prob_ncov)
-
-        print ("{} {} {} {} {} {}".format(all_info[0]["name"], pid, prob_normal, prob_ncov, prob_cap, labels.item()))
-
-        # Val_CE.write(val_loss); Val_Acc.write(val_acc)
-
-# from metrics import sensitivity_specificity
-Ece, Eacc = Val_CE.read(), Val_Acc.read()
-gts, pcovs = np.asarray(gts), np.asarray(pcovs)
-_, _, Eauc = sensitivity_specificity(gts, pcovs)
-e = 0
-print("VALIDATION | E [{}] | CE: {:1.5f} | ValAcc: {:1.3f} | ValAUC: {:1.3f}".format(e, Ece, Eacc, Eauc))
-
+#
 # below commented out just checking above works
 # """# Getting Training to work"""
+
+# import warnings
 #
-# # import warnings
-# #
-# # def fxn():
-# #     warnings.warn("deprecated", UserWarning)
-# #
-# # with warnings.catch_warnings():
-# #     warnings.simplefilter("once")
-# #     fxn()
-# #
-# # import warnings
-# # warnings.filterwarnings("ignore", category=UserWarning)
+# def fxn():
+#     warnings.warn("deprecated", UserWarning)
 #
-# ############### Set up Variables ###############
-# TRAIN_CROP_SIZE = tuple([224, 336])
-# CLIP_RANGE = [float(x) for x in [0.3, 0.7]]
-# DATA_ROOT = 'dataset4/NCOV-BF'
-# BATCH_SIZE_PER_GPU = 1
-# LEARNING_RATE = 1e-5
-# WEIGHT_DECAY = 0
-# LR_DECAY = 1
-# INIT_MODEL_PATH = 'ncov-Epoch_00140-auc95p9.pth'
-# INIT_MODEL_STRICT = "True"
-# SNAPSHOT_FREQ = 5
-# TRAIN_EPOCH = 200 #, will likely stop it early
-# SNAPSHOT_HOME = "experiments_v4_dcvnt"
-# SNAPSHOT_MODEL_TPL = "ncov-Epoch_{:05d}.pth"
+# with warnings.catch_warnings():
+#     warnings.simplefilter("once")
+#     fxn()
 #
-#
-#
-# random.seed(0); torch.manual_seed(0); np.random.seed(0)
-# local_rank = 0
-#
-#
-# ############### Set up Dataloaders ###############
-# Trainset = CTDataset(data_home=DATA_ROOT,
-#                      split='train',
-#                      #fold_id=FOLD_ID,
-#                      crop_size=TRAIN_CROP_SIZE,
-#                      clip_range=CLIP_RANGE)
-#
+# import warnings
+# warnings.filterwarnings("ignore", category=UserWarning)
+
+############### Set up Variables ###############
+TRAIN_CROP_SIZE = tuple([224, 336])
+CLIP_RANGE = [float(x) for x in [0.3, 0.7]]
+DATA_ROOT = 'dataset4/NCOV-BF'
+BATCH_SIZE_PER_GPU = 1
+LEARNING_RATE = 1e-5
+WEIGHT_DECAY = 0
+LR_DECAY = 1
+INIT_MODEL_PATH = 'ncov-Epoch_00140-auc95p9.pth'
+INIT_MODEL_STRICT = "True"
+SNAPSHOT_FREQ = 5
+TRAIN_EPOCH = 200 #, will likely stop it early
+SNAPSHOT_HOME = "experiments_v4_baseline_r3d50"
+SNAPSHOT_MODEL_TPL = "ncov-Epoch_{:05d}.pth"
+
+
+
+random.seed(0); torch.manual_seed(0); np.random.seed(0)
+local_rank = 0
+
+
+############### Set up Dataloaders ###############
+Trainset = CTDataset(data_home=DATA_ROOT,
+                     split='train',
+                     #fold_id=FOLD_ID,
+                     crop_size=TRAIN_CROP_SIZE,
+                     clip_range=CLIP_RANGE)
+
 # Validset = CTDataset(data_home=DATA_ROOT,
 #                      split='valid',
 #                      #fold_id=FOLD_ID,
 #                      crop_size=TRAIN_CROP_SIZE,
 #                      clip_range=CLIP_RANGE)
-#
-#
-#
+
+
+
 # model = ENModel(arch=ARCH, resnet_depth=DEPTH,
 #                     input_channel=2,
 #                     crop_h=TRAIN_CROP_SIZE[0],
@@ -2025,34 +2026,31 @@ print("VALIDATION | E [{}] | CE: {:1.5f} | ValAcc: {:1.3f} | ValAUC: {:1.3f}".fo
 #
 #
 # print(model)
-#
-# TrainLoader = torch.utils.data.DataLoader(Trainset,
-#                                     batch_size=BATCH_SIZE_PER_GPU,
-#                                         num_workers=NUM_WORKERS,
-#                                         collate_fn=Train_Collatefn,
-#                                         shuffle=True,
-#                                         pin_memory=True)
-#
-#
-#
-#
-#
-# ############### Set up Optimization ###############
-# optimizer = torch.optim.Adam(model.parameters(), lr=LEARNING_RATE, weight_decay=WEIGHT_DECAY)
-# lr_scher = torch.optim.lr_scheduler.ExponentialLR(optimizer, gamma=LR_DECAY, last_epoch=-1)
-# criterion = torch.nn.CrossEntropyLoss(reduction="mean")
-#
-#
-# # model.load_state_dict(torch.load(INIT_MODEL_PATH, \
-# #                  map_location=f'cuda:{local_rank}'), strict=INIT_MODEL_STRICT)
-#
-# # model.eval()
-#
-# dset_len, loader_len = len(Trainset), len(TrainLoader)
-#
-# Epoch_CE, Epoch_Acc = [ScalarContainer() for _ in range(2)]
-#
-# ############### Sending Model data to Neptune ###############
+
+TrainLoader = torch.utils.data.DataLoader(Trainset,
+                                    batch_size=BATCH_SIZE_PER_GPU,
+                                        num_workers=NUM_WORKERS,
+                                        collate_fn=Train_Collatefn,
+                                        shuffle=True,
+                                        pin_memory=True)
+
+
+############### Set up Optimization ###############
+optimizer = torch.optim.Adam(model.parameters(), lr=LEARNING_RATE, weight_decay=WEIGHT_DECAY)
+lr_scher = torch.optim.lr_scheduler.ExponentialLR(optimizer, gamma=LR_DECAY, last_epoch=-1)
+criterion = torch.nn.CrossEntropyLoss(reduction="mean")
+
+
+# model.load_state_dict(torch.load(INIT_MODEL_PATH, \
+#                  map_location=f'cuda:{local_rank}'), strict=INIT_MODEL_STRICT)
+
+# model.eval()
+
+dset_len, loader_len = len(Trainset), len(TrainLoader)
+
+Epoch_CE, Epoch_Acc = [ScalarContainer() for _ in range(2)]
+
+############### Sending Model data to Neptune ###############
 # run["config/model"] = type(model).__name__
 # run["config/criterion"] = type(criterion).__name__
 # run["config/optimizer"] = type(optimizer).__name__
@@ -2073,150 +2071,151 @@ print("VALIDATION | E [{}] | CE: {:1.5f} | ValAcc: {:1.3f} | ValAUC: {:1.3f}".fo
 # run["config/dataset/path"] = DATA_ROOT
 # run["config/dataset/transforms"] =  data_tfms
 # run["config/dataset/size"] = dataset_size
-#
-#
-# parameters = {
-#     "lr": LEARNING_RATE,
-#     "bs": BATCH_SIZE_PER_GPU,
-#     "input_sz": 224 * 336 ,
-#     "n_classes": NUM_CLASSES,
-#     "model_filename": "decovnet_v0_10ep",
-#     "device": torch.device("cuda:0" if torch.cuda.is_available() else "cpu"),
-#     'weight_decay': WEIGHT_DECAY,
-#     'lr_decay': LR_DECAY,
-#     'train_crop_size': TRAIN_CROP_SIZE,
-#     'clip_range': CLIP_RANGE,
-#     'SNAPSHOT_FREQ': SNAPSHOT_FREQ,
-#     'train_epoch': TRAIN_EPOCH,
-#     'pre-trained-DeCoVNet': 'ncov-Epoch_00140-auc95p9.pth',
-# }
-#
-# run["config/hyperparameters"] = parameters
-#
-#
-# ############### Training ###############
-# print('2nd model training')
-# best_acc = 0.0
-#
-# for e in range(TRAIN_EPOCH):
-#     run["training/batch/epoch"].log(e)
-#     for i, (all_F, all_L, all_info) in enumerate(TrainLoader):
-#         optimizer.zero_grad()
-#
-#         # tik = time.time()
-#         preds = model([all_F.cuda(non_blocking=True)])   # I3D
-#         labels = all_L.cuda(non_blocking=True)
-#         loss = criterion(preds, labels)
-#
-#
-#         acc = topk_accuracies(preds, labels, [1])[0]
-#         # rT += time.time()-tik
-#         Epoch_CE.write(loss); Epoch_Acc.write(acc);
-#
-#         run["training/batch/loss"].log(loss)
-#         run["training/batch/acc"].log(acc)
-#
-#         if labels[0] == 0:
-#              run["training/1NonCOVID/loss"].log(loss)
-#              run["training/1NonCOVID/acc"].log(acc)
-#
-#         elif labels[0] == 1:
-#              run["training/2COVID/loss"].log(loss)
-#              run["training/2COVID/acc"].log(acc)
-#
-#         elif labels[0] == 2:
-#              run["training/3CAP/loss"].log(loss)
-#              run["training/3CAP/acc"].log(acc)
-#
-#
-#         loss.backward()
-#         optimizer.step()
-#         # Epoch_CE = loss
-#         # Epoch_Acc = acc
-#         #break
-#
-#     Ece, Eacc = Epoch_CE.read(), Epoch_Acc.read()
-#
-#     # Ece, Eacc = Epoch_CE, Epoch_Acc
-#     print("EN | E-R [{}-{}] | I [{}] | CE: {:1.5f} | TrainAcc: {:1.3f}".format(e, local_rank, loader_len, Ece, Eacc))
-#
-#     if local_rank == 0:
-#         if e % SNAPSHOT_FREQ == 0 or e >= TRAIN_EPOCH-1:
-#             #model.eval()
-#             model_save_path = os.path.join(SNAPSHOT_HOME, SNAPSHOT_MODEL_TPL.format(e))
-#             print(f"Dump weights {model_save_path} to disk...")
-#             torch.save(model.state_dict(), model_save_path)
-#
-#             ValidLoader = torch.utils.data.DataLoader(Validset,
-#                                                 batch_size=1,
-#                                                 num_workers=NUM_WORKERS,
-#                                                 collate_fn=Train_Collatefn,
-#                                                 shuffle=True,)
-#
-#             Val_CE, Val_Acc = [ScalarContainer() for _ in range(2)]
-#
-#             print("Do evaluation...")
-#             with torch.no_grad():
-#                 gts = []
-#                 pcovs = []
-#                 for i, (all_F, all_L, all_info) in enumerate(ValidLoader):
-#                     labels = all_L.cuda(non_blocking=True)
-#                     preds = model([all_F.cuda(non_blocking=True)])
-#                     val_loss = criterion(preds, labels)
-#                     val_acc = topk_accuracies(preds, labels, [1])[0]
-#
-#                     if labels[0] == 0:
-#                          run["validation/1NonCOVID/loss"].log(val_loss)
-#                          run["validation/1NonCOVID/acc"].log(val_acc)
-#
-#                     elif labels[0] == 1:
-#                          run["validation/2COVID/loss"].log(val_loss)
-#                          run["validation/2COVID/acc"].log(val_acc)
-#
-#                     elif labels[0] == 2:
-#                          run["validation/3CAP/loss"].log(val_loss)
-#                          run["validation/3CAP/acc"].log(val_acc)
-#
-#                     prob_preds = F.softmax(preds, dim=1)
-#                     prob_normal = prob_preds[0, 0].item()
-#                     prob_ncov = prob_preds[0, 1].item()
-#                     gt = labels.item()
-#
-#                     gts.append(gt)
-#                     pcovs.append(prob_ncov)
-#
-#                     Val_CE.write(val_loss); Val_Acc.write(val_acc)
-#
-#                     # Val_CE = val_loss
-#                     # Val_Acc = val_acc
-#
-#                 #Eap = average_precision_score(gts, pcovs)
-#                 gts, pcovs = np.asarray(gts), np.asarray(pcovs)
-#                 _, _, Eauc = sensitivity_specificity(gts, pcovs)
-#
-#                 # Ece = Val_CE
-#                 # Eacc = Val_Acc
-#                 Ece, Eacc = Val_CE.read(), Val_Acc.read()
-#
-#                 print("VALIDATION | E [{}] | CE: {:1.5f} | ValAcc: {:1.3f} | ValAUC: {:1.3f}".format(e, Ece, Eacc, Eauc))
-#                 run["validation/ValLoss"].log(Ece)
-#                 run["validation/ValAcc"].log(Eacc)
-#                 # run["validation/ValAUC"].log(Eauc) - not calculated properly still for 2 classes only
-#                 if Eacc > best_acc:
-#                     best_acc = Eacc
-#                     best_model_save_path = os.path.join(SNAPSHOT_HOME, 'ncov-best.pth')
-#                     # 'ncov-best.pth'
-#                     # SNAPSHOT_MODEL_TPL = "ncov-Epoch_{:05d}.pth"
-#                     print(f"Dump weights {best_model_save_path} to disk...")
-#                     torch.save(model.state_dict(), best_model_save_path)
-#                     run["validation/best_model_epoch"].log(e)
-#
+
+
+parameters = {
+    "lr": LEARNING_RATE,
+    "bs": BATCH_SIZE_PER_GPU,
+    "input_sz": 224 * 336 ,
+    "n_classes": NUM_CLASSES,
+    "model_filename": "decovnet_v0_10ep",
+    "device": torch.device("cuda:0" if torch.cuda.is_available() else "cpu"),
+    'weight_decay': WEIGHT_DECAY,
+    'lr_decay': LR_DECAY,
+    'train_crop_size': TRAIN_CROP_SIZE,
+    'clip_range': CLIP_RANGE,
+    'SNAPSHOT_FREQ': SNAPSHOT_FREQ,
+    'train_epoch': TRAIN_EPOCH,
+    'pre-trained-DeCoVNet': 'ncov-Epoch_00140-auc95p9.pth',
+}
+
+run["config/hyperparameters"] = parameters
+
+
+############### Training ###############
+print('2nd model training')
+best_acc = 0.0
+TRAIN_EPOCH = 5
+
+for e in range(TRAIN_EPOCH):
+    run["training/batch/epoch"].log(e)
+    for i, (all_F, all_L, all_info) in enumerate(TrainLoader):
+        optimizer.zero_grad()
+
+        # tik = time.time()
+        preds = model([all_F.cuda(non_blocking=True)])   # I3D
+        labels = all_L.cuda(non_blocking=True)
+        loss = criterion(preds, labels)
+
+
+        acc = topk_accuracies(preds, labels, [1])[0]
+        # rT += time.time()-tik
+        Epoch_CE.write(loss); Epoch_Acc.write(acc);
+
+        run["training/batch/loss"].log(loss)
+        run["training/batch/acc"].log(acc)
+
+        if labels[0] == 0:
+             run["training/1NonCOVID/loss"].log(loss)
+             run["training/1NonCOVID/acc"].log(acc)
+
+        elif labels[0] == 1:
+             run["training/2COVID/loss"].log(loss)
+             run["training/2COVID/acc"].log(acc)
+
+        elif labels[0] == 2:
+             run["training/3CAP/loss"].log(loss)
+             run["training/3CAP/acc"].log(acc)
+
+
+        loss.backward()
+        optimizer.step()
+        # Epoch_CE = loss
+        # Epoch_Acc = acc
+        #break
+
+    Ece, Eacc = Epoch_CE.read(), Epoch_Acc.read()
+
+    # Ece, Eacc = Epoch_CE, Epoch_Acc
+    print("EN | E-R [{}-{}] | I [{}] | CE: {:1.5f} | TrainAcc: {:1.3f}".format(e, local_rank, loader_len, Ece, Eacc))
+
+    if local_rank == 0:
+        if e % SNAPSHOT_FREQ == 0 or e >= TRAIN_EPOCH-1:
+            #model.eval()
+            model_save_path = os.path.join(SNAPSHOT_HOME, SNAPSHOT_MODEL_TPL.format(e))
+            print(f"Dump weights {model_save_path} to disk...")
+            torch.save(model.state_dict(), model_save_path)
+
+            # ValidLoader = torch.utils.data.DataLoader(Validset,
+            #                                     batch_size=1,
+            #                                     num_workers=NUM_WORKERS,
+            #                                     collate_fn=Train_Collatefn,
+            #                                     shuffle=True,)
+            #
+            # Val_CE, Val_Acc = [ScalarContainer() for _ in range(2)]
+            #
+            # print("Do evaluation...")
+            # with torch.no_grad():
+            #     gts = []
+            #     pcovs = []
+            #     for i, (all_F, all_L, all_info) in enumerate(ValidLoader):
+            #         labels = all_L.cuda(non_blocking=True)
+            #         preds = model([all_F.cuda(non_blocking=True)])
+            #         val_loss = criterion(preds, labels)
+            #         val_acc = topk_accuracies(preds, labels, [1])[0]
+            #
+            #         if labels[0] == 0:
+            #              run["validation/1NonCOVID/loss"].log(val_loss)
+            #              run["validation/1NonCOVID/acc"].log(val_acc)
+            #
+            #         elif labels[0] == 1:
+            #              run["validation/2COVID/loss"].log(val_loss)
+            #              run["validation/2COVID/acc"].log(val_acc)
+            #
+            #         elif labels[0] == 2:
+            #              run["validation/3CAP/loss"].log(val_loss)
+            #              run["validation/3CAP/acc"].log(val_acc)
+            #
+            #         prob_preds = F.softmax(preds, dim=1)
+            #         prob_normal = prob_preds[0, 0].item()
+            #         prob_ncov = prob_preds[0, 1].item()
+            #         gt = labels.item()
+            #
+            #         gts.append(gt)
+            #         pcovs.append(prob_ncov)
+            #
+            #         Val_CE.write(val_loss); Val_Acc.write(val_acc)
+            #
+            #         # Val_CE = val_loss
+            #         # Val_Acc = val_acc
+            #
+            #     #Eap = average_precision_score(gts, pcovs)
+            #     gts, pcovs = np.asarray(gts), np.asarray(pcovs)
+            #     _, _, Eauc = sensitivity_specificity(gts, pcovs)
+            #
+            #     # Ece = Val_CE
+            #     # Eacc = Val_Acc
+            #     Ece, Eacc = Val_CE.read(), Val_Acc.read()
+            #
+            #     print("VALIDATION | E [{}] | CE: {:1.5f} | ValAcc: {:1.3f} | ValAUC: {:1.3f}".format(e, Ece, Eacc, Eauc))
+            #     run["validation/ValLoss"].log(Ece)
+            #     run["validation/ValAcc"].log(Eacc)
+            #     # run["validation/ValAUC"].log(Eauc) - not calculated properly still for 2 classes only
+            #     if Eacc > best_acc:
+            #         best_acc = Eacc
+            #         best_model_save_path = os.path.join(SNAPSHOT_HOME, 'ncov-best.pth')
+            #         # 'ncov-best.pth'
+            #         # SNAPSHOT_MODEL_TPL = "ncov-Epoch_{:05d}.pth"
+            #         print(f"Dump weights {best_model_save_path} to disk...")
+            #         torch.save(model.state_dict(), best_model_save_path)
+            #         run["validation/best_model_epoch"].log(e)
+
 #
 #     if LR_DECAY != 1:
 #         lr_scher.step()
 #         if local_rank == 0:
 #             print("Setting LR: {}".format(optimizer.param_groups[0]["lr"]))
-#
+# #
 # # get testing to work
 #
 # # define Testset
