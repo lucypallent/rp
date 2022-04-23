@@ -231,12 +231,12 @@ def Rand_Transforms(imgs, masks,
 
     # Color Transforms
     def colorop(img, bright, contrast):
-        print(type(img))
         _img = TF.adjust_brightness(img, bright)
         _img = TF.adjust_contrast(_img, contrast)
         return _img
     bright = 1 + round(random.uniform(-BRIGHT_R, BRIGHT_R), 1)
     contrast = 1 + round(random.uniform(-CONTRAST_R, CONTRAST_R), 1)
+    print(type(pil_imgs))
     pil_imgs = [colorop(x, bright, contrast) for x in pil_imgs]
 
     imgs = np.asarray([np.asarray(x, dtype=np.uint8) for x in pil_imgs], dtype=np.uint8)
