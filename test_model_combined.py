@@ -2051,11 +2051,11 @@ def test_model(model_pth, folder_pth, run, model_covcap_pth):
     fpr = dict()
     tpr = dict()
     roc_auc = dict()
-    print(true)
-    print(pred_probs)
+    # print(true)
+    # print(pred_probs)
     from sklearn.preprocessing import label_binarize
     true_bin = label_binarize(true, classes=[0, 1, 2])
-    print(true_bin)
+    # print(true_bin)
     for i in range(n_classes):
         fpr[i], tpr[i], _ = roc_curve(true_bin[:, i], pred_probs[:, i])
         roc_auc[i] = auc(fpr[i], tpr[i])
@@ -2191,10 +2191,11 @@ def main(argv):
         # # # DEBUG:
         # test_model(model_lst[0])
 
-        for m in model_lst:
-            for mcc in model_lst_cc:
-                # test_model(m, 'NpyData-size224x336-imp10-infmask0010-test-1pc')
-                test_model(m, data_folder, run, mcc)
+        # for m in model_lst:
+        m = 'experiments_v4_dcvnt_noaug_imp10_infmask0010_t3_1pc/ncov-best.pth'
+        for mcc in model_lst_cc:
+            # test_model(m, 'NpyData-size224x336-imp10-infmask0010-test-1pc')
+            test_model(m, data_folder, run, mcc)
 
 if __name__ == '__main__':
     main(sys.argv[1:])
