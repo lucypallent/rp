@@ -1886,68 +1886,68 @@ Val_CE, Val_Acc = [ScalarContainer() for _ in range(2)]
 gts, pcovs = [], []
 
 # # copied from metrics
-# def sensitivity_specificity(y_true, y_score):
-#     desc_score_indices = np.argsort(y_score, kind="mergesort")[::-1]
-#     y_score = y_score[desc_score_indices]
-#     y_true = y_true[desc_score_indices]
-#
-#     N = len(y_score)
-#     tp, fp = 0, 0
-#     condition_positive, condition_negative = np.sum(y_true), N-np.sum(y_true)
-#
-#     sensitivity, specificity = np.zeros(N), np.zeros(N)
-#
-#     for i in range(N):
-#         predicted_positive = i+1
-#         predicted_negative = N - predicted_positive
-#         if y_true[i] == 1:
-#             tp += 1
-#         else:
-#             fp += 1
-#
-#         tn = condition_negative - fp
-#
-#         sensitivity[i] = tp / float(condition_positive)
-#         specificity[i] = tn / float(condition_negative + 1e-6)
-#
-#         # print( "tp: {}, fp: {}, tn: {}, sens: {}, spec: {}".format( tp,fp,tn,sensitivity[i], specificity[i]  )  )
-#
-#     sensitivity, specificity = np.r_[0, sensitivity, 1], np.r_[1, specificity, 0]
-#     auc = 0
-#     for i in range(len(sensitivity)-1):
-#         # auc += (sensitivity[i+1]-sensitivity[i]) * specificity[i]
-#         auc += (sensitivity[i+1]-sensitivity[i]) * specificity[i]
-#
-#     return sensitivity, specificity, auc
+def sensitivity_specificity(y_true, y_score):
+    desc_score_indices = np.argsort(y_score, kind="mergesort")[::-1]
+    y_score = y_score[desc_score_indices]
+    y_true = y_true[desc_score_indices]
+
+    N = len(y_score)
+    tp, fp = 0, 0
+    condition_positive, condition_negative = np.sum(y_true), N-np.sum(y_true)
+
+    sensitivity, specificity = np.zeros(N), np.zeros(N)
+
+    for i in range(N):
+        predicted_positive = i+1
+        predicted_negative = N - predicted_positive
+        if y_true[i] == 1:
+            tp += 1
+        else:
+            fp += 1
+
+        tn = condition_negative - fp
+
+        sensitivity[i] = tp / float(condition_positive)
+        specificity[i] = tn / float(condition_negative + 1e-6)
+
+        # print( "tp: {}, fp: {}, tn: {}, sens: {}, spec: {}".format( tp,fp,tn,sensitivity[i], specificity[i]  )  )
+
+    sensitivity, specificity = np.r_[0, sensitivity, 1], np.r_[1, specificity, 0]
+    auc = 0
+    for i in range(len(sensitivity)-1):
+        # auc += (sensitivity[i+1]-sensitivity[i]) * specificity[i]
+        auc += (sensitivity[i+1]-sensitivity[i]) * specificity[i]
+
+    return sensitivity, specificity, auc
 #
 # print('2nd valid loader??')
 
-with torch.no_grad():
-    for i, (all_F, all_L, all_info) in enumerate(ValidLoader):
-        labels = all_L.cuda()
-        all_F = torch.cat((all_F, all_F, all_F), 1)
-        print(all_F.size())
-        # preds = model([all_F.cuda()])
-        preds = model(all_F.cuda())
-        print(preds)
-        print(labels)
+# with torch.no_grad():
+for i, (all_F, all_L, all_info) in enumerate(ValidLoader):
+    labels = all_L.cuda()
+    all_F = torch.cat((all_F, all_F, all_F), 1)
+    print(all_F.size())
+    # preds = model([all_F.cuda()])
+    preds = model(all_F.cuda())
+    print(preds)
+    print(labels)
 
-        # val_loss = criterion(preds, labels)
-        val_acc = topk_accuracies(preds, labels, [1])[0]
+    # val_loss = criterion(preds, labels)
+    val_acc = topk_accuracies(preds, labels, [1])[0]
 
-        name = all_info[0]["name"]
-        pid = name.split('/')[-1][:-4]
+    name = all_info[0]["name"]
+    pid = name.split('/')[-1][:-4]
 
-        prob_preds = F.softmax(preds, dim=1)
-        prob_normal = prob_preds[0, 0].item()
-        prob_ncov = prob_preds[0, 1].item()
-        prob_cap =  prob_preds[0, 2].item() # this should work
-        gt = labels.item()
+    prob_preds = F.softmax(preds, dim=1)
+    prob_normal = prob_preds[0, 0].item()
+    prob_ncov = prob_preds[0, 1].item()
+    prob_cap =  prob_preds[0, 2].item() # this should work
+    gt = labels.item()
 
-        gts.append(gt)
-        pcovs.append(prob_ncov)
+    gts.append(gt)
+    pcovs.append(prob_ncov)
 
-        print ("{} {} {} {} {} {}".format(all_info[0]["name"], pid, prob_normal, prob_ncov, prob_cap, labels.item()))
+    print ("{} {} {} {} {} {}".format(all_info[0]["name"], pid, prob_normal, prob_ncov, prob_cap, labels.item()))
 
         # Val_CE.write(val_loss); Val_Acc.write(val_acc)
 
