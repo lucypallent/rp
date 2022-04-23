@@ -231,6 +231,7 @@ def Rand_Transforms(imgs, masks,
 
     # Color Transforms
     def colorop(img, bright, contrast):
+        print(type(img))
         _img = TF.adjust_brightness(img, bright)
         _img = TF.adjust_contrast(_img, contrast)
         return _img
@@ -267,7 +268,7 @@ class CTDataset(data.Dataset):
         meta_cap   = [[os.path.join(data_home, "NpyData-size224x336-test2", "{}.npy".format(x)), 2]
                                 for x in readvdnames(_cap_f)]
 
-        # not in the baseline implementation 
+        # not in the baseline implementation
         # if split == "train":
         #     lmg = len(meta_neg)
         #     if len(meta_pos) > len(meta_neg):
