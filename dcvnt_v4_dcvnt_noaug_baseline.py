@@ -47,6 +47,7 @@ import torch
 import random
 from scipy.ndimage import zoom
 import neptune.new as neptune
+from neptune.new.types import File
 
 
 random.seed(0); torch.manual_seed(0); np.random.seed(0)
