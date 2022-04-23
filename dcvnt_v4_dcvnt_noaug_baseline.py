@@ -2002,11 +2002,11 @@ Trainset = CTDataset(data_home=DATA_ROOT,
                      crop_size=TRAIN_CROP_SIZE,
                      clip_range=CLIP_RANGE)
 
-# Validset = CTDataset(data_home=DATA_ROOT,
-#                      split='valid',
-#                      #fold_id=FOLD_ID,
-#                      crop_size=TRAIN_CROP_SIZE,
-#                      clip_range=CLIP_RANGE)
+Validset = CTDataset(data_home=DATA_ROOT,
+                     split='valid',
+                     #fold_id=FOLD_ID,
+                     crop_size=TRAIN_CROP_SIZE,
+                     clip_range=CLIP_RANGE)
 
 
 
@@ -2099,7 +2099,7 @@ TRAIN_EPOCH = 5
 
 for e in range(TRAIN_EPOCH):
     run["training/batch/epoch"].log(e)
-    for i, (all_F, all_L, all_info) in enumerate(TrainLoader):
+    for i, (all_F, all_L, all_info) in enumerate(ValidLoader):
         optimizer.zero_grad()
         # tik = time.time()
         all_F = torch.cat((all_F,all_F,all_F),1)
