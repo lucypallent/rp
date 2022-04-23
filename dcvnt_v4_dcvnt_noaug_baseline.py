@@ -53,8 +53,8 @@ random.seed(0); torch.manual_seed(0); np.random.seed(0)
 device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
 
 run = neptune.init(
-    project="lhp/res-proj",
-    api_token="eyJhcGlfYWRkcmVzcyI6Imh0dHBzOi8vYXBwLm5lcHR1bmUuYWkiLCJhcGlfdXJsIjoiaHR0cHM6Ly9hcHAubmVwdHVuZS5haSIsImFwaV9rZXkiOiI2MDQxZWMwYS1hMDg5LTQzNDQtYWFkMy1iZGZiNjk4MjM4YTMifQ==",
+    project="lucyhollypallent/res-preoject",
+    api_token="eyJhcGlfYWRkcmVzcyI6Imh0dHBzOi8vYXBwLm5lcHR1bmUuYWkiLCJhcGlfdXJsIjoiaHR0cHM6Ly9hcHAubmVwdHVuZS5haSIsImFwaV9rZXkiOiI2YWVjODQwOS0yZDQ5LTQ5NjAtYjgyOC0xOTBkNDFjOWE3OTYifQ==",
 )  # your credentials
 #
 # import torchvision.models as models
@@ -2101,8 +2101,8 @@ for e in range(TRAIN_EPOCH):
     run["training/batch/epoch"].log(e)
     for i, (all_F, all_L, all_info) in enumerate(TrainLoader):
         optimizer.zero_grad()
-
         # tik = time.time()
+        print(type(all_F))
         preds = model([all_F.cuda(non_blocking=True)])   # I3D
         labels = all_L.cuda(non_blocking=True)
         loss = criterion(preds, labels)
@@ -2336,3 +2336,272 @@ for e in range(TRAIN_EPOCH):
 # final_model_save_path = os.path.join(SNAPSHOT_HOME, 'ncov-final.pth')
 # print(f"Dump weights {final_model_save_path} to disk...")
 # torch.save(model.state_dict(), final_model_save_path)
+
+
+
+###### BELOW is the Test bit uncomment all
+# # define Testset
+# SAMPLE_NUMBER = -1
+#
+# Testset = CTDataset(data_home=DATA_ROOT,
+#                                split='valid',
+#                                folder=folder_pth)#, trying something
+#                               #  sample_number=SAMPLE_NUMBER)
+#
+# criterion = torch.nn.CrossEntropyLoss(reduction="mean")
+#
+# TestLoader = torch.utils.data.DataLoader(Testset,
+#                                     batch_size=1,
+#                                     num_workers=NUM_WORKERS,
+#                                     collate_fn=Train_Collatefn,
+#                                     shuffle=False,)
+#
+# Tes_CE, Tes_Acc = [ScalarContainer() for _ in range(2)]
+#
+# NCov_Tes_CE, NCov_Tes_Acc = [ScalarContainer() for _ in range(2)]
+# Cov_Tes_CE, Cov_Tes_Acc = [ScalarContainer() for _ in range(2)]
+# CAP_Tes_CE, CAP_Tes_Acc = [ScalarContainer() for _ in range(2)]
+#
+# gts, pcovs = [], []
+#
+# model.eval()
+#
+# optimizer = torch.optim.Adam(model.parameters(), lr=LEARNING_RATE, weight_decay=WEIGHT_DECAY)
+# lr_scher = torch.optim.lr_scheduler.ExponentialLR(optimizer, gamma=LR_DECAY, last_epoch=-1)
+# criterion = torch.nn.CrossEntropyLoss(reduction="mean")
+#
+# with torch.no_grad():
+#     for i, (all_F, all_L, all_info) in enumerate(TestLoader):
+#         labels = all_L.cuda()
+#         preds = model([all_F.cuda(non_blocking=True)])
+#
+#         # preds = model([all_F.cuda(non_blocking=True)])   # I3D
+#         true = torch.cat((true, labels), 0)
+#
+#         name = all_info[0]["name"]
+#         pid = name.split('/')[-1][:-4]
+#
+#         prob_preds = F.softmax(preds, dim=1)
+#         pred_probs = torch.cat((pred_probs, prob_preds), 0)
+#
+#         # Get predictions from the maximum value
+#         predicted = torch.max(prob_preds, 1)[1]
+#         if predicted != 0:
+#             # cases where it is not equal to 0
+#             pred_covcap = model_covcap([all_F.cuda(non_blocking=True)])
+#             prob_preds_covcap = F.softmax(pred_covcap, dim=1)
+#             print(prob_preds)
+#             print(prob_preds_covcap)
+#             prob_norm = torch.tensor([[0]]).cuda()
+#             prob_preds_covcap = torch.cat((prob_norm, prob_preds_covcap), 1)
+#             prob_preds = prob_preds + prob_preds_covcap
+#             predicted = torch.max(prob_preds, 1)[1]
+#             preds_norm = torch.tensor([[0]]).cuda()
+#             preds_covcap = torch.cat((preds_norm, pred_covcap), 1)
+#             preds = preds + preds_covcap
+#
+#         val_loss = criterion(preds, labels)
+#         val_acc = topk_accuracies(preds, labels, [1])[0]
+#
+#         pred = torch.cat((pred, predicted), 0)
+#
+#         prob_normal = prob_preds[0, 0].item()
+#         prob_ncov = prob_preds[0, 1].item()
+#         prob_cap = prob_preds[0, 2].item()
+#         gt = labels.item()
+#
+#         gts.append(gt)
+#         pcovs.append(prob_ncov)
+#
+#         print ("{} {} {} {} {} {}".format(all_info[0]["name"], pid, prob_normal, prob_ncov, prob_cap, labels.item()))
+#
+#         Tes_CE.write(val_loss); Tes_Acc.write(val_acc)
+#
+#         if labels[0] == 0:
+#             NCov_Tes_CE.write(val_loss); NCov_Tes_Acc.write(val_acc)
+#
+#         elif labels[0] == 1:
+#             Cov_Tes_CE.write(val_loss); Cov_Tes_Acc.write(val_acc)
+#
+#         elif labels[0] == 2:
+#             CAP_Tes_CE.write(val_loss); CAP_Tes_Acc.write(val_acc)
+#
+# # from metrics import sensitivity_specificity
+# Ece, Eacc = Tes_CE.read(), Tes_Acc.read()
+# gts, pcovs = np.asarray(gts), np.asarray(pcovs)
+# _, _, Eauc = sensitivity_specificity(gts, pcovs)
+# e = 0
+# print("TEST | E [{}] | CE: {:1.5f} | ValAcc: {:1.3f} | ValAUC: {:1.3f}".format(e, Ece, Eacc, Eauc))
+#
+# # run["test/all/TestLoss"].log(Ece)
+# run["test/all/TestAcc"].log(Eacc)
+#
+# NCov_Ece, NCov_Eacc = NCov_Tes_CE.read(), NCov_Tes_Acc.read()
+# # run["test/1NonCOVID/TestLoss"].log(NCov_Ece)
+# run["test/1NonCOVID/TestAcc"].log(NCov_Eacc)
+#
+# Cov_Ece, Cov_Eacc = Cov_Tes_CE.read(), Cov_Tes_Acc.read()
+# # run["test/2COVID/TestLoss"].log(Cov_Ece)
+# run["test/2COVID/TestAcc"].log(Cov_Eacc)
+#
+# CAP_Ece, CAP_Eacc = CAP_Tes_CE.read(), CAP_Tes_Acc.read()
+# # run["test/3CAP/TestLoss"].log(CAP_Ece)
+# run["test/3CAP/TestAcc"].log(CAP_Eacc)
+#
+# # code to run classification scores
+# from sklearn.metrics import classification_report
+# from sklearn.metrics import accuracy_score
+#
+# true = true.to('cpu')
+# pred = pred.to('cpu')
+# pred_probs = pred_probs.to('cpu')
+#
+# target_names = ['NonCOVID', 'COVID', 'CAP']
+#
+# # get precision, recall, f1-score
+# print('Summary Report ======> ' + model_pth)
+#
+# print(classification_report(true, pred, target_names=target_names, digits=4))
+#
+# # get accuracy each individual class
+# from sklearn.metrics import confusion_matrix
+# matrix = confusion_matrix(true, pred)
+# print(matrix.diagonal()/matrix.sum(axis=1))
+#
+# # display the confusion confusion_matrix
+# import seaborn as sns
+# import matplotlib.pyplot as plt
+#
+# fig, ax = plt.subplots()
+# sns.heatmap(matrix, annot=True, cmap='Blues')
+#
+# ax.set_title('Confusion Matrix for ' + str(model_pth) + '\n\n');
+# ax.set_xlabel('\nPredicted classification')
+# ax.set_ylabel('Actual classification ');
+#
+# ## Ticket labels - List must be in alphabetical order
+# ax.xaxis.set_ticklabels(target_names)
+# ax.yaxis.set_ticklabels(target_names)
+#
+# run["evaluation/conf_matrix"].log(File.as_image(fig))
+# # run['training/batch/img'].log(File.as_image(all_F[0,0,0]))
+#
+# # get the ROC Curve
+# from sklearn.metrics import roc_curve, roc_auc_score, auc
+# from itertools import cycle
+#
+# macro_roc_auc_ovo = roc_auc_score(true, pred_probs, multi_class="ovo", average="macro")
+# weighted_roc_auc_ovo = roc_auc_score(
+#     true, pred_probs, multi_class="ovo", average="weighted"
+# )
+# macro_roc_auc_ovr = roc_auc_score(true, pred_probs, multi_class="ovr", average="macro")
+# weighted_roc_auc_ovr = roc_auc_score(
+#     true, pred_probs, multi_class="ovr", average="weighted"
+# )
+# print(
+#     "One-vs-One ROC AUC scores:\n{:.6f} (macro),\n{:.6f} "
+#     "(weighted by prevalence)".format(macro_roc_auc_ovo, weighted_roc_auc_ovo)
+# )
+# print(
+#     "One-vs-Rest ROC AUC scores:\n{:.6f} (macro),\n{:.6f} "
+#     "(weighted by prevalence)".format(macro_roc_auc_ovr, weighted_roc_auc_ovr)
+# )
+#
+# print(roc_auc_score(true, pred_probs, multi_class="ovr"))
+# print(roc_auc_score(true, pred_probs, multi_class="ovo"))
+#
+# # plot the ROC Curve
+# n_classes = 3
+# # Compute ROC curve and ROC area for each class
+# fpr = dict()
+# tpr = dict()
+# roc_auc = dict()
+# # print(true)
+# # print(pred_probs)
+# from sklearn.preprocessing import label_binarize
+# true_bin = label_binarize(true, classes=[0, 1, 2])
+# # print(true_bin)
+# for i in range(n_classes):
+#     fpr[i], tpr[i], _ = roc_curve(true_bin[:, i], pred_probs[:, i])
+#     roc_auc[i] = auc(fpr[i], tpr[i])
+#
+# # Compute micro-average ROC curve and ROC area
+# fpr["micro"], tpr["micro"], _ = roc_curve(true_bin.ravel(), pred_probs.ravel())
+# roc_auc["micro"] = auc(fpr["micro"], tpr["micro"])
+#
+# fig = plt.figure()
+# lw = 2
+# plt.plot(
+#     fpr[2],
+#     tpr[2],
+#     color="darkorange",
+#     lw=lw,
+#     label="ROC curve (area = %0.2f)" % roc_auc[2],
+# )
+# plt.plot([0, 1], [0, 1], color="navy", lw=lw, linestyle="--")
+# plt.xlim([0.0, 1.0])
+# plt.ylim([0.0, 1.05])
+# plt.xlabel("False Positive Rate")
+# plt.ylabel("True Positive Rate")
+# plt.title("Receiver operating characteristic example")
+# plt.legend(loc="lower right")
+# run["evaluation/ROC_curve"].log(File.as_image(fig))
+#
+# # get the master graph
+# # First aggregate all false positive rates
+# all_fpr = np.unique(np.concatenate([fpr[i] for i in range(n_classes)]))
+#
+# # Then interpolate all ROC curves at this points
+# mean_tpr = np.zeros_like(all_fpr)
+# for i in range(n_classes):
+#     mean_tpr += np.interp(all_fpr, fpr[i], tpr[i])
+#
+# # Finally average it and compute AUC
+# mean_tpr /= n_classes
+#
+# fpr["macro"] = all_fpr
+# tpr["macro"] = mean_tpr
+# roc_auc["macro"] = auc(fpr["macro"], tpr["macro"])
+#
+# # Plot all ROC curves
+# fig = plt.figure()
+# plt.plot(
+#     fpr["micro"],
+#     tpr["micro"],
+#     label="micro-average ROC curve (area = {0:0.2f})".format(roc_auc["micro"]),
+#     color="deeppink",
+#     linestyle=":",
+#     linewidth=4,
+# )
+#
+# plt.plot(
+#     fpr["macro"],
+#     tpr["macro"],
+#     label="macro-average ROC curve (area = {0:0.2f})".format(roc_auc["macro"]),
+#     color="navy",
+#     linestyle=":",
+#     linewidth=4,
+# )
+#
+# colors = cycle(["aqua", "darkorange", "cornflowerblue"])
+# for i, color in zip(range(n_classes), colors):
+#     plt.plot(
+#         fpr[i],
+#         tpr[i],
+#         color=color,
+#         lw=lw,
+#         label="ROC curve of class {0} (area = {1:0.2f})".format(i, roc_auc[i]),
+#     )
+#
+# plt.plot([0, 1], [0, 1], "k--", lw=lw)
+# plt.xlim([0.0, 1.0])
+# plt.ylim([0.0, 1.05])
+# plt.xlabel("False Positive Rate")
+# plt.ylabel("True Positive Rate")
+# plt.title("Some extension of Receiver operating characteristic to multiclass")
+# plt.legend(loc="lower right")
+# run["evaluation/ROC_curve_all"].log(File.as_image(fig))
+#
+#
+# # get accuracy averaged out across class
+# print(accuracy_score(true, pred))
