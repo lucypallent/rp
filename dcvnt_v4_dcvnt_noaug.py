@@ -239,7 +239,9 @@ def Rand_Transforms(imgs, masks,
         return _img
     bright = 1 + round(random.uniform(-BRIGHT_R, BRIGHT_R), 1)
     contrast = 1 + round(random.uniform(-CONTRAST_R, CONTRAST_R), 1)
-    pil_imgs = [colorop(x, bright, contrast) for x in pil_imgs]
+    # pil_imgs = [colorop(x, bright, contrast) for x in pil_imgs]
+    print('---------------------asdasd----------------------------')
+    print(type(pil_imgs))
 
     imgs = np.asarray([np.asarray(x, dtype=np.uint8) for x in pil_imgs], dtype=np.uint8)
     masks = np.asarray([np.asarray(x, dtype=np.uint8) for x in pil_masks], dtype=np.uint8)
