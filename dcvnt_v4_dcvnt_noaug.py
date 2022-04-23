@@ -347,23 +347,53 @@ class CTDataset(data.Dataset):
                        clip_range=(0.2, 0.7),   # useless
                        logger=None):
 
-        _pneum_f = os.path.join(data_home, "ImageSets", "ncov_{}.txt".format(split))
-        _non_pneum_f = os.path.join(data_home, "ImageSets", "cap_{}.txt".format(split))
+        # _pneum_f = os.path.join(data_home, "ImageSets", "ncov_{}.txt".format(split))
+        # _non_pneum_f = os.path.join(data_home, "ImageSets", "cap_{}.txt".format(split))
+        # # Build a dictionary to record {path - label} pair
+        # meta_pneum   = [[os.path.join(data_home, "NpyData-size224x336-imp10-infmask0010-test-1pc", "{}.npy".format(x)), 1]
+        #                         for x in readvdnames(_pneum_f)]
+        #
+        # meta_non_pneum   = [[os.path.join(data_home, "NpyData-size224x336-imp10-infmask0010-test-1pc", "{}.npy".format(x)), 0]
+        #                         for x in readvdnames(_non_pneum_f)]
+
+        _embo_f = os.path.join(data_home, "ImageSets", "ncov_{}.txt".format(split))
+        _norm_f = os.path.join(data_home, "ImageSets", "normal_{}.txt".format(split))
+        _cap_f = os.path.join(data_home, "ImageSets", "cap_{}.txt".format(split))
         # Build a dictionary to record {path - label} pair
-        meta_pneum   = [[os.path.join(data_home, "NpyData-size224x336-imp10-infmask0010-test-1pc", "{}.npy".format(x)), 1]
-                                for x in readvdnames(_pneum_f)]
+        meta_pos   = [[os.path.join(data_home, "NpyData-size224x336-test2", "{}.npy".format(x)), 1]
+                                for x in readvdnames(_embo_f)]
 
-        meta_non_pneum   = [[os.path.join(data_home, "NpyData-size224x336-imp10-infmask0010-test-1pc", "{}.npy".format(x)), 0]
-                                for x in readvdnames(_non_pneum_f)]
+        meta_neg   = [[os.path.join(data_home, "NpyData-size224x336-test2", "{}.npy".format(x)), 0]
+                                for x in readvdnames(_norm_f)]
 
-        if split == "train":
-            lmg = len(meta_non_pneum)
-            if len(meta_pneum) > len(meta_non_pneum):
-                for i in range(len(meta_pneum) - len(meta_non_pneum)):
-                    meta_non_pneum.append(random.choice(meta_non_pneum))
-            else:
-                for i in range(len(meta_non_pneum) - len(meta_pneum)):
-                    meta_pneum.append(random.choice(meta_pneum))
+        meta_cap   = [[os.path.join(data_home, "NpyData-size224x336-test2", "{}.npy".format(x)), 2]
+                                for x in readvdnames(_cap_f)]
+
+        # if split == "train":
+        #     lmg = len(meta_neg)
+        #     if len(meta_pos) > len(meta_neg):
+        #         for i in range(len(meta_pos) - len(meta_neg)):
+        #             meta_neg.append(random.choice(meta_neg))
+        #     else:
+        #         for i in range(len(meta_neg) - len(meta_pos)):
+        #             meta_pos.append(random.choice(meta_pos))
+        #     if len(meta_cap) > lmg:
+        #         for i in range(len(meta_cap) - len(meta_neg)):
+        #             meta_neg.append(random.choice(meta_cap))
+        #     else:
+        #         for i in range(len(meta_neg) - len(meta_cap)):
+        #             meta_cap.append(random.choice(meta_cap))
+
+        meta = meta_pos + meta_neg + meta_cap
+
+        # if split == "train":
+        #     lmg = len(meta_non_pneum)
+        #     if len(meta_pneum) > len(meta_non_pneum):
+        #         for i in range(len(meta_pneum) - len(meta_non_pneum)):
+        #             meta_non_pneum.append(random.choice(meta_non_pneum))
+        #     else:
+        #         for i in range(len(meta_non_pneum) - len(meta_pneum)):
+        #             meta_pneum.append(random.choice(meta_pneum))
 
         meta = meta_pneum + meta_non_pneum
 
