@@ -267,20 +267,21 @@ class CTDataset(data.Dataset):
         meta_cap   = [[os.path.join(data_home, "NpyData-size224x336-test2", "{}.npy".format(x)), 2]
                                 for x in readvdnames(_cap_f)]
 
-        if split == "train":
-            lmg = len(meta_neg)
-            if len(meta_pos) > len(meta_neg):
-                for i in range(len(meta_pos) - len(meta_neg)):
-                    meta_neg.append(random.choice(meta_neg))
-            else:
-                for i in range(len(meta_neg) - len(meta_pos)):
-                    meta_pos.append(random.choice(meta_pos))
-            if len(meta_cap) > lmg:
-                for i in range(len(meta_cap) - len(meta_neg)):
-                    meta_neg.append(random.choice(meta_cap))
-            else:
-                for i in range(len(meta_neg) - len(meta_cap)):
-                    meta_cap.append(random.choice(meta_cap))
+        # not in the baseline implementation 
+        # if split == "train":
+        #     lmg = len(meta_neg)
+        #     if len(meta_pos) > len(meta_neg):
+        #         for i in range(len(meta_pos) - len(meta_neg)):
+        #             meta_neg.append(random.choice(meta_neg))
+        #     else:
+        #         for i in range(len(meta_neg) - len(meta_pos)):
+        #             meta_pos.append(random.choice(meta_pos))
+        #     if len(meta_cap) > lmg:
+        #         for i in range(len(meta_cap) - len(meta_neg)):
+        #             meta_neg.append(random.choice(meta_cap))
+        #     else:
+        #         for i in range(len(meta_neg) - len(meta_cap)):
+        #             meta_cap.append(random.choice(meta_cap))
 
         meta = meta_pos + meta_neg + meta_cap
 
