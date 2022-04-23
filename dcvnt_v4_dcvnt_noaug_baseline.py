@@ -19,19 +19,6 @@ Original file is located at
 
 # creating the dataset to be input as requested in GitHub README.md
 
-import torchvision.models as models
-r3d_18 = models.video.r3d_18(pretrained = True).cuda()
-
-# freeze all the network except the final layer, so gradients are
-# not computed in backward() - to do FIXED FEATURE EXTRACTION
-# frome here: https://pytorch.org/tutorials/beginner/transfer_learning_tutorial.html
-for p in r3d_18.parameters():
-    p.requires_grad = False
-
-# changing final 2 layers of r3d_18
-# r3d_18.avgpool = torch.nn.AdaptiveAvgPool3d(output_size=(1, 1, 1))
-r3d_18.fc = torch.nn.Linear(r3d_18.fc.in_features, 3).cuda()
-
 import torch
 import torchvision
 import torchvision.transforms as transforms
@@ -70,6 +57,18 @@ run = neptune.init(
     api_token="eyJhcGlfYWRkcmVzcyI6Imh0dHBzOi8vYXBwLm5lcHR1bmUuYWkiLCJhcGlfdXJsIjoiaHR0cHM6Ly9hcHAubmVwdHVuZS5haSIsImFwaV9rZXkiOiI2MDQxZWMwYS1hMDg5LTQzNDQtYWFkMy1iZGZiNjk4MjM4YTMifQ==",
 )  # your credentials
 
+import torchvision.models as models
+r3d_18 = models.video.r3d_18(pretrained = True).cuda()
+
+# freeze all the network except the final layer, so gradients are
+# not computed in backward() - to do FIXED FEATURE EXTRACTION
+# frome here: https://pytorch.org/tutorials/beginner/transfer_learning_tutorial.html
+for p in r3d_18.parameters():
+    p.requires_grad = False
+
+# changing final 2 layers of r3d_18
+# r3d_18.avgpool = torch.nn.AdaptiveAvgPool3d(output_size=(1, 1, 1))
+r3d_18.fc = torch.nn.Linear(r3d_18.fc.in_features, 3).cuda()
 
 DATA_ROOT = 'dataset4/NCOV-BF'
 
