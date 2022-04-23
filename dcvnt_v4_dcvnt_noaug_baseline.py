@@ -2463,7 +2463,7 @@ pred_probs = pred_probs.to('cpu')
 target_names = ['NonCOVID', 'COVID', 'CAP']
 
 # get precision, recall, f1-score
-print('Summary Report ======> ' + model_pth)
+print('Summary Report ======> ')
 
 print(classification_report(true, pred, target_names=target_names, digits=4))
 
