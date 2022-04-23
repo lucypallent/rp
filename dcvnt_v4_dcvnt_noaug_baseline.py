@@ -2479,7 +2479,7 @@ import matplotlib.pyplot as plt
 fig, ax = plt.subplots()
 sns.heatmap(matrix, annot=True, cmap='Blues')
 
-ax.set_title('Confusion Matrix for ' + str(model_pth) + '\n\n');
+ax.set_title('Confusion Matrix for \n\n');
 ax.set_xlabel('\nPredicted classification')
 ax.set_ylabel('Actual classification ');
 
