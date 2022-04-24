@@ -110,8 +110,8 @@ class test_dataset2:
         for i, n in enumerate(npy):
             n = t(n)
             n = t2(n)
-            n = transforms.functional.adjust_brightness(n , brightness_factor=1.5)
-            n = transforms.functional.adjust_contrast(n , contrast_factor=1.25)
+            # n = transforms.functional.adjust_brightness(n , brightness_factor=1.5)
+            # n = transforms.functional.adjust_contrast(n , contrast_factor=1.25)
             n = transforms.functional.rotate(n, 270)
             n = t3(n)
             n = torch.flip(n, (2,))
@@ -609,46 +609,46 @@ model.load_state_dict(torch.load(pth_path, map_location={'cuda:1':'cuda:0'}))
 model.cuda()
 model.eval()
 
-################### commented out below to make other chnages
-# transforms.functional.adjust_brightness
-# transforms.functional.adjust_contrast
-#
-# kernel = np.ones((10,10), np.uint8)
-# for i in range(test_loader.size):
-#     images, name = test_loader.load_data()
-#     images = images.cuda()
-#     res2 = np.zeros((len(images), 512, 512))
-#     res3 = np.zeros((len(images), 512, 512))
-#     for i, img in enumerate(images): # ([64, 1, 3, 352, 352])
-#         lateral_map_5, lateral_map_4, lateral_map_3, lateral_map_2, lateral_edge = model(img)
-#         imgT = img[0].cpu()
-#
-#         res = lateral_map_2
-#         res = res.sigmoid().data.cpu().numpy().squeeze()
-#         res = (res - res.min()) / (res.max() - res.min() + 1e-8)
-#         res = cv2.resize(res, dsize=(512, 512), interpolation=cv2.INTER_CUBIC)
-#         print(res)
-#         res1 = (np.ceil(res-0.01)).astype(np.float32) # currently swapped the two lines
-#
-#         res = ((res - np.min(res)) / (np.max(res) - np.min(res))).astype(np.float32)
-#
-#
-#         # # dilate the mask by 10 pixels
-#         # dilated_res = cv2.dilate(res, kernel, iterations=1)
-#
-#         res2[i] = res1
-#         res3[i] = res
-#     print(res2.shape)
-#     name = name.split('.')[0]
-#     name = name[:-2]
-#     name0 = name + '.npy'
-#     np.save(os.path.join(save_path + name0), img.cpu())
-#     name2 = name + '-infmask-orig.npy'
-#     np.save(os.path.join(save_path + name2), res2)
-#     # roundign up everything with an above than 0.1 chance of being an infection
-# print('Test Done!')
-################### commented out above to make other chnages
-# add code from other versions to see if it works
+################## commented out below to make other chnages
+transforms.functional.adjust_brightness
+transforms.functional.adjust_contrast
+
+kernel = np.ones((10,10), np.uint8)
+for i in range(test_loader.size):
+    images, name = test_loader.load_data()
+    images = images.cuda()
+    res2 = np.zeros((len(images), 512, 512))
+    res3 = np.zeros((len(images), 512, 512))
+    for i, img in enumerate(images): # ([64, 1, 3, 352, 352])
+        lateral_map_5, lateral_map_4, lateral_map_3, lateral_map_2, lateral_edge = model(img)
+        imgT = img[0].cpu()
+
+        res = lateral_map_2
+        res = res.sigmoid().data.cpu().numpy().squeeze()
+        res = (res - res.min()) / (res.max() - res.min() + 1e-8)
+        res = cv2.resize(res, dsize=(512, 512), interpolation=cv2.INTER_CUBIC)
+        print(res)
+        res1 = (np.ceil(res-0.01)).astype(np.float32) # currently swapped the two lines
+
+        res = ((res - np.min(res)) / (np.max(res) - np.min(res))).astype(np.float32)
+
+
+        # # dilate the mask by 10 pixels
+        # dilated_res = cv2.dilate(res, kernel, iterations=1)
+
+        res2[i] = res1
+        res3[i] = res
+    print(res2.shape)
+    name = name.split('.')[0]
+    name = name[:-2]
+    name0 = name + '.npy'
+    np.save(os.path.join(save_path + name0), img.cpu())
+    name2 = name + '-infmask-orig.npy'
+    np.save(os.path.join(save_path + name2), res2)
+    # roundign up everything with an above than 0.1 chance of being an infection
+print('Test Done!')
+################## commented out above to make other chnages
+add code from other versions to see if it works
 
 
 # create the infnet limited to being the shape of the lungs
