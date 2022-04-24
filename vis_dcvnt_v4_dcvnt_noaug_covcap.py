@@ -1895,7 +1895,7 @@ with torch.no_grad():
         prob_preds = F.softmax(preds, dim=1)
         prob_normal = prob_preds[0, 0].item()
         prob_ncov = prob_preds[0, 1].item()
-        prob_cap =  prob_preds[0, 2].item() # this should work
+        # prob_cap =  prob_preds[0, 2].item() # this should work
         gt = labels.item()
 
         gts.append(gt)
