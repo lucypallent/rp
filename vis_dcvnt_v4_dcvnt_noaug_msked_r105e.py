@@ -1883,7 +1883,7 @@ model = torch.nn.DataParallel(model).cuda()
 
 model.eval()
 model.module.classifier[1] = nn.Linear(model.module.classifier[1].in_features, NUM_CLASSES).cuda()
-model.load_state_dict(torch.load('experiments_v4_dcvnt_msk2/ncov-Epoch-00105.pth'))
+model.load_state_dict(torch.load('experiments_v4_dcvnt_msk2/ncov-Epoch_00105.pth'))
 
 ValidLoader = torch.utils.data.DataLoader(Validset,
                                     batch_size=1,
@@ -2026,7 +2026,7 @@ model = torch.nn.DataParallel(model).cuda()
 
 model.eval()
 model.module.classifier[1] = nn.Linear(model.module.classifier[1].in_features, NUM_CLASSES).cuda()
-model.load_state_dict(torch.load('experiments_v4_dcvnt_msk2/ncov-Epoch-00105.pth'))
+model.load_state_dict(torch.load('experiments_v4_dcvnt_msk2/ncov-Epoch_00105.pth'))
 
 
 print(model)
