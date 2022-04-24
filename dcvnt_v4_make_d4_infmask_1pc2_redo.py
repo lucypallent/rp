@@ -62,7 +62,8 @@ class test_dataset2:
         # self.images = [image_root + f for f in os.listdir(image_root) if f.endswith('.npy')]
         readvdnames = lambda x: open(x).read().rstrip().split('\n')
         # self.pe_list = readvdnames(f"d6/image_sets/all_patients.txt")[::-1]
-        self.pe_list = readvdnames(f"dataset3/NCOV-BF/ImageSets-old/lung_test.txt")[::-1]
+        # self.pe_list = readvdnames(f"dataset3/NCOV-BF/ImageSets-old/lung_test.txt")[::-1]
+        self.pe_list = readvdnames(f"dataset4/NCOV-BF/ImageSets/lung_test.txt")[::-1]
         self.images = ['unet-results/' + x + '-2.npy' for x in self.pe_list]
         # self.gts = [gt_root + f for f in os.listdir(gt_root) if f.endswith('.jpg') or f.endswith('.png')]
         self.images = sorted(self.images)
