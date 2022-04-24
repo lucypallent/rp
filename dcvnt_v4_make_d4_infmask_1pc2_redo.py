@@ -64,7 +64,9 @@ class test_dataset2:
         # self.pe_list = readvdnames(f"d6/image_sets/all_patients.txt")[::-1]
         # self.pe_list = readvdnames(f"dataset3/NCOV-BF/ImageSets-old/lung_test.txt")[::-1]
         self.pe_list = readvdnames(f"dataset4/NCOV-BF/ImageSets/lung_test.txt")[::-1]
-        self.images = ['unet-results2/' + x + '-2.npy' for x in self.pe_list]
+        # self.images = ['unet-results2/' + x + '-2.npy' for x in self.pe_list]
+        self.images = ['unet-results2/' + x + '.npy' for x in self.pe_list]
+
         # self.gts = [gt_root + f for f in os.listdir(gt_root) if f.endswith('.jpg') or f.endswith('.png')]
         self.images = sorted(self.images)
         # self.gts = sorted(self.gts)
@@ -110,8 +112,8 @@ class test_dataset2:
         for i, n in enumerate(npy):
             n = t(n)
             n = t2(n)
-            # n = transforms.functional.adjust_brightness(n , brightness_factor=1.5)
-            # n = transforms.functional.adjust_contrast(n , contrast_factor=1.25)
+            n = transforms.functional.adjust_brightness(n , brightness_factor=1.5)
+            n = transforms.functional.adjust_contrast(n , contrast_factor=1.25)
             n = transforms.functional.rotate(n, 270)
             n = t3(n)
             n = torch.flip(n, (2,))
@@ -640,7 +642,7 @@ for i in range(test_loader.size):
         res3[i] = res
     print(res2.shape)
     name = name.split('.')[0]
-    name = name[:-2]
+    # name = name[:-2]
     name0 = name + '.npy'
     np.save(os.path.join(save_path + name0), img.cpu())
     name2 = name + '-infmask-orig.npy'
