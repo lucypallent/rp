@@ -348,8 +348,8 @@ class CTDataset(data.Dataset):
                        clip_range=(0.2, 0.7),   # useless
                        logger=None):
 
-        _pneum_f = os.path.join(data_home, "ImageSets", "ncov_{}.txt".format(split))
-        _non_pneum_f = os.path.join(data_home, "ImageSets", "cap_{}.txt".format(split))
+        _pneum_f = os.path.join(data_home, "ImageSets", "pneum_yes_{}.txt".format(split))
+        _non_pneum_f = os.path.join(data_home, "ImageSets", "pneum_no_{}.txt".format(split))
         # Build a dictionary to record {path - label} pair
         meta_pneum   = [[os.path.join(data_home, "NpyData-size224x336-test2", "{}.npy".format(x)), 1]
                                 for x in readvdnames(_pneum_f)]
@@ -1938,7 +1938,7 @@ INIT_MODEL_PATH = 'ncov-Epoch_00140-auc95p9.pth'
 INIT_MODEL_STRICT = "True"
 SNAPSHOT_FREQ = 5
 TRAIN_EPOCH = 200 #, will likely stop it early
-SNAPSHOT_HOME = "experiments_v4_dcvnt_cvcp_run2"
+SNAPSHOT_HOME = "experiments_v4_dcvnt_pnm_run2"
 SNAPSHOT_MODEL_TPL = "ncov-Epoch_{:05d}.pth"
 
 
