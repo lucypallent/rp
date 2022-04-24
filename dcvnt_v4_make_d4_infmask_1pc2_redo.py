@@ -639,6 +639,7 @@ for i in range(test_loader.size):
         res3[i] = res
     print(res2.shape)
     name = name.split('.')[0]
+    name = name[:-2]
     name0 = name + '.npy'
     np.save(os.path.join(save_path + name0), img.cpu())
     name2 = name + '-infmask-orig.npy'
