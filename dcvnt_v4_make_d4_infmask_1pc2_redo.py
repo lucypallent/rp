@@ -747,7 +747,7 @@ def create_masked_lungs(x):
 
     for i in range(length):
         # mask the images
-        raw_masked[i] = cv2.bitwise_and(raw_imgs[i], raw_imgs[i], mask=dilated_slice)
+        raw_masked[i] = cv2.bitwise_and(raw_imgs[i], raw_imgs[i], mask=raw_masks[i])
 
     raw_masked = ((raw_masked - np.min(raw_masked)) / (np.max(raw_masked) - np.min(raw_masked))).astype(np.float32)
 
@@ -798,6 +798,7 @@ def resize_cta_images(x):        # dtype is "PE"/"NORMAL"
     ### raw_imgs = np.uint8(np.load(os.path.join(src_home, x+".npy")))
     raw_imgs = np.load(os.path.join(src_home, x+"-masked.npy"))
     raw_masks = np.load(os.path.join(src_home, x+"-infmask.npy"))
+    bin_masks = np.load(os.path.join(src_home, x+"-dlmask.npy"))
     length = len(raw_imgs)
 
     height, width = raw_imgs.shape[1:3]
@@ -810,6 +811,12 @@ def resize_cta_images(x):        # dtype is "PE"/"NORMAL"
     zoomed_masks[zoomed_masks <= 0.01] = 0.0
     zoomed_masks = zoomed_masks.astype(np.float32)
     np.save(os.path.join(des_home, x+"-dlmask.npy"), zoomed_masks)
+
+    zoomed_bin_masks = zoom(bin_masks, (slice_resolution, new_height/height, new_width/width))
+    zoomed_bin_masks[zoomed_bin_masks > 0.01] = 1.0
+    zoomed_bin_masks[zoomed_bin_masks <= 0.01] = 0.0
+    zoomed_bin_masks = zoomed_bin_masks.astype(np.float32)
+    np.save(os.path.join(des_home, x+"-dlmask-orig.npy"), zoomed_bin_masks)
 
     #imgs2vid(immasks, "debug/{}.avi".format(x))
 ############################ end of functions for preprocessing .npys (creating d4)
