@@ -53,10 +53,6 @@ from neptune.new.types import File
 random.seed(0); torch.manual_seed(0); np.random.seed(0)
 device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
 
-
-readvdnames = lambda x: open(x).read().rstrip().split('\n')
-pe_list = readvdnames(f"d6/image_sets/all_patients.txt")[::-1]
-
 run = neptune.init(
     project="lucyhollypallent/res-preoject",
     api_token="eyJhcGlfYWRkcmVzcyI6Imh0dHBzOi8vYXBwLm5lcHR1bmUuYWkiLCJhcGlfdXJsIjoiaHR0cHM6Ly9hcHAubmVwdHVuZS5haSIsImFwaV9rZXkiOiI2YWVjODQwOS0yZDQ5LTQ5NjAtYjgyOC0xOTBkNDFjOWE3OTYifQ==",
@@ -413,8 +409,8 @@ class CTDataset(data.Dataset):
 
     def __getitem__(self, index):
         data_path, label = self.meta[index]
-        mask_path = data_path.replace('.npy', '-dlmask.npy')
-        mask_path = mask_path.replace('NpyData-size224x336-test2', 'NpyData-size224x336-imp10-infmask0010-test-1pc')
+        mask_path = data_path.replace('.npy', '-dlmask-orig.npy')
+        mask_path = data_path.replce('NpyData-size224x336-test2', 'NpyData-size224x336-imp10-infmask0010-test-1pc-redo')
 
         cta_images = np.load(data_path)
         cta_masks = np.load(mask_path)
@@ -1942,7 +1938,7 @@ INIT_MODEL_PATH = 'ncov-Epoch_00140-auc95p9.pth'
 INIT_MODEL_STRICT = "True"
 SNAPSHOT_FREQ = 5
 TRAIN_EPOCH = 200 #, will likely stop it early
-SNAPSHOT_HOME = "experiments_v4_dcvnt_imp2"
+SNAPSHOT_HOME = "experiments_v4_dcvnt_imp_run2"
 SNAPSHOT_MODEL_TPL = "ncov-Epoch_{:05d}.pth"
 
 
