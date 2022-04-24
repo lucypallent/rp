@@ -1901,7 +1901,7 @@ with torch.no_grad():
         gts.append(gt)
         pcovs.append(prob_ncov)
 
-        print ("{} {} {} {} {} {}".format(all_info[0]["name"], pid, prob_normal, prob_ncov, prob_cap, labels.item()))
+        print ("{} {} {} {} {}".format(all_info[0]["name"], pid, prob_normal, prob_ncov, labels.item()))
 
         # Val_CE.write(val_loss); Val_Acc.write(val_acc)
 
