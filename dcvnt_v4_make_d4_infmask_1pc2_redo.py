@@ -29,7 +29,7 @@ import neptune.new as neptune
 random.seed(0); torch.manual_seed(0); np.random.seed(0)
 device = torch.device('cuda') if torch.cuda.is_available() else torch.device('cpu')
 
-###### start of making infnet form -2.npy in unet-results
+###### start of making infnet form -2.npy in unet-results2
 
 # -*- coding: utf-8 -*-
 
@@ -64,7 +64,7 @@ class test_dataset2:
         # self.pe_list = readvdnames(f"d6/image_sets/all_patients.txt")[::-1]
         # self.pe_list = readvdnames(f"dataset3/NCOV-BF/ImageSets-old/lung_test.txt")[::-1]
         self.pe_list = readvdnames(f"dataset4/NCOV-BF/ImageSets/lung_test.txt")[::-1]
-        self.images = ['unet-results/' + x + '-2.npy' for x in self.pe_list]
+        self.images = ['unet-results2/' + x + '-2.npy' for x in self.pe_list]
         # self.gts = [gt_root + f for f in os.listdir(gt_root) if f.endswith('.jpg') or f.endswith('.png')]
         self.images = sorted(self.images)
         # self.gts = sorted(self.gts)
@@ -663,7 +663,7 @@ readvdnames = lambda x: open(x).read().rstrip().split('\n')
 pe_list = readvdnames(f"d6/image_sets/all_patients.txt")[::-1]
 
 des_home = 'dataset4/NCOV-BF/NpyData-imp10-infmask0010-test-1pc-redo' # '/content/test'
-src_home = 'unet-results' # '/content' # where lung masks are saved 'unet-results'
+src_home = 'unet-results2' # '/content' # where lung masks are saved 'unet-results2'
 
 def create_masks(x):
     print(x)
@@ -727,7 +727,7 @@ with futures.ProcessPoolExecutor(max_workers=num_threads) as executor:
 
 ############################ create the masked lungs
 
-src_home = 'unet-results' # '/content' # where lung masks are saved 'unet-results'
+src_home = 'unet-results2' # '/content' # where lung masks are saved 'unet-results2'
 des_home = 'dataset4/NCOV-BF/NpyData-imp10-infmask0010-test-1pc-redo'
 
 def create_masked_lungs(x):
