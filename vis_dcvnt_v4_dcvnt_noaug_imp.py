@@ -410,7 +410,7 @@ class CTDataset(data.Dataset):
     def __getitem__(self, index):
         data_path, label = self.meta[index]
         mask_path = data_path.replace('.npy', '-dlmask-orig.npy')
-        mask_path = data_path.replce('NpyData-size224x336-test2', 'NpyData-size224x336-imp10-infmask0010-test-1pc-redo')
+        mask_path = mask_path.replace('NpyData-size224x336-test2', 'NpyData-size224x336-imp10-infmask0010-test-1pc-redo')
 
         cta_images = np.load(data_path)
         cta_masks = np.load(mask_path)
