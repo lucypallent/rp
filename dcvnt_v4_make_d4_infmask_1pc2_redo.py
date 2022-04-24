@@ -722,16 +722,16 @@ def create_masks(x):
 # create_masks('patient-P9')
 # print('==============================create masks works=================')
 
-############################ start of preprocessing .npys (creating d4)
-from concurrent import futures
-
-num_threads=10
-
-with futures.ProcessPoolExecutor(max_workers=num_threads) as executor:
-    fs = [executor.submit(create_masks, x, ) for x in pe_list[::-1]]
-    for i, f in enumerate(futures.as_completed(fs)):
-        print ("{}/{} done...".format(i, len(fs)))
-############################ end of preprocessing .npys (creating d4)
+# ############################ start of preprocessing .npys (creating d4)
+# from concurrent import futures
+#
+# num_threads=10
+#
+# with futures.ProcessPoolExecutor(max_workers=num_threads) as executor:
+#     fs = [executor.submit(create_masks, x, ) for x in pe_list[::-1]]
+#     for i, f in enumerate(futures.as_completed(fs)):
+#         print ("{}/{} done...".format(i, len(fs)))
+# ############################ end of preprocessing .npys (creating d4)
 
 ############################ create the masked lungs
 
@@ -760,16 +760,16 @@ def create_masked_lungs(x):
 # print('==============================create_masked_lungs works=================')
 
 
-############################ start of preprocessing .npys (creating d4)
-from concurrent import futures
-
-num_threads=10
-
-with futures.ProcessPoolExecutor(max_workers=num_threads) as executor:
-    fs = [executor.submit(create_masked_lungs, x, ) for x in pe_list[::-1]]
-    for i, f in enumerate(futures.as_completed(fs)):
-        print ("{}/{} done...".format(i, len(fs)))
-############################ end of preprocessing .npys (creating d4)
+# ############################ start of preprocessing .npys (creating d4)
+# from concurrent import futures
+#
+# num_threads=10
+#
+# with futures.ProcessPoolExecutor(max_workers=num_threads) as executor:
+#     fs = [executor.submit(create_masked_lungs, x, ) for x in pe_list[::-1]]
+#     for i, f in enumerate(futures.as_completed(fs)):
+#         print ("{}/{} done...".format(i, len(fs)))
+# ############################ end of preprocessing .npys (creating d4)
 
 ############################ start of functions for preprocessing .npys create 224x336
 ### = just removed
@@ -806,7 +806,7 @@ def resize_cta_images(x):        # dtype is "PE"/"NORMAL"
     raw_imgs = np.load(os.path.join(src_home, x+"-masked.npy"))
     raw_masks = np.load(os.path.join(src_home, x+"-infmask.npy"))
     bin_masks = np.load(os.path.join(src_home, x+"-dlmask.npy"))
-    bin_orig_inf_masks = np.load(os.path.join(src_home, x+"-infmask-orig.npy"))
+    # bin_orig_inf_masks = np.load(os.path.join(src_home, x+"-infmask-orig.npy"))
 
     length = len(raw_imgs)
 
