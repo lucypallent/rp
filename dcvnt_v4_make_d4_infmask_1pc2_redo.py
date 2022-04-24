@@ -718,19 +718,19 @@ def create_masks(x):
 
 
 
-create_masks('patient-P9')
-print('==============================create masks works=================')
+# create_masks('patient-P9')
+# print('==============================create masks works=================')
 
-# ############################ start of preprocessing .npys (creating d4)
-# from concurrent import futures
-#
-# num_threads=10
-#
-# with futures.ProcessPoolExecutor(max_workers=num_threads) as executor:
-#     fs = [executor.submit(create_masks, x, ) for x in pe_list[::-1]]
-#     for i, f in enumerate(futures.as_completed(fs)):
-#         print ("{}/{} done...".format(i, len(fs)))
-# ############################ end of preprocessing .npys (creating d4)
+############################ start of preprocessing .npys (creating d4)
+from concurrent import futures
+
+num_threads=10
+
+with futures.ProcessPoolExecutor(max_workers=num_threads) as executor:
+    fs = [executor.submit(create_masks, x, ) for x in pe_list[::-1]]
+    for i, f in enumerate(futures.as_completed(fs)):
+        print ("{}/{} done...".format(i, len(fs)))
+############################ end of preprocessing .npys (creating d4)
 
 ############################ create the masked lungs
 
@@ -755,20 +755,20 @@ def create_masked_lungs(x):
 
     np.save(os.path.join(des_home, x+"-masked.npy"), raw_masked)
 
-create_masked_lungs('patient-P9')
-print('==============================create_masked_lungs works=================')
+# create_masked_lungs('patient-P9')
+# print('==============================create_masked_lungs works=================')
 
 
-# ############################ start of preprocessing .npys (creating d4)
-# from concurrent import futures
-#
-# num_threads=10
-#
-# with futures.ProcessPoolExecutor(max_workers=num_threads) as executor:
-#     fs = [executor.submit(create_masked_lungs, x, ) for x in pe_list[::-1]]
-#     for i, f in enumerate(futures.as_completed(fs)):
-#         print ("{}/{} done...".format(i, len(fs)))
-# ############################ end of preprocessing .npys (creating d4)
+############################ start of preprocessing .npys (creating d4)
+from concurrent import futures
+
+num_threads=10
+
+with futures.ProcessPoolExecutor(max_workers=num_threads) as executor:
+    fs = [executor.submit(create_masked_lungs, x, ) for x in pe_list[::-1]]
+    for i, f in enumerate(futures.as_completed(fs)):
+        print ("{}/{} done...".format(i, len(fs)))
+############################ end of preprocessing .npys (creating d4)
 
 ############################ start of functions for preprocessing .npys create 224x336
 ### = just removed
@@ -834,18 +834,18 @@ def resize_cta_images(x):        # dtype is "PE"/"NORMAL"
 
     #imgs2vid(immasks, "debug/{}.avi".format(x))
 
-resize_cta_images('patient-P9')
-print('==============================resize_cta_images works=================')
+# resize_cta_images('patient-P9')
+# print('==============================resize_cta_images works=================')
 
 ############################ end of functions for preprocessing .npys (creating d4)
 
-# ############################ start of preprocessing .npys (creating d4)
-# from concurrent import futures
-#
-# num_threads=10
-#
-# with futures.ProcessPoolExecutor(max_workers=num_threads) as executor:
-#     fs = [executor.submit(resize_cta_images, x, ) for x in pe_list[::-1]]
-#     for i, f in enumerate(futures.as_completed(fs)):
-#         print ("{}/{} done...".format(i, len(fs)))
-# ############################ end of preprocessing .npys (creating d4)
+############################ start of preprocessing .npys (creating d4)
+from concurrent import futures
+
+num_threads=10
+
+with futures.ProcessPoolExecutor(max_workers=num_threads) as executor:
+    fs = [executor.submit(resize_cta_images, x, ) for x in pe_list[::-1]]
+    for i, f in enumerate(futures.as_completed(fs)):
+        print ("{}/{} done...".format(i, len(fs)))
+############################ end of preprocessing .npys (creating d4)
