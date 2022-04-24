@@ -713,12 +713,13 @@ def create_masks(x):
     raw_imp_masked[raw_imp_masked < 1.0] = 0.0
 
     np.save(os.path.join(des_home, x+"-infmask.npy"), raw_infmasked10)
-    np.save(os.path.join(des_home, x+"-dlmask.npy"), raw_masked10)
+    np.save(os.path.join(des_home, x+"-dlmask.npy"), raw_masked00)
     # np.save(os.path.join(des_home, x+".npy"), raw_imgs)
 
 
 
 create_masks('patient-P9')
+print('==============================create masks works=================')
 
 # ############################ start of preprocessing .npys (creating d4)
 # from concurrent import futures
@@ -755,6 +756,8 @@ def create_masked_lungs(x):
     np.save(os.path.join(des_home, x+"-masked.npy"), raw_masked)
 
 create_masked_lungs('patient-P9')
+print('==============================create_masked_lungs works=================')
+
 
 # ############################ start of preprocessing .npys (creating d4)
 # from concurrent import futures
@@ -832,6 +835,8 @@ def resize_cta_images(x):        # dtype is "PE"/"NORMAL"
     #imgs2vid(immasks, "debug/{}.avi".format(x))
 
 resize_cta_images('patient-P9')
+print('==============================resize_cta_images works=================')
+
 ############################ end of functions for preprocessing .npys (creating d4)
 
 # ############################ start of preprocessing .npys (creating d4)
