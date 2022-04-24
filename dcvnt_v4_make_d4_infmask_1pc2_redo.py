@@ -836,7 +836,7 @@ def resize_cta_images(x):        # dtype is "PE"/"NORMAL"
     #imgs2vid(immasks, "debug/{}.avi".format(x))
 
 resize_cta_images('patient-P9')
-# print('==============================resize_cta_images works=================')
+print('==============================resize_cta_images works=================')
 
 ############################ end of functions for preprocessing .npys (creating d4)
 
