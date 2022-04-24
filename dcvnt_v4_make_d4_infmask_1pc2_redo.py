@@ -648,7 +648,7 @@ for i in range(test_loader.size):
     # roundign up everything with an above than 0.1 chance of being an infection
 print('Test Done!')
 ################## commented out above to make other chnages
-add code from other versions to see if it works
+# add code from other versions to see if it works
 
 
 # create the infnet limited to being the shape of the lungs
