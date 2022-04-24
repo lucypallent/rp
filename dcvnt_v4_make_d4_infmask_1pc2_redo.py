@@ -112,8 +112,8 @@ class test_dataset2:
         for i, n in enumerate(npy):
             n = t(n)
             n = t2(n)
-            n = transforms.functional.adjust_brightness(n , brightness_factor=1.5)
-            n = transforms.functional.adjust_contrast(n , contrast_factor=1.25)
+            # n = transforms.functional.adjust_brightness(n , brightness_factor=1.5)
+            # n = transforms.functional.adjust_contrast(n , contrast_factor=1.25)
             n = transforms.functional.rotate(n, 270)
             n = t3(n)
             n = torch.flip(n, (2,))
