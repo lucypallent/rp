@@ -693,12 +693,12 @@ def create_masks(x):
         # dilate the lungs by 10 pixels
         dilated_slice10 = cv2.dilate(labels_slice, kernel, iterations=1)
         # fill in any holes in the lungs
-        dilated_slice10 = ndimage.binary_fill_holes(dilated_slice10).astype(int)
+        dilated_slice10 = ndimage.binary_fill_holes(dilated_slice10).astype(np.uint8)
 
         # dilate the lungs by 00 pixels
         dilated_slice00 = labels_slice #cv2.dilate(labels_slice, kernel, iterations=1)
         # fill in any holes in the lungs
-        dilated_slice00 = ndimage.binary_fill_holes(dilated_slice00).astype(int)
+        dilated_slice00 = ndimage.binary_fill_holes(dilated_slice00).astype(np.uint8)
 
         # dilate the covid lung infection selections by 10 pixels
         dilated_img = cv2.dilate(raw_imgs[i], kernel, iterations=1)
