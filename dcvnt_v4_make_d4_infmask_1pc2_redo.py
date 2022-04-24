@@ -598,8 +598,8 @@ import imageio
 import cv2
 
 image_root = 'dataset3/NCOV-BF/NpyData/'
-testsize = 352
-test_loader = test_dataset2(image_root, testsize)
+# testsize = 352
+test_loader = test_dataset2(image_root, 512)
 pth_path = 'd6/mdls/Inf-Net-100.pth'
 save_path = 'dataset4/NCOV-BF/NpyData-infmask-test-1pc/'
 model = Inf_Net()
@@ -623,7 +623,7 @@ for i in range(test_loader.size):
         res = lateral_map_2
         res = res.sigmoid().data.cpu().numpy().squeeze()
         res = (res - res.min()) / (res.max() - res.min() + 1e-8)
-        # res = cv2.resize(res, dsize=(512, 512), interpolation=cv2.INTER_CUBIC)
+        res = cv2.resize(res, dsize=(512, 512), interpolation=cv2.INTER_CUBIC)
         print(res)
         res1 = (np.ceil(res-0.01)).astype(np.float32) # currently swapped the two lines
 
