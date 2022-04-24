@@ -799,6 +799,8 @@ def resize_cta_images(x):        # dtype is "PE"/"NORMAL"
     raw_imgs = np.load(os.path.join(src_home, x+"-masked.npy"))
     raw_masks = np.load(os.path.join(src_home, x+"-infmask.npy"))
     bin_masks = np.load(os.path.join(src_home, x+"-dlmask.npy"))
+    bin_orig_inf_masks = np.load(os.path.join(src_home, x+"-infmask-orig.npy"))
+
     length = len(raw_imgs)
 
     height, width = raw_imgs.shape[1:3]
@@ -817,6 +819,12 @@ def resize_cta_images(x):        # dtype is "PE"/"NORMAL"
     zoomed_bin_masks[zoomed_bin_masks <= 0.01] = 0.0
     zoomed_bin_masks = zoomed_bin_masks.astype(np.float32)
     np.save(os.path.join(des_home, x+"-dlmask-orig.npy"), zoomed_bin_masks)
+
+    zoomed_bin_orig_inf_masks = zoom(bin_orig_inf_masks, (slice_resolution, new_height/height, new_width/width))
+    zoomed_bin_orig_inf_masks[zoomed_bin_orig_inf_masks > 0.01] = 1.0
+    zoomed_bin_orig_inf_masks[zoomed_bin_orig_inf_masks <= 0.01] = 0.0
+    zoomed_bin_orig_inf_masks = zoomed_bin_orig_inf_masks.astype(np.float32)
+    np.save(os.path.join(des_home, x+"-infmask-orig.npy"), zoomed_bin_orig_inf_masks)
 
     #imgs2vid(immasks, "debug/{}.avi".format(x))
 ############################ end of functions for preprocessing .npys (creating d4)
