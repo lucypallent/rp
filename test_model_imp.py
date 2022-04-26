@@ -1742,7 +1742,7 @@ def test_model(model_pth, folder_pth, run):
     NUM_WORKERS = 2
 
     CFG_FILE = "cfgs/test.yaml"
-    Validset = CTDataset(data_home=DATA_ROOT, split='test', folder=folder_pth)
+    Validset = CTDataset(data_home=DATA_ROOT, split='test')#, folder=folder_pth)
 
     MODEL_UID = 'baseline_i3d'
     NUM_CLASSES = 3
@@ -1778,15 +1778,15 @@ def test_model(model_pth, folder_pth, run):
                          split='train',
                          #fold_id=FOLD_ID,
                          crop_size=TRAIN_CROP_SIZE,
-                         clip_range=CLIP_RANGE,
-                         folder=folder_pth)
+                         clip_range=CLIP_RANGE)#,
+                         #folder=folder_pth)
 
     Validset = CTDataset(data_home=DATA_ROOT,
                          split='valid',
                          #fold_id=FOLD_ID,
                          crop_size=TRAIN_CROP_SIZE,
-                         clip_range=CLIP_RANGE,
-                         folder=folder_pth)
+                         clip_range=CLIP_RANGE)#,
+                        # folder=folder_pth)
 
 
 
@@ -1880,8 +1880,8 @@ def test_model(model_pth, folder_pth, run):
     SAMPLE_NUMBER = -1
 
     Testset = CTDataset(data_home=DATA_ROOT,
-                                   split='valid',
-                                   folder=folder_pth)#, trying something
+                                   split='valid')#,
+                                   #folder=folder_pth)#, trying something
                                   #  sample_number=SAMPLE_NUMBER)
 
     criterion = torch.nn.CrossEntropyLoss(reduction="mean")
