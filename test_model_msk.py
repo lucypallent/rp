@@ -2173,9 +2173,11 @@ def main(argv):
     # # # DEBUG:
     # test_model(model_lst[0])
 
-    for m in model_lst:
+    # for m in model_lst:
         # test_model(m, 'NpyData-size224x336-imp10-infmask0010-test-1pc')
-        test_model(m, data_folder, run)
+    m = 'experiments_v4_dcvnt_wght2/ncov-best.pth'
+
+    test_model(m, data_folder, run)
 
 if __name__ == '__main__':
     main(sys.argv[1:])
