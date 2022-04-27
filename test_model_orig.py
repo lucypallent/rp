@@ -2174,7 +2174,7 @@ def main(argv):
 
     # for m in model_lst:
         # test_model(m, 'NpyData-size224x336-imp10-infmask0010-test-1pc')
-    m = 'experiments_v4_dcvnt_run2/ncov-best.pth'
+    m = 'experiments_v4_dcvnt_wght2/ncov-best.pth'
     test_model(m, data_folder, run)
 
 if __name__ == '__main__':
