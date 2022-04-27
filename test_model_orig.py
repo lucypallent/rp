@@ -1918,6 +1918,7 @@ def test_model(model_pth, folder_pth, run):
         for i, (all_F, all_L, all_info) in enumerate(TestLoader):
             labels = all_L.cuda()
             print(all_F.shape)
+            print(type(all_F))
             preds = model([all_F.cuda(non_blocking=True)])
 
             # preds = model([all_F.cuda(non_blocking=True)])   # I3D
